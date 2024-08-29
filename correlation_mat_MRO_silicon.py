@@ -9,9 +9,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
-from viz_util import merge_values
+from src.viz_util import merge_values
 
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_silicon_tube")
 
 def json_paths_to_string(json_input):
