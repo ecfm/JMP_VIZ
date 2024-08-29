@@ -9,10 +9,29 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
-from src.viz_util import merge_values
 
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_silicon_tube")
+
+def merge_values(val1, val2):
+    if val1 is None or len(val1) == 0:
+        return val2
+    if val2 is None or len(val2) == 0:
+        return val1
+    if isinstance(val1, list) or isinstance(val2, list):
+        if isinstance(val1, list) and isinstance(val2, list):
+            return list(set(val1+val2))
+        elif hasattr(val1, 'keys'):
+            return merge_values(val1, {'_': val2})
+        else:
+            return merge_values({'_': val1}, val2)
+    elif hasattr(val1, 'keys') and hasattr(val2, 'keys'):
+        new_dict = {}
+        for key in set(list(val1.keys())+list(val2.keys())):
+            new_dict[key] = merge_values(val1.get(key, None), val2.get(key, None))
+        return new_dict
+    else:
+        raise ValueError(f"Invalid value type: {type(val1)} of {val1} and {type(val2)} of {val2}")
 
 def json_paths_to_string(json_input):
     if not isinstance(json_input, dict):
