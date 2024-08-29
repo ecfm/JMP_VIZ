@@ -1,0 +1,1486 @@
+{
+  "家具 (Furniture)": {
+    "组装:柜子销钉安装 (Assembly:Cabinet Pin Fitting)": [
+      "use_19"
+    ],
+    "保护 (Protection)": {
+      "躺椅底座包裹 (Recliner Base Wrap)": [
+        "use_22"
+      ],
+      "墙钩垫 (Wall Hook Padding)": [
+        "use_434"
+      ]
+    }
+  },
+  "时尚配饰:手提包 (Fashion Accessories:Purse)": {
+    "把手 (Handles)": [
+      "use_558"
+    ]
+  },
+  "医疗和牙科护理 (Medical and Dental Care)": {
+    "冲牙器 (Water Flosser)": [
+      "use_333",
+      "use_535"
+    ]
+  },
+  "机械:组件 (Machinery:Components)": {
+    "咖啡机 (Coffee Machine)": [
+      "use_160",
+      "use_448",
+      "use_354",
+      "use_361",
+      "use_259",
+      "use_362",
+      "use_362",
+      "use_87",
+      "use_372"
+    ],
+    "挤奶机 (Milking Machine)": [
+      "use_80",
+      "use_377",
+      "use_597"
+    ],
+    "洗衣机 (Washing Machine)": [
+      "use_159"
+    ],
+    "各种机器 (Various Machines)": [
+      "use_15",
+      "use_176"
+    ],
+    "电子烟 (Vape)": [
+      "use_262"
+    ],
+    "焊接站 (Solder Station)": [
+      "use_275"
+    ]
+  },
+  "包装:包裹打包 (Packaging:Parcel Packing)": {
+    "通用 (General)": [
+      "use_291"
+    ]
+  },
+  "通用应用 (General Applications)": {
+    "杆加厚 (Rod Thickening)": [
+      "use_336"
+    ],
+    "系统:喷雾风扇 (System:Misting Fan)": [
+      "use_131"
+    ],
+    "pH专家 (pH Expert)": [
+      "use_161"
+    ],
+    "倒钩配件 (Barb Fitting)": [
+      "use_335",
+      "use_420",
+      "use_525"
+    ]
+  },
+  "防水:LED灯罩 (Waterproofing:LED Light Cover)": {
+    "通用 (General)": [
+      "use_318"
+    ]
+  },
+  "工业 (Industrial)": {
+    "冷却 (Cooling)": {
+      "数控机床 (CNC Machine)": [
+        "use_229",
+        "use_344",
+        "use_565",
+        "use_568"
+      ],
+      "激光 (Laser)": [
+        "use_488"
+      ]
+    },
+    "组件 (Components)": {
+      "管道 (Pipe)": [
+        "use_485"
+      ],
+      "密封垫圈 (Sealing Gasket)": [
+        "use_406"
+      ],
+      "机械 (Machinery)": [
+        "use_209",
+        "use_498",
+        "use_505",
+        "use_56",
+        "use_601",
+        "use_483",
+        "use_512"
+      ],
+      "流体控制 (Fluid Control)": [
+        "use_595",
+        "use_52"
+      ]
+    },
+    "应用:化学品处理 (Applications:Chemical Handling)": [
+      "use_225"
+    ]
+  },
+  "电子烟:机械模组制作 (Vaping:Mech Mod Fabrication)": {
+    "通用 (General)": [
+      "use_479",
+      "use_563"
+    ]
+  },
+  "特殊设备:吸锡器 (Specialized Equipment:Solder Sucker)": {
+    "特定用途 (Specific Use)": [
+      "use_559"
+    ]
+  },
+  "电动工具 (Power Tools)": {
+    "切割工具 (Cutting Tools)": {
+      "激光切割机 (Laser Cutter)": [
+        "use_77"
+      ],
+      "线锯 (Scroll Saw)": [
+        "use_17"
+      ]
+    },
+    "其他工具:电动滚筒 (Other Tools:Power Roller)": [
+      "use_458"
+    ]
+  },
+  "书写工具:柔性笔 (Writing Instruments:Flexible Pen)": {
+    "通用 (General)": [
+      "use_424"
+    ]
+  },
+  "爱好和娱乐 (Hobby and Recreation)": {
+    "工具 (Tools)": {
+      "迷你火炬 (Mini Torch)": [
+        "use_311",
+        "use_431"
+      ],
+      "组装工具 (Assembly Tools)": [
+        "use_521"
+      ]
+    },
+    "音乐设备 (Musical Equipment)": {
+      "吉他架 (Guitar Stand)": [
+        "use_366"
+      ],
+      "小号 (Trumpet)": [
+        "use_58",
+        "use_149"
+      ],
+      "小提琴 (Violin)": [
+        "use_280"
+      ]
+    },
+    "户外活动 (Outdoor Activities)": {
+      "风筝 (Kite)": [
+        "use_89"
+      ],
+      "遥控船 (RC Boat)": [
+        "use_98",
+        "use_227"
+      ],
+      "水上摩托 (Jet Ski)": [
+        "use_240"
+      ],
+      "彩弹 (Paintball)": [
+        "use_135"
+      ]
+    },
+    "角色扮演:质子包 (Cosplay:Proton Pack)": [
+      "use_400"
+    ]
+  },
+  "宠物护理 (Pet Care)": {
+    "爬行动物:蛇隐藏保护 (Reptiles:Snake Hide Protection)": [
+      "use_438"
+    ],
+    "狗狗用品 (Dog Accessories)": {
+      "LED背带 (LED Harness)": [
+        "use_423"
+      ],
+      "项圈消音 (Collar Silencing)": [
+        "use_442"
+      ]
+    },
+    "猫咪用品:猫砂盆盖 (Cat Accessories:Litter Box Cover)": [
+      "use_553"
+    ]
+  },
+  "存储 (Storage)": {
+    "架设 (Racking)": [
+      "use_279"
+    ]
+  },
+  "表演设备:火棍 (Performance Equipment:Fire Staves)": {
+    "握把 (Grip)": [
+      "use_562"
+    ]
+  },
+  "保护 (Protection)": {
+    "金属保护 (Metal Protection)": {
+      "杆子防刮 (Rod Scuff Protection)": [
+        "use_439"
+      ],
+      "砂锅盖保护 (Casserole Lid Protection)": [
+        "use_513"
+      ]
+    },
+    "安全设备:刀片保护 (Safety Equipment:Blade Protection)": [
+      "use_437"
+    ],
+    "眼镜 (Eyewear)": {
+      "太阳镜 (Sunglasses)": [
+        "perf_486",
+        "use_566"
+      ],
+      "普通眼镜 (Glasses)": [
+        "use_393"
+      ],
+      "舒适度 (Comfort)": [
+        "use_84",
+        "use_473"
+      ],
+      "配件 (Accessories)": [
+        "use_586"
+      ]
+    }
+  },
+  "DIY项目 (DIY Projects)": {
+    "设备:孵化器 (Equipment:Egg Incubator)": [
+      "use_463"
+    ],
+    "各种项目 (Various Projects)": [
+      "use_212",
+      "use_276",
+      "use_395"
+    ]
+  },
+  "园艺 (Gardening)": {
+    "植物绑扎 (Plant Tying)": [
+      "use_147"
+    ],
+    "浇水 (Watering)": {
+      "浇水壶 (Watering Can)": [
+        "use_413"
+      ],
+      "一般浇水 (General Watering)": [
+        "use_145",
+        "use_220",
+        "use_339",
+        "use_390",
+        "use_454",
+        "use_475",
+        "use_413"
+      ]
+    },
+    "除草:除草喷雾器 (Weed Control:Weed Sprayer)": [
+      "use_222",
+      "use_294"
+    ]
+  },
+
+    "汽车:系统 (Automotive:Systems)": [
+      "use_584",
+      "use_347",
+      "use_407",
+      "use_90",
+      "use_308",
+      "use_67",
+      "use_95",
+      "use_515",
+      "use_91",
+      "use_100",
+      "use_195",
+      "use_219",
+      "use_192",
+      "use_603",
+      "use_455",
+      "use_317",
+      "use_401",
+      "use_2",
+      "use_267",
+      "use_353",
+      "ATTR_372",
+      "use_398",
+      "use_221",
+      "use_224",
+      "use_399",
+      "use_531",
+      "use_151",
+      "use_148",
+      "use_316",
+      "use_457",
+      "use_507",
+      "use_127",
+      "use_444",
+      "use_402",
+      "use_411",
+      "use_68",
+      "use_409",
+      "use_248",
+      "use_227",
+      "use_397",
+      "use_425",
+      "use_241",
+      "use_314",
+      "use_496",
+      "use_450",
+      "use_459",
+      "use_107",
+      "use_309",
+      "use_526",
+      "use_320",
+      "use_410",
+      "use_446"
+    ],
+    "空气系统:压缩空气 (Air Systems:Compressed Air)": [
+      "use_278",
+      "use_445",
+      "use_154",
+      "use_570",
+      "use_133",
+      "use_417",
+      "use_467",
+      "use_502",
+      "use_156",
+      "use_379"
+    ],
+    "压力应用 (Pressure Applications)": {
+      "高压 (High Pressure)": [
+        "use_547"
+      ],
+      "低压 (Low Pressure)": [
+        "use_548"
+      ]
+    },
+    "泵送 (Pumping)": {
+      "液体 (Liquid)": [
+        "use_44",
+        "use_214",
+        "use_290",
+        "use_495",
+        "use_497",
+        "use_587",
+        "use_328",
+        "use_289"
+      ],
+      "气体 (Gas)": [
+        "use_40",
+        "use_510"
+      ],
+      "蠕动泵 (Peristaltic)": [
+        "use_42",
+        "use_64",
+        "use_576",
+        "use_518"
+      ]
+    },
+    "气体处理 (Gas Handling)": {
+      "焊接 (Welding)": [
+        "use_69"
+      ],
+      "丁烷 (Butane)": [
+        "use_359"
+      ],
+      "汽油罐 (Gas Can)": [
+        "use_408"
+      ],
+      "曲轴箱压力 (Crankcase Pressure)": [
+        "use_509"
+      ],
+      "一般应用 (General Applications)": [
+        "use_581"
+      ]
+    },
+    "遥控车辆 (RC Vehicles)": {
+      "飞机 (Aircraft)": [
+        "use_59",
+        "use_221",
+        "use_396"
+      ],
+      "船只 (Boats)": [
+        "use_351",
+        "use_466"
+      ],
+      "汽车 (Cars)": [
+        "use_514",
+        "use_528"
+      ],
+      "模型 (Modeling)": [
+        "use_530"
+      ]
+    },
+    "小型发动机 (Small Engine)": {
+      "越野摩托车 (Dirtbike)": [
+        "use_83"
+      ],
+      "摩托车 (Motorcycle)": [
+        "use_325",
+        "use_516"
+      ],
+      "滑板车 (Scooter)": [
+        "use_315"
+      ],
+      "割草机 (Mower)": [
+        "use_148"
+      ],
+      "一般应用 (General Applications)": [
+        "use_240"
+      ]
+    },
+    "真空 (Vacuum)": {
+      "一般应用 (General Applications)": [
+        "use_303"
+      ],
+      "钟形密封 (Bell Seal)": [
+        "use_478"
+      ],
+      "迷你真空 (Mini Vacuum)": [
+        "use_193"
+      ]
+    },
+    "一般应用:通用 (General Applications:General Purpose)": [
+      "use_207",
+      "use_179",
+      "use_204",
+      "use_182",
+      "use_293",
+      "use_414",
+      "use_471",
+      "use_572",
+      "use_342",
+      "use_65",
+      "use_144",
+      "use_102",
+      "use_295",
+      "use_139",
+      "use_132",
+      "use_418",
+      "use_605",
+      "use_216",
+      "use_549",
+      "use_550",
+      "use_245",
+      "use_571",
+      "use_330",
+      "use_218"
+    ],
+  "测量工具:特定 (Measurement Tools:Specific)": {
+    "水平仪 (Spirit Level)": [
+      "use_368"
+    ]
+  },
+  "户外水系统 (Outdoor Water Systems)": {
+    "水景 (Water Features)": {
+      "瀑布 (Waterfall)": [
+        "use_168"
+      ],
+      "喷泉 (Fountain)": [
+        "use_25",
+        "use_168",
+        "use_171",
+        "use_319",
+        "use_426",
+        "use_231",
+        "use_199",
+        "use_270",
+        "use_10",
+        "use_37",
+        "use_60",
+        "use_242",
+        "use_171",
+        "use_199",
+        "use_270",
+        "use_174"
+      ],
+      "一般用途 (General Use)": [
+        "use_168",
+        "use_499",
+        "use_25",
+        "use_168",
+        "use_171",
+        "use_319",
+        "use_426",
+        "use_231",
+        "use_199",
+        "use_270",
+        "use_10",
+        "use_37",
+        "use_165"
+      ]
+    },
+    "池塘 (Pond)": {
+      "维护 (Maintenance)": [
+        "use_23",
+        "use_162",
+        "use_164",
+        "use_26",
+        "use_542",
+        "use_544",
+        "use_543",
+        "use_499",
+        "use_43"
+      ],
+      "过滤 (Filtration)": [
+        "use_26",
+        "use_542",
+        "use_544"
+      ],
+      "排水 (Water Discharge)": [
+        "use_543"
+      ]
+    },
+    "灌溉 (Irrigation)": {
+      "一般用途 (General Use)": [
+        "use_81",
+        "use_288",
+        "use_387"
+      ],
+      "水位控制 (Water Level Control)": [
+        "use_287"
+      ]
+    }
+  },
+  "家用电器 (Appliances)": {
+    "连接 (Connections)": {
+      "咖啡机 (Coffee Maker)": [
+        "use_374",
+        "use_577",
+        "use_14",
+        "use_310",
+        "use_382"
+      ],
+      "冰箱 (Refrigerator)": [
+        "use_380",
+        "use_486",
+        "use_486",
+        "use_0",
+        "use_360",
+        "use_392"
+      ]
+    },
+    "组件 (Components)": {
+      "加湿器 (Humidifier)": [
+        "use_120",
+        "use_184"
+      ],
+      "除湿机 (Dehumidifier)": [
+        "use_447",
+        "use_1",
+        "use_88",
+        "use_421",
+        "use_468"
+      ],
+      "饮水机 (Water Dispenser)": [
+        "use_272",
+        "use_340",
+        "use_123",
+        "use_352"
+      ],
+      "洗碗机 (Dishwasher)": [
+        "use_508"
+      ],
+      "便携式洗衣机 (Portable Washer)": [
+        "use_300"
+      ],
+      "空调 (Air Conditioning)": [
+        "use_66",
+        "use_201",
+        "use_274",
+        "use_247",
+        "use_271"
+      ],
+      "垃圾处理器 (Garbage Disposal)": [
+        "use_92"
+      ],
+      "炉子 (Furnace)": [
+        "use_338",
+        "use_564",
+        "use_201",
+        "use_274"
+      ]
+    }
+  },
+  "酿造 (Brewing)": {
+    "过程 (Process)": {
+      "啤酒 (Beer)": [
+        "use_47",
+        "use_537",
+        "use_73",
+        "use_106",
+        "use_178",
+        "use_211",
+        "use_260",
+        "use_282",
+        "use_304",
+        "use_552",
+        "use_277",
+        "use_388",
+        "use_404",
+        "use_484",
+        "use_489",
+        "use_307"
+      ],
+      "康普茶 (Kombucha)": [
+        "use_85",
+        "use_481"
+      ],
+      "葡萄酒 (Wine)": [
+        "use_312"
+      ],
+      "发酵 (Fermenting)": [
+        "use_589"
+      ]
+    },
+    "设备 (Equipment)": {
+      "过滤槽 (Lauter Tun)": [
+        "use_593"
+      ],
+      "啤酒桶冷藏柜 (Kegerator)": [
+        "use_244",
+        "use_251",
+        "use_301"
+      ],
+      "家酿冷却器 (Homebrew Chiller)": [
+        "use_297",
+        "use_491",
+        "use_492"
+      ],
+      "碳酸化 (Carbonation)": [
+        "use_551"
+      ],
+      "蒸汽榨汁机 (Steam Juicer)": [
+        "use_383"
+      ],
+      "通用 (General)": [
+        "use_118",
+        "use_371",
+        "use_257",
+        "use_356"
+      ]
+    }
+  },
+  "水族箱 (Aquarium)": {
+    "维护 (Maintenance)": {
+      "二氧化碳注入 (CO2 Injection)": [
+        "use_27"
+      ],
+      "自动补水 (Auto Top Off)": [
+        "use_45"
+      ],
+      "换水 (Water Changes)": [
+        "use_35",
+        "use_41",
+        "use_70"
+      ],
+      "冷却器 (Chiller)": [
+        "use_36"
+      ],
+      "定量投放 (Dosing)": [
+        "use_539",
+        "use_575"
+      ],
+      "过滤 (Filtration)": [
+        "use_82",
+        "use_332",
+        "use_170",
+        "use_111",
+        "use_4",
+        "use_299"
+      ],
+      "气泡器 (Air Bubbler)": [
+        "use_536"
+      ],
+      "蛋白质分离器 (Protein Skimmer)": [
+        "use_29"
+      ],
+      "水流 (Water Flow)": [
+        "use_175",
+        "use_428",
+        "use_190",
+        "use_499"
+      ],
+      "空气系统 (Air System)": [
+        "use_143",
+        "use_281",
+        "use_323",
+        "use_233",
+        "use_296",
+        "use_464"
+      ]
+    },
+    "一般设置 (General Setup)": [
+      "use_24",
+      "use_48",
+      "use_111",
+      "use_170",
+      "use_23",
+      "use_162",
+      "use_35",
+      "use_38",
+      "use_41",
+      "use_187",
+      "use_266",
+      "use_598",
+      "use_501",
+      "use_533"
+    ],
+    "类型 (Types)": {
+      "珊瑚礁缸 (Reef Tank)": [
+        "use_348",
+        "use_385"
+      ],
+      "海水缸 (Saltwater Tank)": [
+        "use_30",
+        "use_39",
+        "use_228"
+      ]
+    }
+  },
+  "3D打印:丝材合并 (3D Printing:Filament Merging)": {
+    "通用 (General)": [
+      "use_146",
+      "use_210",
+      "use_469",
+      "use_585"
+    ]
+  },
+  "玩具和教育 (Toys and Education)": {
+    "积木:乐高 (Construction Toys:Lego)": [
+      "use_126",
+      "use_465"
+    ],
+    "空气玩具 (Air Toy)": [
+      "use_189"
+    ]
+  },
+  "蒸发器:组件 (Vaporizers:Components)": {
+    "干草药 (Dry Herb)": [
+      "use_119"
+    ],
+    "火山 (Volcano)": [
+      "use_594"
+    ],
+    "空气管系统 (Air Tube System)": [
+      "use_306",
+      "use_462"
+    ]
+  },
+  "教育:科学课 (Education:Science Class)": {
+    "实验 (Experiments)": [
+      "use_18"
+    ]
+  },
+  "水培和鱼菜共生:设置 (Hydroponics and Aquaponics:Setup)": [
+    "use_31",
+    "use_163",
+    "use_357",
+    "use_341",
+    "use_349",
+    "use_538"
+  ],
+  "动物护理 (Animal Care)": {
+    "鸟类护理 (Bird Care)": {
+      "喷泉 (Fountain)": [
+        "use_171",
+        "use_199",
+        "use_270"
+      ],
+      "喂食器 (Feeder)": [
+        "use_249",
+        "use_265"
+      ]
+    },
+    "宠物护理:饮水喷泉 (Pet Care:Water Fountain)": [
+      "use_378"
+    ],
+    "奶业:奶泵 (Dairy:Milk Pump)": [
+      "use_34"
+    ],
+    "野生动物:浴盆增氧 (Wildlife:Tub Oxygenating)": [
+      "use_141"
+    ]
+  },
+  "替换零件:特定 (Replacement Parts:Specific)": {
+    "SS 02替换 (SS 02 Replacement)": [
+      "use_560"
+    ]
+  },
+  "水管系统 (Plumbing Systems)": {
+    "一般用途 (General Use)": {
+      "管道连接 (Pipe Connection)": [
+        "use_8",
+        "use_152",
+        "use_71",
+        "use_157",
+        "use_305",
+        "use_364",
+        "use_452",
+        "use_523",
+        "use_245",
+        "use_324",
+        "use_384",
+        "use_524",
+        "use_534",
+        "use_103",
+        "use_201",
+        "use_274",
+        "use_202",
+        "use_239",
+        "use_271",
+        "use_386",
+        "use_389",
+        "use_421",
+        "use_468",
+        "use_422",
+        "use_508",
+        "use_512",
+        "use_604"
+      ],
+      "水槽下方 (Under Sink)": [
+        "use_352",
+        "use_235",
+        "use_600"
+      ],
+      "排水管 (Drain Line)": [
+        "use_103",
+        "use_201",
+        "use_274",
+        "use_202",
+        "use_239",
+        "use_271",
+        "use_386",
+        "use_389",
+        "use_421",
+        "use_468",
+        "use_422",
+        "use_508",
+        "use_512",
+        "use_604"
+      ],
+      "供水 (Water Supply)": [
+        "use_128",
+        "use_186",
+        "use_340",
+        "use_392",
+        "use_374",
+        "use_545"
+      ]
+    },
+    "修理 (Repair)": {
+      "水槽 (Sink)": [
+        "use_235",
+        "use_600"
+      ],
+      "马桶 (Toilet)": [
+        "use_556",
+        "use_569"
+      ],
+      "冲牙器 (Water Flosser)": [
+        "use_75",
+        "use_246"
+      ],
+      "皂液器 (Soap Dispenser)": [
+        "use_12",
+        "use_130",
+        "use_520",
+        "use_592"
+      ]
+    },
+    "特定应用 (Specific Applications)": {
+      "水龙头连接 (Faucet Connection)": [
+        "use_374"
+      ],
+      "户外水龙头 (Outdoor Tap)": [
+        "use_545"
+      ]
+    }
+  },
+  "家用电器:组件 (Home Appliances:Components)": {
+    "净水器 (Water Filter)": [
+      "use_13",
+      "use_188"
+    ]
+  },
+  "实验室:设备 (Laboratory:Equipment)": {
+    "热重分析仪 (TGA Instrument)": [
+      "use_302"
+    ],
+    "气压计 (Barometer)": [
+      "use_185"
+    ],
+    "通用应用 (General Applications)": [
+      "use_54"
+    ],
+    "玻璃器皿 (Glassware)": [
+      "use_79",
+      "use_3"
+    ]
+  },
+  "节日装饰:姜饼展示 (Holiday Decor:Gingerbread Display)": {
+    "通用 (General)": [
+      "use_142"
+    ]
+  },
+  "分配系统 (Dispensing Systems)": {
+    "洗手液 (Hand Soap)": [
+      "use_33",
+      "use_117"
+    ],
+    "爆米花油 (Popcorn Oil)": [
+      "use_116"
+    ],
+    "漱口水 (Mouthwash)": [
+      "use_370"
+    ]
+  },
+  "制冷:冷却 (Refrigeration:Cooling)": {
+    "门封 (Door Seal)": [
+      "use_20"
+    ],
+    "板式冷却器 (Plate Chiller)": [
+      "use_487"
+    ],
+    "床垫系统 (Mattress System)": [
+      "use_292"
+    ]
+  },
+  "水应用:组件 (Water Applications:Components)": {
+    "制冰机 (Ice Machine)": [
+      "use_110",
+      "use_389"
+    ]
+  },
+  "修理:重新连接部件 (Repair:Reconnecting Pieces)": {
+    "通用 (General)": [
+      "use_223"
+    ]
+  },
+  "艺术和手工 (Art and Crafts)": {
+    "气刷:用品 (Airbrush:Supplies)": [
+      "use_97"
+    ],
+    "模型制作 (Modeling)": {
+      "汽车模型 (Model Cars)": [
+        "use_331",
+        "use_411"
+      ],
+      "通用 (General)": [
+        "use_394",
+        "use_529"
+      ]
+    },
+    "环氧树脂珠子模具 (Epoxy Bead Mold)": [
+      "use_441"
+    ],
+    "生态印染 (Ecoprinting)": [
+      "use_50",
+      "use_253"
+    ],
+    "服装项目 (Costume Project)": [
+      "use_101"
+    ],
+    "学校项目 (School Project)": [
+      "use_326"
+    ],
+    "缝纫:制衣 (Sewing:Dressmaking)": [
+      "use_429"
+    ]
+  },
+  "照明 (Lighting)": {
+    "房车灯串 (RV Light String)": [
+      "use_99"
+    ],
+    "仙女灯:绝缘 (Fairy Lights:Insulation)": [
+      "use_519"
+    ]
+  },
+  "激光设备:雕刻机 (Laser Equipment:Engraver)": {
+    "通用 (General)": [
+      "use_417",
+      "use_467"
+    ]
+  },
+  "电动洗涤真空:组件 (Electric Washing Vacuum:Components)": {
+    "抽水 (Pumping)": [
+      "use_532"
+    ]
+  },
+  "游泳池和水疗 (Pool and Spa)": {
+    "一般用途 (General Use)": {
+      "热水浴缸 (Hot Tub)": [
+        "use_11",
+        "use_46",
+        "use_490",
+        "use_234"
+      ],
+      "维护 (Maintenance)": [
+        "use_121"
+      ],
+      "加热器设置 (Heater Setup)": [
+        "use_129"
+      ]
+    },
+    "特定设备 (Specific Equipment)": {
+      "氯化器 (Chlorinator)": [
+        "use_78",
+        "use_346"
+      ],
+      "氯投加器 (Chlorine Feeder)": [
+        "use_9"
+      ]
+    },
+    "清洁:水抽吸 (Cleaning:Water Suction)": [
+      "use_599"
+    ]
+  },
+  "流体循环:一般用途 (Fluid Circulation:General Use)": [
+    "use_214"
+  ],
+  "清洁系统:设备 (Cleaning Systems:Equipment)": {
+    "消毒 (Sanitizing)": [
+      "use_105"
+    ],
+    "自动清洁烟囱 (Auto Clean Chimney)": [
+      "use_213"
+    ],
+    "除垢 (Descaling)": [
+      "use_416"
+    ],
+    "地毯洗涤机 (Carpet Shampooer)": [
+      "use_150",
+      "use_561",
+      "use_554"
+    ],
+    "蒸汽拖把 (Steam Mop)": [
+      "use_329"
+    ]
+  },
+  "水净化 (Water Purification)": {
+    "过滤系统 (Filtration System)": [
+      "use_16",
+      "use_166",
+      "use_256",
+      "use_365",
+      "use_461",
+      "use_580"
+    ],
+    "海水淡化 (Desalination)": [
+      "use_108"
+    ],
+    "软水器 (Water Softener)": [
+      "use_268"
+    ]
+  },
+  "泵和水管理 (Pumps and Water Management)": {
+    "泵送 (Pumping)": {
+      "一般用途 (General Use)": [
+        "use_183",
+        "use_273",
+        "use_334"
+      ],
+      "集水坑 (Sump)": [
+        "use_243",
+        "use_350"
+      ],
+      "水槽 (Sink)": [
+        "use_254"
+      ]
+    },
+    "排水 (Drainage)": {
+      "一般用途 (General Use)": [
+        "use_200",
+        "use_203",
+        "use_345",
+        "use_596",
+        "use_263",
+        "use_264"
+      ],
+      "电器 (Appliance)": [
+        "use_263",
+        "use_264"
+      ],
+      "购物车排水 (Cart Water Drainage)": [
+        "use_609"
+      ]
+    },
+    "虹吸 (Siphoning)": {
+      "一般用途 (General Use)": [
+        "use_76",
+        "use_165",
+        "use_590"
+      ],
+      "葡萄酒 (Wine)": [
+        "use_74"
+      ],
+      "酿造 (Brewing)": [
+        "use_355"
+      ]
+    },
+    "水管理 (Water Management)": {
+      "运输 (Transportation)": [
+        "use_205"
+      ],
+      "雨水收集 (Rainwater Collection)": [
+        "use_134",
+        "use_476"
+      ]
+    },
+    "泵配件 (Pump Accessories)": {
+      "吸入侧 (Suction Side)": [
+        "use_506"
+      ],
+      "过滤器附件 (Filter Attachment)": [
+        "use_285"
+      ],
+      "连接 (Connection)": [
+        "use_217"
+      ],
+      "气管手泵 (Airline Hand Pump)": [
+        "use_226"
+      ]
+    }
+  },
+  "饮用水:接触 (Drinking Water:Contact)": [
+    "use_261"
+  ],
+  "臭氧处理:设备 (Ozone Treatment:Equipment)": {
+    "零件 (Parts)": [
+      "use_517",
+      "use_583"
+    ]
+  },
+  "电子 (Electronics)": {
+    "音频设备 (Audio Equipment)": {
+      "CD播放器滚轮 (CD Player Rollers)": [
+        "use_322"
+      ],
+      "扬声器保护 (Speaker Protection)": [
+        "use_5"
+      ],
+      "助听器 (Hearing Aid)": [
+        "use_125"
+      ]
+    },
+    "焊接:绝缘 (Soldering:Insulation)": [
+      "use_343"
+    ],
+    "冷却系统:组件 (Cooling System:Components)": [
+      "use_230",
+      "use_112",
+      "use_115",
+      "use_582",
+      "use_153",
+      "use_608"
+    ],
+    "电池:柔性引线 (Battery:Flexible Lead Cable)": [
+      "use_522"
+    ],
+    "照明:LED扩散 (Lighting:LED Diffusion)": [
+      "use_104",
+      "use_158",
+      "use_318",
+      "use_405",
+      "use_423"
+    ],
+    "打印机:组件 (Printer:Components)": [
+      "use_470",
+      "use_373"
+    ],
+    "光纤:电缆保护 (Fiber Optics:Cable Protection)": [
+      "use_443"
+    ],
+    "线缆保护 (Wire Protection)": [
+      "use_198",
+      "use_511",
+      "use_567",
+      "use_443"
+    ]
+  },
+  "特效:设备 (Special Effects:Equipment)": {
+    "烟雾机 (Fog Machine)": [
+      "use_7"
+    ]
+  },
+  "建筑 (Construction)": {
+    "建造 (Builds)": [
+      "use_369"
+    ],
+    "精密建造 (Precision Building)": [
+      "use_61"
+    ]
+  },
+  "食品饮料 (Food and Beverage)": {
+    "加工 (Processing)": {
+      "通用设备 (General Equipment)": [
+        "use_55",
+        "use_62",
+        "use_114",
+        "use_327"
+      ],
+      "枫树汁收集 (Maple Sap Collecting)": [
+        "use_181"
+      ],
+      "分子美食学 (Molecular Gastronomy)": [
+        "use_250"
+      ],
+      "香醋意大利面 (Balsamic Vinegar Spaghetti)": [
+        "use_415"
+      ],
+      "食品级应用 (Food Grade Applications)": [
+        "use_540",
+        "use_578"
+      ]
+    },
+    "保存:罐子密封器 (Preservation:Jar Sealer)": [
+      "use_449"
+    ]
+  },
+  "露营和休闲 (Camping and Recreation)": {
+    "房车露营 (RV Camping)": {
+      "供水 (Water Supply)": [
+        "use_137",
+        "use_500"
+      ],
+      "便携式淋浴 (Portable Shower)": [
+        "use_286"
+      ]
+    },
+    "休闲活动 (Recreational Activities)": {
+      "水过滤器 (Water Filter)": [
+        "use_236"
+      ],
+      "补水系统 (Hydration System)": [
+        "use_172"
+      ]
+    }
+  },
+  "钓鱼 (Fishing)": {
+    "设备保护 (Equipment Protection)": {
+      "鱼线保护 (Line Protection)": [
+        "perf_148",
+        "use_167",
+        "use_591"
+      ],
+      "鱼钩保护 (Hook Protection)": [
+        "use_86",
+        "use_138",
+        "use_283",
+        "use_367",
+        "use_436"
+      ],
+      "鱼饵保护 (Lure Protection)": [
+        "use_440"
+      ]
+    },
+    "装备 (Gear)": {
+      "卷轴 (Reel)": [
+        "use_432"
+      ],
+      "装备组装 (Rig Assembly)": [
+        "use_177",
+        "use_477"
+      ]
+    }
+  },
+  "饮品配件:吸管 (Drink Accessories:Straws)": {
+    "定制 (Custom)": [
+      "use_258",
+      "use_557"
+    ],
+    "饮用 (Sipping)": [
+      "use_124"
+    ]
+  },
+  "流体控制:液位计 (Fluid Control:Level Gauge)": [
+    "use_208"
+  ],
+  "配件 (Fittings)": {
+    "各种用途 (Various Uses)": [
+      "use_574"
+    ]
+  },
+  "焊接:丝材 (Welding:Filament)": {
+    "通用 (General)": [
+      "use_469"
+    ]
+  },
+  "特定用途 (Specific Uses)": {
+    "电子:减震 (Electronics:Vibration Isolation)": [
+      "use_21",
+      "use_527"
+    ],
+    "充气 (Inflation)": {
+      "气球 (Balloon)": [
+        "use_460"
+      ],
+      "轮胎 (Tire)": [
+        "use_456"
+      ]
+    },
+    "专业设备:摩托喷射 (Specialized Equipment:Motojet)": [
+      "use_122"
+    ],
+    "绘画:喷笔系统 (Painting:Airbrush System)": [
+      "use_169",
+      "use_503"
+    ],
+    
+    "户外设备:高压清洗机 (Outdoor Equipment:Pressure Washer)": [
+      "use_94"
+    ],
+    "液压 (Hydraulics)": {
+      "机械臂 (Arms)": [
+        "use_72"
+      ],
+      "机器 (Machines)": [
+        "use_173"
+      ]
+    },
+    "船舶系统:海洋 (Boat Systems:Marine)": [
+      "use_227",
+      "use_602",
+      "use_607",
+      "use_433"
+    ],
+    "运动:山地自行车轮胎密封剂 (Sports:Mountain Biking Tire Sealant)": [
+      "use_403"
+    ],
+    "维修 (Repair)": {
+      "一般维修 (General Repair)": [
+        "use_573"
+      ],
+      "紧急维修 (Emergency Repair)": [
+        "use_419"
+      ]
+    }
+  },
+  "水应用 (Water Application)": {
+    "喷洒 (Spraying)": {
+      "加压水 (Pressurized Water)": [
+        "use_51"
+      ],
+      "泵式喷雾器 (Pump Sprayer)": [
+        "use_140"
+      ],
+      "园艺喷雾器 (Garden Sprayer)": [
+        "use_454",
+        "use_453"
+      ]
+    },
+    "一般用途 (General Use)": {
+      "水盘 (Water Tray)": [
+        "use_180"
+      ],
+      "饮水机 (Water Dispensers)": [
+        "use_32",
+        "use_123",
+        "use_380"
+      ],
+      "加湿器 (Humidifier)": [
+        "use_493"
+      ]
+    },
+    "特定应用 (Specific Applications)": {
+      "坐浴器 (Bidet)": [
+        "use_541"
+      ],
+      "爬行动物喷雾系统 (Reptile Misting System)": [
+        "use_28"
+      ]
+    }
+  },
+  "露营车连接 (Camper Connections)": {
+    "通用 (General)": [
+      "use_474"
+    ]
+  },
+  "医疗 (Medical)": {
+    "输送:氧气系统 (Delivery:Oxygen System)": [
+      "use_237"
+    ],
+    "应用 (Applications)": [
+      "use_53"
+    ],
+    "设备 (Equipment)": {
+      "蠕动泵 (Peristaltic Pump)": [
+        "use_480"
+      ],
+      "呼吸设备 (Respiratory Equipment)": [
+        "use_504"
+      ],
+      "喂食管 (Feeding Tube)": [
+        "use_427"
+      ],
+      "喉部清洁设备 (Throat Cleaning Devices)": [
+        "use_194"
+      ],
+      "呼吸机 (CPAP Machine)": [
+        "use_63"
+      ],
+      "血压计 (Blood Pressure Monitor)": [
+        "use_238",
+        "use_451"
+      ],
+      "听诊器 (Stethoscope)": [
+        "use_136"
+      ],
+      "生化分析仪 (Biochemistry Analyzer)": [
+        "use_252"
+      ],
+      "高压灭菌器 (Autoclave)": [
+        "use_482"
+      ]
+    },
+    "牙科:正畸 (Dental:Orthodontics)": [
+      "use_435"
+    ],
+    "术后:颌骨手术液体消耗 (Post Surgery:Liquid Consumption Jaw Surgery)": [
+      "use_255"
+    ],
+    "口罩 (Face Masks)": {
+      "密封 (Mask Seals)": [
+        "use_358"
+      ],
+      "调节器 (Adjusters)": [
+        "use_191"
+      ]
+    }
+  },
+  "珠宝 (Jewelry)": {
+    "项链:支撑 (Necklace:Support)": [
+      "use_6"
+    ],
+    "波洛领带:链条 (Bolo Tie:Chain)": [
+      "use_298"
+    ],
+    "制作 (Making)": [
+      "use_49",
+      "use_113",
+      "use_430"
+    ]
+  },
+  "家居用品 (Household Items)": {
+    "打火机 (Cigarette Lighter)": [
+      "use_412"
+    ],
+    "组件 (Components)": {
+      "吸管杯 (Straw Cup)": [
+        "use_375"
+      ],
+      "保温瓶 (Thermos)": [
+        "use_109"
+      ]
+    }
+  },
+  "液体传输 (Liquid Transfer)": {
+    "短长度 (Short Length)": [
+      "use_215"
+    ]
+  },
+  "个人护理 (Personal Care)": {
+    "淋浴:配件 (Shower:Accessories)": [
+      "use_381"
+    ],
+    "洗脸:设备 (Face Washing:Devices)": [
+      "use_381"
+    ]
+  }
+}

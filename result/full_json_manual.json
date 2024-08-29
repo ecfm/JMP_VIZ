@@ -1,0 +1,4764 @@
+{
+    "occasion": {
+        "professional": {
+            "not_acceptable": {
+                "-1": [
+                    1490
+                ]
+            },
+            "good": {
+                "1": [
+                    675,
+                    838,
+                    3900
+                ]
+            },
+            "interviews": {
+                "1": [
+                    2967,
+                    2749,
+                    486
+                ]
+            },
+            "business": {
+                "1": [
+                    1871,
+                    2074
+                ]
+            },
+            "professional": {
+                "1": [
+                    4002,
+                    2115,
+                    2056,
+                    3501,
+                    4143,
+                    4018,
+                    3189,
+                    281,
+                    2714,
+                    3643,
+                    319
+                ]
+            },
+            "wear_to_work": {
+                "1": [
+                    2435
+                ]
+            },
+            "business_casual": {
+                "1": [
+                    2115,
+                    2227
+                ]
+            },
+            "office_with_jeans": {
+                "1": [
+                    2267
+                ]
+            },
+            "good_for_office": {
+                "1": [
+                    3665,
+                    3034,
+                    282,
+                    1795,
+                    760,
+                    2898,
+                    3222,
+                    3123,
+                    1824,
+                    3212,
+                    2194,
+                    3280,
+                    350,
+                    1951,
+                    1250,
+                    1370,
+                    3409,
+                    756,
+                    37,
+                    998
+                ]
+            },
+            "office_or_business": {
+                "1": [
+                    454
+                ]
+            },
+            "for_meeting": {
+                "1": [
+                    2036,
+                    1852,
+                    3612,
+                    467,
+                    3123,
+                    3309
+                ]
+            },
+            "suitable_for_corporate_world": {
+                "1": [
+                    4143
+                ]
+            },
+            "business_appointments": {
+                "1": [
+                    4018
+                ]
+            },
+            "suitable_for_court": {
+                "1": [
+                    396
+                ]
+            },
+            "work": {
+                "1": [
+                    2796,
+                    4018,
+                    821,
+                    408,
+                    3996,
+                    319,
+                    2714
+                ]
+            },
+            "suitable_for_casual_work_environment": {
+                "1": [
+                    3548
+                ]
+            },
+            "not_for_business": {
+                "-1": [
+                    2783
+                ]
+            },
+            "good_for_work": {
+                "1": [
+                    2306,
+                    2269,
+                    397,
+                    2247,
+                    4004,
+                    3900,
+                    998,
+                    1607,
+                    3403
+                ]
+            }
+        },
+        "casual": {
+            "versatile": {
+                "1": [
+                    3358
+                ]
+            },
+            "not_casual_with_jeans": {
+                "-1": [
+                    3567
+                ]
+            },
+            "casual_wear": {
+                "1": [
+
+                ]
+            },
+            "suitable_for_casual_wear": {
+                "1": [
+                    995,
+                    1062,
+                    998,
+                    1007,
+                    1142,
+                    3900,
+                    975,
+                    2416,
+                    451,
+                    697,
+                    2695
+                ]
+            }
+        },
+        "versatility": {
+            "for_work_or_jeans": {
+                "1": [
+                    2938
+                ]
+            },
+            "night_time_look": {
+                "1": [
+                    1176
+                ]
+            },
+            "suitable_for_multiple_occasions": {
+                "1": [
+                    32
+                ]
+            },
+            "works_for_wedding": {
+                "1": [
+                    3657
+                ]
+            },
+            "goes_with_almost_everything": {
+                "1": [
+                    1007,
+                    1595
+                ]
+            },
+
+
+            "more_casual_than_expected": {
+                "-1": [
+                    608
+                ]
+            },
+            "suitable_for_casual": {
+                "1": [
+                    1328,
+                    1676
+                ]
+            },
+            "works_with_black_pants": {
+                "1": [
+                    1504
+                ]
+            },
+            "great_for_traveling": {
+                "1": [
+                    1804
+                ]
+            },
+            "dress_up": {
+                "1": [
+                    1963
+                ]
+            },
+            "good_for_business_casual": {
+                "1": [
+                    1654
+                ]
+            },
+
+            "daily_ensemble": {
+                "1": [
+                    454
+                ]
+            },
+            "works_for_all_seasons": {
+                "1": [
+                    761
+                ]
+            },
+            "suitable_for_evening_wedding": {
+                "1": [
+                    2044
+                ]
+            },
+            "good_for_sundresses": {
+                "1": [
+                    2464
+                ]
+            },
+            "date_night": {
+                "1": [
+                    454
+                ]
+            },
+            "good_for_court": {
+                "1": [
+                    549
+                ]
+            },
+            "perfect_for_any_occasion": {
+                "1": [
+                    1898
+                ]
+            },
+            "good_basic_piece": {
+                "1": [
+                    3053
+                ]
+            },
+
+            "looks_great_with_tank_top": {
+                "1": [
+                    2435,
+                    2534
+                ]
+            },
+            "work_appropriate": {
+                "1": [
+                    2940,
+                    2773,
+                    238,
+                    774
+                ]
+            },
+            "attractive_to_different_generations": {
+                "1": [
+                    3805
+                ]
+            },
+            "can_be_dressed_up": {
+                "1": [
+                    386,
+                    2695
+                ]
+            },
+
+            "good_for_spring_and_early_summer": {
+                "1": [
+                    2222
+                ]
+            },
+            "special_occasions": {
+                "1": [
+                    264
+                ]
+            },
+            "not_recommended_for_everyday_use": {
+                "-1": [
+                    243
+                ]
+            },
+            "good_for_fall_winter_or_cooler_days_nights": {
+                "1": [
+                    2813
+                ]
+            },
+            "wear_with_anything": {
+                "1": [
+                    2388
+                ]
+            },
+            "dresses_up_outfit": {
+                "1": [
+                    1149
+                ]
+            },
+            "goes_with_anything": {
+                "1": [
+                    3227
+                ]
+            },
+            "suitable_for_graduation": {
+                "1": [
+                    1167
+                ]
+            },
+            "for_uniform": {
+                "1": [
+                    3315
+                ]
+            },
+            "suitable_for_dinner": {
+                "1": [
+                    1852
+                ]
+            },
+            "brunch": {
+                "1": [
+                    1871
+                ]
+            },
+            "suitable_for_formal_wear": {
+                "1": [
+                    1415
+                ]
+            },
+            "doesnt_detract_from_dress": {
+                "1": [
+                    2044
+                ]
+            },
+            "can_dress_up_or_down": {
+                "1": [
+                    1204
+                ]
+            },
+            "casual": {
+                "1": [
+                    1824,
+                    3228,
+                    2453,
+                    1904
+                ]
+            },
+            "can_be_layered_for_cooler_weather": {
+                "1": [
+                    761
+                ]
+            },
+            "weekend_look": {
+                "1": [
+                    1176
+                ]
+            },
+            "networking_event": {
+                "1": [
+                    1176
+                ]
+            },
+            "cuts_chill_in_ballroom": {
+                "1": [
+                    2044
+                ]
+            },
+            "suitable_for_photoshoot": {
+                "1": [
+                    2105
+                ]
+            },
+            "works_with_pants_and_skirts": {
+                "1": [
+                    1818
+                ]
+            },
+            "good_with_jeans_or_trousers": {
+                "1": [
+                    84
+                ]
+            },
+            "semi_formal": {
+                "1": [
+                    2453
+                ]
+            },
+            "good_for_layering": {
+                "1": [
+                    1577,
+                    1818,
+                    745,
+                    1573
+                ]
+            },
+            "not_casual_with_jeans": {
+                "-1": [
+                    3567
+                ]
+            },
+            "suitable_for_professional_settings": {
+                "1": [
+                    995
+                ]
+            },
+            "looks_good_with_shorts": {
+                "1": [
+                    3034
+                ]
+            },
+            "versatile": {
+                "1": [
+                    3358,
+                    1845,
+                    998,
+                    1007
+                ]
+            },
+            "can_be_worn_with_anything": {
+                "1": [
+                    1142
+                ]
+            },
+            "looks_great_with_dress_pants": {
+                "1": [
+                    2435
+                ]
+            },
+            "go_to_item": {
+                "1": [
+                    1204
+                ]
+            },
+            "everyday_wear": {
+                "1": [
+                    4098
+                ]
+            },
+            "can_be_dressed_up_or_down": {
+                "1": [
+                    3589,
+                    2343,
+                    2247,
+                    2857,
+                    360,
+                    2955,
+                    429,
+                    3694,
+                    1679,
+                    1007,
+                    1008,
+                    2259,
+                    2804,
+                    828
+                ]
+            },
+            "makes_more_presentable": {
+                "1": [
+                    3161
+                ]
+            },
+            "easy_to_dress_up_or_down": {
+                "1": [
+                    3576
+                ]
+            },
+        
+            "great_for_cosplay": {
+                "1": [
+                    243
+                ]
+            },
+            "casual_or_dressy": {
+                "1": [
+                    1462
+                ]
+            },
+            "fall_wardrobe": {
+                "1": [
+                    1989
+                ]
+            },
+            "good_for_wedding": {
+                "1": [
+                    549,
+                    654,
+                    912
+                ]
+            },
+            "works_year_round": {
+                "1": [
+                    761
+                ]
+            },
+            "works_with_slacks": {
+                "1": [
+                    3194
+                ]
+            },
+
+            "college_graduation": {
+                "1": [
+                    1904
+                ]
+            },
+            "casual_or_professional": {
+                "1": [
+                    888,
+                    525
+                ]
+            },
+            "sunday_service": {
+                "1": [
+                    2190
+                ]
+            },
+            "business_casual": {
+                "1": [
+                    3616,
+                    3123,
+                    2468
+                ]
+            },
+            "suitable_for_summer": {
+                "1": [
+                    4102
+                ]
+            },
+            "over_leggings_and_tshirt": {
+                "1": [
+                    2527
+                ]
+            },
+            "suitable_for_memorial_service": {
+                "1": [
+                    1572
+                ]
+            },
+            "good_for_any_weather": {
+                "1": [
+                    2824
+                ]
+            },
+            "works_with_dress": {
+                "1": [
+                    3194
+                ]
+            },
+            "suitable_for_southern_california_winters": {
+                "1": [
+                    4102
+                ]
+            },
+            "can_wear_with_anything": {
+                "1": [
+                    2225
+                ]
+            },
+            "wear_for_errands": {
+                "1": [
+                    2435
+                ]
+            },
+            
+            "layer_for_cool_nights": {
+                "1": [
+                    2527
+                ]
+            },
+            "looks_great_with_slacks_or_jeans": {
+                "1": [
+                    250,
+                    602
+                ]
+            },
+            "suitable_for_dressing_up": {
+                "1": [
+                    1676
+                ]
+            },
+            "can_be_worn_many_ways": {
+                "1": [
+                    1550
+                ]
+            },
+            "dress_up_or_down": {
+                "1": [
+                    3616,
+                    4100,
+                    454,
+                    3176,
+                    3821,
+                    3120,
+                    337,
+                    628,
+                    2238,
+                    991
+                ]
+            },
+            "good_with_high_waist_pants": {
+                "1": [
+                    397
+                ]
+            },
+            "elevate_simple_outfit": {
+                "1": [
+                    3387
+                ]
+            },
+            "can_be_dressed_up_and_down": {
+                "1": [
+                    1771
+                ]
+            },
+            "can_pair_with_jeans_or_formal_pants": {
+                "1": [
+                    1442
+                ]
+            },
+            "looks_great_with_sweater": {
+                "1": [
+                    2435
+                ]
+            },
+            "casual_or_dressed_up": {
+                "1": [
+                    3085
+                ]
+            },
+            "good_with_dresses": {
+                "1": [
+                    397,
+                    912
+                ]
+            },
+
+            "nice_outing": {
+                "1": [
+                    1871
+                ]
+            },
+            "perfect_for_spring_and_summer": {
+                "1": [
+                    2824,
+                    3034
+                ]
+            },
+            "wear_over_tshirts": {
+                "1": [
+                    1563
+                ]
+            },
+            "can_wear_in_many_different_ways": {
+                "1": [
+                    1598
+                ]
+            },
+            "wardrobe_staple": {
+                "1": [
+                    3694
+                ]
+            },
+            "simple_but_elegant": {
+                "1": [
+                    2044
+                ]
+            },
+            "suitable_for_brunch": {
+                "1": [
+                    3541
+                ]
+            },
+            "goes_with_everything": {
+                "1": [
+                    3441,
+                    1204,
+                    2829
+                ]
+            }
+        },
+        "seasonal": {
+            "suitable_for_indoor_fall_winter": {
+                "1": [
+                    3407
+                ]
+            },
+            "good_for_fall": {
+                "1": [
+                    238
+                ]
+            },
+            "good_for_summer_events": {
+                "1": [
+                    1046
+                ]
+            },
+            "good_for_night_out": {
+                "1": [
+                    3034
+                ]
+            },
+            "dressy": {
+                "1": [
+                    2674
+                ]
+            },
+            "suitable_for_summer": {
+                "1": [
+                    4115,
+                    1852
+                ]
+            },
+            "perfect_for_spring": {
+                "1": [
+                    3695
+                ]
+            },
+            "suitable_for_spring": {
+                "1": [
+                    3900,
+                    2045
+                ]
+            },
+            "suitable_for_fall": {
+                "1": [
+                    3900
+                ]
+            },
+            "good_for_hot_weather": {
+                "1": [
+                    4002
+                ]
+            },
+            "for_summer": {
+                "1": [
+                    2749
+                ]
+            },
+            "good_for_summer_in_texas": {
+                "1": [
+                    914
+                ]
+            },
+            "good_for_cold_days": {
+                "1": [
+                    32
+                ]
+            },
+            "wearable_in_hot_months": {
+                "1": [
+                    386
+                ]
+            },
+            "spring": {
+                "1": [
+                    408
+                ]
+            },
+            "fall": {
+                "1": [
+                    408
+                ]
+            },
+            "versatile_for_summer_and_winter": {
+                "1": [
+                    29
+                ]
+            },
+            "all_season": {
+                "1": [
+                    525
+                ]
+            }
+        },
+        "pairing": {
+
+        "looks_nice_with_jeans_and_white_shirt": {
+            "1": [
+                2824
+            ]
+        },
+        "worn_over_jeans_leggings_long_dresses": {
+            "1": [
+                3650
+            ]
+        },
+        "with_dress_shorts": {
+            "1": [
+                2337
+            ]
+        },
+        "good_with_jeans": {
+            "1": [
+                397,
+                912,
+                2337,
+                1963,
+                2464,
+                84,
+                2824,
+                3650,
+                593,
+                238,
+                845,
+                1504,
+                1676,
+                1168,
+                1328,
+                760,
+                2435,
+                2534,
+                998
+            ]
+        },
+            "with_khakis": {
+                "1": [
+                    486
+                ]
+            },
+            "looks_great_with_slacks": {
+                "1": [
+                    238
+                ]
+            },
+            "with_sporty_top": {
+                "1": [
+                    486
+                ]
+            },
+            "with_denim": {
+                "1": [
+                    454,
+                    991
+                ]
+            },
+            "good_with_sleeveless_dress": {
+                "1": [
+                    1766
+                ]
+            },
+            "with_t_shirt": {
+                "1": [
+                    454
+                ]
+            },
+            "looks_great_with_high_waisted_slacks": {
+                "1": [
+                    998
+                ]
+            },
+            "with_slacks": {
+                "1": [
+                    454
+                ]
+            },
+            "with_tank_top": {
+                "1": [
+                    454
+                ]
+            },
+            "with_button_down_blouses": {
+                "1": [
+                    454
+                ]
+            },
+            "pairs_well_with_skinny_jeans_and_booties": {
+                "1": [
+                    1004
+                ]
+            },
+            "with_tight_black_high_neck_tank_top": {
+                "1": [
+                    1176
+                ]
+            },
+            "good_with_dress": {
+                "1": [
+                    2123,
+                    998
+                ]
+            },
+            "nice_with_jumpers_rompers_and_dresses": {
+                "1": [
+                    1365
+                ]
+            }
+        },
+        "use_case": {
+            "suitable_for_easter_outfit": {
+                "1": [
+                    3378
+                ]
+            },
+            "work_appropriate": {
+                "1": [
+                    11
+                ]
+            },
+            "dinner": {
+                "1": [
+                    4018,
+                    374
+                ]
+            },
+
+            "dress_up_outfit": {
+                "1": [
+                    1235
+                ]
+            },
+
+            "court_wear": {
+                "1": [
+                    1593
+                ]
+            },
+            "not_for_professional_outfit": {
+                "-1": [
+                    3233
+                ]
+            },
+            "good_for_weddings": {
+                "1": [
+                    1214
+                ]
+            },
+            "suitable_for_trip": {
+                "1": [
+                    258
+                ]
+            },
+            "fits_well_with_jeans": {
+                "1": [
+                    3462
+                ]
+            },
+            "suitable_for_casual_wear": {
+                "1": [
+                    756,
+                    828
+                ]
+            },
+            "suitable_for_evening_graduation_event": {
+                "1": [
+                    3940
+                ]
+            },
+
+            "good_for_vacation": {
+                "1": [
+                    1818
+                ]
+            },
+            "casual": {
+                "1": [
+                    2894
+                ]
+            },
+
+            "perfect_for_fall": {
+                "1": [
+                    3959,
+                    4097
+                ]
+            },
+            "suitable_for_rodeo": {
+                "1": [
+                    477
+                ]
+            },
+            "casual_with_jeans": {
+                "1": [
+                    3041,
+                    3124
+                ]
+            },
+            "zoom_calls": {
+                "1": [
+                    319
+                ]
+            },
+            "good_for_events": {
+                "1": [
+                    1298
+                ]
+            },
+            "suitable_for_dressy_occasions": {
+                "1": [
+                    818,
+                    828
+                ]
+            },
+            "choir_concert": {
+                "-1": [
+                    816
+                ]
+            },
+            "holidays": {
+                "1": [
+                    525
+                ]
+            },
+            "suitable_for_summer_or_mild_weather": {
+                "1": [
+                    3613
+                ]
+            },
+            "good_for_headshots": {
+                "1": [
+                    1298
+                ]
+            },
+
+            "suitable_for_normal_wear": {
+                "1": [
+                    3291
+                ]
+            },
+            "great_for_wedding": {
+                "1": [
+                    3761
+                ]
+            },
+            "suitable_for_90s_dance_number": {
+                "1": [
+                    3291
+                ]
+            }
+        }
+    },
+    "material": {
+        "overall_quality": {
+            "cheap": {
+                "-1": [
+                    3551
+                ]
+            },
+            "thin": {
+                "-1": [
+                    3511
+                ]
+            },
+            "collects_lint": {
+                "-1": [
+                    2250
+                ]
+            },
+            "lacks_rich_look": {
+                "-1": [
+                    3358
+                ]
+            },
+            "shiny": {
+                "-1": [
+                    2103
+                ]
+            },
+            "shinier_than_pictures": {
+                "-1": [
+                    3358
+                ]
+            }
+        },
+        "thickness": {
+            "thick": {
+                "1": [
+                    338
+                ]
+            },
+            "light": {
+                "1": [
+                    58
+                ],
+                "-1": [
+                    593
+                ]
+            },
+            "heavy": {
+                "-1": [
+                    3982,
+                    2615
+                ]
+            },
+            "correct": {
+                "1": [
+                    490
+                ]
+            },
+            "nice": {
+                "1": [
+                    1963
+                ]
+            },
+            "not_lightweight": {
+                "-1": [
+                    438
+                ]
+            },
+            "thicker": {
+                "1": [
+                    3363
+                ]
+            },
+            "lightweight": {
+                "1": [
+                    1602,
+                    4004,
+                    1607,
+                    2894,
+                    2355
+                ]
+            },
+            "very_light": {
+                "-1": [
+                    1673
+                ]
+            }
+        },
+        "breathability": {
+            "breathes_well": {
+                "1": [
+                    525
+                ]
+            }
+        },
+        "washability": {
+            "melts_when_ironed": {
+                "-1": [
+                    435
+                ]
+            },
+            "pink_pills_at_first_wash": {
+                "-1": [
+                    382
+                ]
+            },
+            "easy_to_wash_and_dry": {
+                "1": [
+                    11
+                ]
+            },
+            "machine_washable": {
+                "1": [
+                    1603
+                ]
+            }
+        },
+        "lining": {
+            "not_set_well": {
+                "-1": [
+                    2794
+                ]
+            },
+            "feels_nice": {
+                "1": [
+                    1439
+                ]
+            },
+            "peeks_out_of_sleeve": {
+                "-1": [
+                    1439
+                ]
+            },
+            "not_lined": {
+                "-1": [
+                    1104,
+                    3513,
+                    806
+                ]
+            },
+            "satin": {
+                "1": [
+                    2887
+                ]
+            },
+            "silky": {
+                "1": [
+                    1393
+                ]
+            },
+            "only_on_sides": {
+                "-1": [
+                    1915
+                ]
+            },
+            "no_lining": {
+                "-1": [
+                    2775
+                ]
+            },
+            "no_polyester_lining": {
+                "1": [
+                    1418
+                ]
+            },
+            "absent": {
+                "-1": [
+                    3703,
+                    4104
+                ]
+            },
+            "not_on_back": {
+                "-1": [
+                    1915
+                ]
+            },
+            "soft": {
+                "1": [
+                    254
+                ]
+            },
+            "not_fully_lined": {
+                "-1": [
+                    2972,
+                    3102
+                ]
+            },
+            "nice": {
+                "1": [
+                    2753,
+                    3444,
+                    2285
+                ]
+            },
+            "fully_lined": {
+                "1": [
+                    1984,
+                    325,
+                    1832,
+                    939,
+                    2712,
+                    1520,
+                    1394,
+                    760,
+                    1758
+                ]
+            },
+            "has_lining": {
+                "1": [
+                    1670
+                ]
+            },
+            "lined": {
+                "1": [
+                    2434,
+                    1903,
+                    1904,
+                    3887,
+                    1007,
+                    2966,
+                    1787
+                ],
+                "-1": [
+                    3803
+                ]
+            },
+            "great": {
+                "1": [
+                    2170
+                ]
+            }
+        },
+        "wrinkles": {
+            "wrinkle_resistant": {
+                "1": [
+                    1670
+                ]
+            },
+            "never_gets_wrinkled": {
+                "1": [
+                    2648
+                ]
+            },
+            "very_wrinkled": {
+                "-1": [
+                    186
+                ]
+            },
+            "wrinkly_out_of_box": {
+                "-1": [
+                    3091
+                ]
+            },
+            "wrinkles_easily": {
+                "-1": [
+                    1572,
+                    1477,
+                    1900,
+                    2542,
+                    1843,
+                    2710
+                ]
+            },
+            "deep": {
+                "-1": [
+                    1044
+                ]
+            },
+            "impossible_to_remove": {
+                "-1": [
+                    1044
+                ]
+            },
+            "not_wrinkle_proof": {
+                "-1": [
+                    2416
+                ]
+            },
+            "difficult_to_remove_wrinkles": {
+                "-1": [
+                    2794
+                ]
+            },
+            "tough_to_remove": {
+                "-1": [
+                    3900
+                ]
+            },
+            "wont_come_out": {
+                "-1": [
+                    3751
+                ]
+            },
+            "arrives_creased": {
+                "-1": [
+                    2710
+                ]
+            },
+            "time_consuming_to_iron": {
+                "-1": [
+                    3541
+                ]
+            },
+            "irons_nicely": {
+                "1": [
+                    3695
+                ]
+            },
+            "came_wrinkled": {
+                "-1": [
+                    3695
+                ]
+            },
+            "arrives_very_wrinkled": {
+                "-1": [
+                    338,
+                    460
+                ]
+            },
+            "arrived_extremely_wrinkled": {
+                "-1": [
+                    3501
+                ]
+            },
+            "wrinkled_out_of_package": {
+                "-1": [
+                    3444
+                ]
+            },
+            "extremely_wrinkled": {
+                "-1": [
+                    576,
+                    135,
+                    4104,
+                    1416,
+                    490,
+                    2416,
+                    1682,
+                    84,
+                    988
+                ]
+            },
+            "difficult_to_remove": {
+                "-1": [
+                    4104,
+                    84
+                ]
+            }
+        },
+        "threads": {
+            "loose": {
+                "-1": [
+                    1345
+                ]
+            }
+        },
+        "weight": {
+            "not_too_heavy": {
+                "1": [
+                    254
+                ]
+            },
+            "feels_lightweight": {
+                "1": [
+                    2434,
+                    2865,
+                    2955
+                ]
+            },
+            "heavier": {
+                "1": [
+                    2813
+                ]
+            },
+            "perfect_weight_for_cool_evenings": {
+                "1": [
+                    2981
+                ]
+            }
+        },
+        "buttons": {
+            "gold": {
+                "1": [
+                    2227
+                ]
+            },
+            "fell_off": {
+                "-1": [
+                    2579
+                ]
+            }
+        }
+    },
+    "fit": {
+        "overall": {
+            "off_for_larger_sizes": {
+                "-1": [
+                    1213
+                ]
+            },
+            "not_tailored_for_female": {
+                "-1": [
+                    2239
+                ]
+            },
+            "not_graded_properly_for_height": {
+                "-1": [
+                    1213
+                ]
+            },
+            "fits_like_unisex": {
+                "-1": [
+                    2239
+                ]
+            },
+            "narrow": {
+                "-1": [
+                    2633
+                ]
+            }
+        },
+        "shoulder": {
+            "fit_great": {
+                "1": [
+                    2019
+                ]
+            },
+            "nice_structure": {
+                "1": [
+                    1610
+                ]
+            },
+            "small": {
+                "-1": [
+                    1696
+                ]
+            },
+            "tight_due_to_shoulder_pads": {
+                "-1": [
+                    2466,
+                    3444
+                ]
+            },
+            "not_restrictive": {
+                "1": [
+                    1153
+                ]
+            },
+            "too_narrow": {
+                "-1": [
+                    3285
+                ]
+            },
+            "not_bulky_in_shoulder_area": {
+                "1": [
+                    4017
+                ]
+            },
+            "wide_fit": {
+                "1": [
+                    1305
+                ]
+            },
+            "fits_fine": {
+                "1": [
+                    3322,
+                    3358
+                ]
+            },
+            "restricting": {
+                "-1": [
+                    454
+                ]
+            },
+            "small_on_broad_shoulders": {
+                "-1": [
+                    3407
+                ]
+            },
+            "tight": {
+                "-1": [
+                    3864,
+                    49,
+                    3269,
+                    454
+                ]
+            },
+            "fits_broad_shoulders": {
+                "1": [
+                    2957,
+                    3695
+                ]
+            },
+            "too_tight": {
+                "-1": [
+                    2166,
+                    1999
+                ]
+            },
+            "fits_muscular_shoulders": {
+                "1": [
+                    1376
+                ]
+            },
+            "fits_nicely": {
+                "1": [
+                    1153
+                ]
+            },
+            "huge": {
+                "-1": [
+                    1060
+                ]
+            },
+            "doesnt_fit_across": {
+                "-1": [
+                    3960
+                ]
+            },
+            "good_fit": {
+                "1": [
+                    282
+                ]
+            },
+            "very_large": {
+                "-1": [
+                    1727
+                ]
+            },
+            "not_too_stiff": {
+                "1": [
+                    3013
+                ]
+            },
+            "too_tall_for_petite": {
+                "-1": [
+                    97
+                ]
+            },
+            "narrow": {
+                "-1": [
+                    843
+                ]
+            },
+            "fits_well": {
+                "1": [
+                    4072
+                ]
+            }
+        },
+        "wrist_and_arm": {
+            "strangely_snug": {
+                "-1": [
+                    3549
+                ]
+            },
+            "perfect_length": {
+                "1": [
+                    1548,
+                    1656
+                ]
+            },
+            "tight_for_larger_arms": {
+                "-1": [
+                    3443,
+                    3513
+                ]
+            },
+            "perfect": {
+                "1": [
+                    1902
+                ]
+            },
+            "long_sleeves": {
+                "-1": [
+                    4072
+                ]
+            },
+            "long": {
+                "-1": [
+                    2753,
+                    2278,
+                    503
+                ],
+                "1": [
+                    756
+                ]
+            },
+            "too_small": {
+                "-1": [
+                    2150
+                ]
+            },
+            "too_long": {
+                "-1": [
+                    2921,
+                    1679,
+                    3157,
+                    2901,
+                    2204,
+                    2783
+                ]
+            },
+            "tight": {
+                "-1": [
+                    3296,
+                    3936,
+                    260,
+                    517,
+                    3652,
+                    3722,
+                    1616,
+                    3248,
+                    881,
+                    3864,
+                    3775
+                ]
+            },
+            "short_length": {
+                "-1": [
+                    3337
+                ]
+            },
+            "very_tight": {
+                "-1": [
+                    1819
+                ]
+            },
+            "bulky_at_wrist": {
+                "-1": [
+                    282
+                ]
+            },
+            "sleeves_too_long": {
+                "-1": [
+                    3931,
+                    4100
+                ]
+            },
+            "not_too_tight": {
+                "1": [
+                    3013
+                ]
+            },
+            "tight_upper_arms": {
+                "-1": [
+                    4072
+                ]
+            },
+            "costumey_large": {
+                "-1": [
+                    3561
+                ]
+            },
+            "longer_than_expected": {
+                "-1": [
+                    1457
+                ]
+            },
+            "sleeves_shorter_than_expected": {
+                "-1": [
+                    3135
+                ]
+            },
+            "great_room": {
+                "1": [
+                    407
+                ]
+            },
+            "perfect_length_for_short_arms": {
+                "1": [
+                    3877
+                ]
+            },
+            "for_slim_person": {
+                "-1": [
+                    3248
+                ]
+            },
+            "forgiving_width": {
+                "1": [
+                    2027
+                ]
+            },
+            "short": {
+                "-1": [
+                    3234,
+                    1123,
+                    4045
+                ]
+            },
+            "too_tight": {
+                "-1": [
+                    2674,
+                    2611,
+                    1885,
+                    2061
+                ]
+            },
+            "wide": {
+                "-1": [
+                    2901
+                ],
+                "1": [
+                    1766
+                ]
+            },
+            "long_enough_for_long_arms": {
+                "1": [
+                    1098
+                ]
+            },
+            "long_enough": {
+                "1": [
+                    350,
+                    843
+                ]
+            },
+            "tight_in_upper_arms": {
+                "-1": [
+                    123,
+                    684,
+                    843
+                ]
+            },
+            "small": {
+                "-1": [
+                    1696,
+                    3150
+                ]
+            },
+            "fits_well": {
+                "1": [
+                    1577
+                ]
+            },
+            "snug": {
+                "-1": [
+                    2144
+                ]
+            },
+            "sleeves_slightly_too_big": {
+                "-1": [
+                    3243
+                ]
+            },
+            "comfortable_for_bigger_arms": {
+                "1": [
+                    3784
+                ]
+            },
+            "no_tightness_on_biceps": {
+                "1": [
+                    2887
+                ]
+            },
+            "too_short": {
+                "-1": [
+                    1783
+                ]
+            }
+        },
+        "underarms": {
+            "too_tight": {
+                "-1": [
+                    211,
+                    461
+                ]
+            },
+            "very_tight": {
+                "-1": [
+                    3248
+                ]
+            }
+        },
+        "bust_and_chest": {
+            "too_low": {
+                "-1": [
+                    1899
+                ]
+            },
+            "tight": {
+                "-1": [
+                    3029
+                ]
+            }
+        },
+        "waist": {
+            "too_small": {
+                "-1": [
+                    1682
+                ]
+            },
+            "small": {
+                "-1": [
+                    2783
+                ]
+            }
+        },
+        "buttoning": {
+            "look_silly_when_unbuttoned": {
+                "-1": [
+                    1290
+                ]
+            },
+            "4-6_inch_gap": {
+                "1": [
+                    3120
+                ]
+            }
+        },
+        "length": {
+            "covers_stomach": {
+                "1": [
+                    1345
+                ]
+            },
+            "not_too_short": {
+                "1": [
+                    1523
+                ]
+            },
+            "over_hip_coverage": {
+                "1": [
+                    3589
+                ]
+            },
+            "long_enough_for_mini_skirt": {
+                "1": [
+                    3141
+                ]
+            },
+            "not_too_long": {
+                "1": [
+                    2674,
+                    1523
+                ]
+            },
+            "great": {
+                "1": [
+                    2335,
+                    2661
+                ]
+            },
+            "longer": {
+                "1": [
+                    756
+                ]
+            },
+            "not_frumpy": {
+                "1": [
+                    1345
+                ]
+            },
+            "below_waist": {
+                "1": [
+                    3905
+                ]
+            }
+        },
+        "top": {
+            "huge": {
+                "-1": [
+                    2633
+                ]
+            }
+        }
+    },
+    "appearance": {
+        "shape_and_cut": {
+            "flattering_cut": {
+                "1": [
+                    3778
+                ]
+            },
+            "smart_looking": {
+                "1": [
+                    3694
+                ]
+            },
+            "unusual": {
+                "1": [
+                    2708
+                ]
+            },
+            "not_as_pictured": {
+                "-1": [
+                    3620,
+                    3825
+                ]
+            },
+            "like": {
+                "1": [
+                    2439
+                ]
+            },
+            "modern": {
+                "1": [
+                    2569
+                ]
+            },
+            "timeless": {
+                "1": [
+                    454
+                ]
+            },
+            "long": {
+                "1": [
+                    1598,
+                    1610
+                ]
+            },
+            "holds_form": {
+                "1": [
+                    540
+                ]
+            },
+            "open_front": {
+                "1": [
+                    1442
+                ]
+            },
+            "sophisticated": {
+                "1": [
+                    1598
+                ]
+            },
+            "academia": {
+                "1": [
+                    119
+                ]
+            },
+            "lightweight": {
+                "1": [
+                    3613,
+                    3940,
+                    29
+                ]
+            },
+            "doesnt_hang_well": {
+                "-1": [
+                    468
+                ]
+            },
+            "beautiful": {
+                "1": [
+                    1553,
+                    1139,
+                    873
+                ]
+            },
+            "classic": {
+                "1": [
+                    2857,
+                    1610,
+                    454
+                ]
+            },
+            "lean": {
+                "1": [
+                    1610
+                ]
+            },
+            "oversized_90s": {
+                "1": [
+                    2569
+                ]
+            },
+            "not_flattering": {
+                "-1": [
+                    3830
+                ]
+            },
+            "looks_expensive": {
+                "1": [
+                    4017
+                ]
+            },
+            "nice": {
+                "1": [
+                    1393,
+                    123,
+                    1102
+                ]
+            },
+            "boxy": {
+                "-1": [
+                    3777,
+                    503
+                ]
+            },
+            "stylish": {
+                "1": [
+                    1442,
+                    2780,
+                    991,
+                    4004,
+                    1607,
+                    2712,
+                    3120,
+                    4049,
+                    1523,
+                    408,
+                    1817,
+                    282,
+                    2874,
+                    2105
+                ]
+            },
+            "can_be_dressed_up_or_casual": {
+                "1": [
+                    3613
+                ]
+            },
+            "without_form": {
+                "-1": [
+                    3690
+                ]
+            },
+            "like_bolero_jacket": {
+                "1": [
+                    2831
+                ]
+            },
+            "fold_back_sleeves": {
+                "1": [
+                    628
+                ]
+            },
+            "tailored": {
+                "1": [
+                    1345
+                ]
+            },
+            "basic": {
+                "1": [
+                    3821,
+                    3773
+                ]
+            },
+            "classy": {
+                "1": [
+                    3123
+                ]
+            },
+            "super_stylish": {
+                "1": [
+                    1717
+                ]
+            },
+            "super_cute": {
+                "1": [
+                    1720
+                ]
+            },
+            "trendy": {
+                "1": [
+                    2105,
+                    3513,
+                    2238
+                ]
+            },
+            "less_stylish_than_pictured": {
+                "-1": [
+                    2794
+                ]
+            },
+            "casual": {
+                "1": [
+                    2355,
+                    3613,
+                    3439
+                ]
+            },
+            "pinned_strips": {
+                "1": [
+                    628
+                ]
+            },
+            "elegant": {
+                "1": [
+                    912,
+                    2874
+                ]
+            },
+            "contrasting_sleeve_cuffs": {
+                "1": [
+                    3708
+                ]
+            },
+            "not_oversized": {
+                "1": [
+                    1610
+                ],
+                "-1": [
+                    2190
+                ]
+            },
+            "not_flowing_well": {
+                "-1": [
+                    1566
+                ]
+            },
+            "current": {
+                "1": [
+                    2527
+                ]
+            },
+            "eye_catching": {
+                "1": [
+                    4102
+                ]
+            },
+            "oversized_fit": {
+                "1": [
+                    29
+                ]
+            },
+            "cute": {
+                "1": [
+                    1795,
+                    259,
+                    135,
+                    3212,
+                    525,
+                    2061,
+                    3086,
+                    3091,
+                    2708,
+                    22,
+                    3992,
+                    1817,
+                    3228,
+                    2588,
+                    2727,
+                    2600,
+                    2043,
+                    1967,
+                    4018,
+                    1971,
+                    4022,
+                    2105,
+                    3387,
+                    3646,
+                    1986,
+                    3924,
+                    3541,
+                    2267,
+                    2780,
+                    3805,
+                    3685,
+                    2541,
+                    891,
+                    254
+                ]
+            },
+            "not_too_cropped": {
+                "1": [
+                    998
+                ]
+            },
+            "different": {
+                "1": [
+                    2267
+                ]
+            },
+            "versatile": {
+                "1": [
+                    3616,
+                    4097,
+                    4100,
+                    3821,
+                    3694,
+                    3887,
+                    2738,
+                    755
+                ]
+            },
+            "not_boxy": {
+                "1": [
+                    1607
+                ]
+            },
+            "great": {
+                "1": [
+                    1603,
+                    2335
+                ]
+            },
+            "unlined": {
+                "1": [
+                    3613
+                ]
+            },
+            "funeral_vibes": {
+                "-1": [
+                    3620
+                ]
+            },
+            "looks_manly": {
+                "-1": [
+                    2794
+                ]
+            },
+
+            "oversized": {
+                "1": [
+                    3141,
+                    3357
+                ],
+                "-1": [
+                    3444
+                ]
+            },
+            "professional_looking": {
+                "1": [
+                    745
+                ]
+            },
+            "unique_one_button_design": {
+                "1": [
+                    1442
+                ]
+            },
+            "retro": {
+                "1": [
+                    2154
+                ]
+            },
+            "flattering": {
+                "1": [
+                    321,
+                    1442,
+                    2661,
+                    1191,
+                    1415,
+                    2674,
+                    1720,
+                    1532
+                ]
+            },
+            "fashionable": {
+                "1": [
+                    250,
+                    1572
+                ]
+            },
+            "good": {
+                "1": [
+                    2612
+                ]
+            },
+            "clean_looking": {
+                "1": [
+                    3708
+                ]
+            },
+            "adorable": {
+                "1": [
+                    3091,
+                    1852,
+                    2111
+                ]
+            },
+            "double_breasted": {
+                "1": [
+                    1535
+                ]
+            },
+            "shapeless": {
+                "-1": [
+                    401
+                ]
+            },
+            "vintage": {
+                "1": [
+                    2154,
+                    119
+                ]
+            },
+            "simple": {
+                "1": [
+                    1523
+                ]
+            },
+            "boyfriend": {
+                "1": [
+                    831
+                ]
+            },
+            "cropped": {
+                "1": [
+                    1376,
+                    2857,
+                    3085,
+                    2255,
+                    1818,
+                    2971,
+                    1951
+                ]
+            },
+            "crop_top": {
+                "1": [
+                    282
+                ]
+            },
+            "office_appropriate": {
+                "1": [
+                    2190
+                ]
+            },
+            "looks_like_thin_blue_uniform_jacket": {
+                "-1": [
+                    1547
+                ]
+            },
+            "looks_nothing_like_picture": {
+                "-1": [
+                    156
+                ]
+            },
+            "looks_like_mens_jacket": {
+                "-1": [
+                    3982
+                ]
+            },
+            "lacks_shape": {
+                "-1": [
+                    1544
+                ]
+            },
+            "no_shape_or_form": {
+                "-1": [
+                    3625
+                ]
+            },
+            "feminine": {
+                "1": [
+                    2056,
+                    4018,
+                    1607
+                ]
+            },
+            "slimming": {
+                "1": [
+                    3931
+                ]
+            },
+            "boyfriend_cut": {
+                "1": [
+                    13
+                ]
+            }
+        },
+        "pattern_and_print": {
+            "unexpected": {
+                "-1": [
+                    3849
+                ]
+            },
+            "white_lines": {
+                "1": [
+                    3754
+                ]
+            },
+            "limited": {
+                "-1": [
+                    1687
+                ]
+            },
+            "stripe_pattern": {
+                "-1": [
+                    3531
+                ]
+            },
+            "love": {
+                "1": [
+                    2285
+                ]
+            },
+            "liked": {
+                "1": [
+                    1131
+                ]
+            }
+        },
+        "overall_aesthetic": {
+            "versatile": {
+                "1": [
+                    760,
+                    1153
+                ]
+            },
+            "very_bonito": {
+                "1": [
+                    2114
+                ]
+            },
+            "looks_like_high_end_jacket": {
+                "1": [
+                    2753
+                ]
+            },
+            "not_professional": {
+                "-1": [
+                    192
+                ]
+            },
+            "great_looking": {
+                "1": [
+                    3327
+                ]
+            },
+            "flattering": {
+                "1": [
+                    3639
+                ]
+            },
+            "looks_expensive": {
+                "1": [
+                    1004,
+                    818,
+                    2259,
+                    1877,
+                    1273
+                ]
+            },
+            "wrinkled": {
+                "-1": [
+                    3600,
+                    3609,
+                    3818
+                ]
+            },
+            "looks_nice": {
+                "1": [
+                    3322
+                ]
+            },
+            "expensive_looking": {
+                "1": [
+                    1328,
+                    3699,
+                    1238
+                ]
+            },
+            "does_not_look_like_pic": {
+                "-1": [
+                    3389
+                ]
+            },
+            "sophisticated": {
+                "1": [
+                    2819
+                ]
+            },
+            "pleasant": {
+                "1": [
+                    1523
+                ]
+            },
+            "thirty_looking": {
+                "-1": [
+                    4084
+                ]
+            },
+            "sharp": {
+                "1": [
+                    1871,
+                    975
+                ]
+            },
+            "cute": {
+                "1": [
+                    1284,
+                    3589,
+                    3718,
+                    2695,
+                    3337,
+                    1676,
+                    274,
+                    1818,
+                    27,
+                    29,
+                    1062,
+                    2214,
+                    3754,
+                    1710,
+                    1207,
+                    699,
+                    3013,
+                    967,
+                    2898,
+                    342,
+                    88,
+                    345,
+                    3291,
+                    3292,
+                    3296,
+                    995,
+                    3684,
+                    998,
+                    1257,
+                    494,
+                    3441,
+                    887,
+                    2685,
+                    382
+                ]
+            },
+            "looks_cheap": {
+                "-1": [
+                    1547,
+                    2204,
+                    2679,
+                    2103
+                ]
+            },
+            "deceptive": {
+                "-1": [
+                    403
+                ]
+            },
+            "frumpy": {
+                "-1": [
+                    2239
+                ]
+            },
+            "professional": {
+                "-1": [
+                    1126
+                ],
+                "1": [
+                    1088,
+                    708,
+                    1232,
+                    501,
+                    3222,
+                    3194,
+                    3771,
+                    3487
+                ]
+            },
+            "feminine_style": {
+                "1": [
+                    3557
+                ]
+            },
+            "not_authentic": {
+                "-1": [
+                    2550
+                ]
+            },
+            "looks_like_picture": {
+                "1": [
+                    1903
+                ]
+            },
+            "compliment_receiving": {
+                "1": [
+                    1414,
+                    1852
+                ]
+            },
+            "looks_exactly_like_ad_pic": {
+                "1": [
+                    4017
+                ]
+            },
+            "trendy": {
+                "1": [
+                    1168,
+                    494
+                ]
+            },
+            "classic": {
+                "1": [
+                    1504,
+                    1550
+                ]
+            },
+            "adorable": {
+                "1": [
+                    699
+                ]
+            },
+            "classy_design": {
+                "1": [
+                    2981
+                ]
+            },
+            "looks_bad_on_body": {
+                "-1": [
+                    2101,
+                    2195
+                ]
+            },
+            "ok": {
+                "-1": [
+                    881
+                ]
+            },
+            "looks_great": {
+                "1": [
+                    1557,
+                    845,
+                    238
+                ]
+            },
+            "gorgeous": {
+                "1": [
+                    1345,
+                    1004,
+                    3221,
+                    2710,
+                    1533
+                ]
+            },
+            "unflattering": {
+                "-1": [
+                    2278
+                ]
+            },
+            "cheap": {
+                "-1": [
+                    2157,
+                    3052,
+                    3154
+                ]
+            },
+            "looks_like_1000_bucks": {
+                "1": [
+                    1598
+                ]
+            },
+            "boxy": {
+                "-1": [
+                    3607
+                ]
+            },
+            "like": {
+                "1": [
+                    2361
+                ]
+            },
+            "stylish": {
+                "1": [
+                    998,
+                    3403,
+                    1166,
+                    1941,
+                    1142
+                ]
+            },
+            "classy": {
+                "1": [
+                    2337,
+                    898,
+                    1926,
+                    3210,
+                    429,
+                    1550,
+                    3475,
+                    1142,
+                    1046,
+                    1273
+                ]
+            },
+            "bonita": {
+                "1": [
+                    1224
+                ]
+            },
+            "nice": {
+                "1": [
+                    768,
+                    3905,
+                    1920,
+                    3617,
+                    3940,
+                    774,
+                    3495,
+                    975,
+                    1904,
+                    3730,
+                    980,
+                    1750,
+                    2971,
+                    1787
+                ]
+            },
+            "nothing_like_pictures": {
+                "-1": [
+                    3560,
+                    3609
+                ]
+            },
+            "elegant": {
+                "1": [
+                    2055,
+                    425,
+                    265,
+                    2387,
+                    3699,
+                    1238
+                ]
+            },
+            "ugly": {
+                "-1": [
+                    3056,
+                    3389
+                ]
+            },
+            "very_casual": {
+                "1": [
+                    780
+                ]
+            },
+            "stunning": {
+                "1": [
+                    3820,
+                    2893
+                ]
+            },
+            "doesnt_look_cheap": {
+                "1": [
+                    1750
+                ]
+            },
+            "elevated": {
+                "1": [
+                    2285
+                ]
+            },
+            "super_cute": {
+                "1": [
+                    2307,
+                    2343
+                ]
+            },
+            "pretty": {
+                "1": [
+                    402,
+                    1523,
+                    2644,
+                    2710,
+                    503,
+                    1240
+                ]
+            },
+            "chic": {
+                "1": [
+                    450,
+                    998
+                ]
+            },
+            "beautiful": {
+                "1": [
+                    2434,
+                    3369,
+                    2859,
+                    670,
+                    3885,
+                    1007,
+                    2387,
+                    3124,
+                    2453,
+                    1273,
+                    2778,
+                    1339,
+                    1214
+                ]
+            },
+            "cheap_looking": {
+                "-1": [
+                    3056,
+                    2014,
+                    3607
+                ]
+            },
+            "fierce_with_short_hair": {
+                "1": [
+                    1899
+                ]
+            },
+            "nice_looking": {
+                "1": [
+                    3096,
+                    3754,
+                    3639,
+                    3079
+                ]
+            },
+            "professionally_tailored": {
+                "1": [
+                    1805
+                ]
+            },
+            "presentable": {
+                "1": [
+                    265
+                ]
+            },
+            "modern": {
+                "1": [
+                    1224
+                ]
+            },
+            "gives_professional_look": {
+                "1": [
+                    3905
+                ]
+            },
+            "put_together": {
+                "1": [
+                    2527
+                ]
+            },
+            "business_like": {
+                "-1": [
+                    3567
+                ]
+            },
+            "looks_good": {
+                "1": [
+                    2355
+                ]
+            },
+            "runway_look": {
+                "1": [
+                    1414
+                ]
+            },
+            "great": {
+                "1": [
+                    2781,
+                    2887,
+                    3176
+                ]
+            },
+            "fashionable": {
+                "1": [
+                    898
+                ]
+            },
+            "looks_better_in_picture": {
+                "-1": [
+                    232
+                ]
+            },
+            "slimming": {
+                "1": [
+                    3820
+                ]
+            }
+        },
+        "sleeves": {
+            "less_ruched_than_photo": {
+                "-1": [
+                    3694
+                ]
+            },
+            "three_quarter": {
+                "1": [
+                    3940
+                ]
+            },
+            "scrunchable_to_elbow": {
+                "1": [
+                    3608
+                ]
+            },
+            "turned": {
+                "1": [
+                    1805
+                ]
+            },
+            "quarter_length": {
+                "1": [
+                    1771
+                ]
+            },
+            "ruched_looks_wrinkled": {
+                "-1": [
+                    3734
+                ]
+            },
+            "cute": {
+                "1": [
+                    2588
+                ]
+            },
+            "too_long": {
+                "-1": [
+                    1394
+                ]
+            },
+            "look_great_slightly_rolled": {
+                "1": [
+                    1393
+                ]
+            }
+        },
+        "lining": {
+            "unlined": {
+                "-1": [
+                    1750
+                ]
+            },
+            "animal_print_inside": {
+                "-1": [
+                    2281
+                ]
+            }
+        },
+        "color": {
+            "wrong": {
+                "-1": [
+                    2434
+                ]
+            },
+            "dark_grey": {
+                "1": [
+                    3531
+                ]
+            },
+            "same_as_pictured": {
+                "1": [
+                    1845
+                ]
+            },
+            "horrible": {
+                "-1": [
+                    3679,
+                    3683
+                ]
+            },
+            "mature_pink": {
+                "1": [
+                    3499
+                ]
+            },
+            "bright_easter_egg_pink": {
+                "-1": [
+                    2045
+                ]
+            },
+            "midnight_blue": {
+                "1": [
+                    2044
+                ]
+            },
+            "soft_blue": {
+                "1": [
+                    3407
+                ]
+            },
+            "not_as_needed": {
+                "-1": [
+                    2573
+                ]
+            },
+            "exact_as_photo": {
+                "1": [
+                    4022
+                ]
+            },
+            "light_tan_not_brown": {
+                "-1": [
+                    289
+                ]
+            },
+            "tan_beige": {
+                "1": [
+                    2355
+                ]
+            },
+            "doesnt_match_photo": {
+                "-1": [
+                    1768
+                ]
+            },
+            "nice": {
+                "1": [
+                    2684,
+                    84,
+                    2944
+                ]
+            },
+            "stands_out": {
+                "1": [
+                    2824
+                ]
+            },
+            "peach": {
+                "-1": [
+                    4120
+                ]
+            },
+            "neon_pink": {
+                "-1": [
+                    2045
+                ]
+            },
+            "exactly_as_pictured": {
+                "1": [
+                    2770,
+                    3501
+                ]
+            },
+            "ivory": {
+                "-1": [
+                    2354
+                ]
+            },
+            "not_true_white": {
+                "-1": [
+                    2354
+                ]
+            },
+            "pink": {
+                "1": [
+                    3010,
+                    2887,
+                    2541,
+                    307,
+                    2134
+                ]
+            },
+            "apricot": {
+                "1": [
+                    3513
+                ]
+            },
+            "as_pictured": {
+                "1": [
+                    407
+                ]
+            },
+            "too_light_gray": {
+                "-1": [
+                    2450
+                ]
+            },
+            "true_to_photos": {
+                "1": [
+                    1214,
+                    1866
+                ]
+            },
+            "soft": {
+                "1": [
+                    3626
+                ]
+            },
+            "perfect": {
+                "1": [
+                    2449,
+                    27,
+                    3614
+                ]
+            },
+            "looks_worse_than_photos": {
+                "-1": [
+                    2356
+                ]
+            },
+            "mint": {
+                "1": [
+                    3900
+                ]
+            },
+            "not_like_picture": {
+                "-1": [
+                    1547
+                ]
+            },
+            "versatile": {
+                "1": [
+                    3660
+                ]
+            },
+            "true_to_color": {
+                "1": [
+                    325
+                ]
+            },
+            "great": {
+                "1": [
+                    386,
+                    3536,
+                    1520,
+                    82,
+                    1309,
+                    3711
+                ]
+            },
+            "stripes_confusing_black_or_dark_navy": {
+                "-1": [
+                    3613
+                ]
+            },
+            "pink_not_purple": {
+                "-1": [
+                    3731
+                ]
+            },
+            "pretty_tan": {
+                "1": [
+                    761
+                ]
+            },
+            "not_as_expected": {
+                "-1": [
+                    2685,
+                    2935
+                ]
+            },
+            "hot_pink": {
+                "1": [
+                    1852,
+                    3646
+                ]
+            },
+            "nice_black": {
+                "1": [
+                    1569
+                ]
+            },
+            "slightly_off_white": {
+                "1": [
+                    1143
+                ]
+            },
+            "amazing": {
+                "1": [
+                    3784,
+                    2166
+                ]
+            },
+            "not_white": {
+                "-1": [
+                    1763
+                ]
+            },
+            "nude": {
+                "1": [
+                    3695
+                ]
+            },
+            "white": {
+                "1": [
+                    2466
+                ]
+            },
+            "unique": {
+                "1": [
+                    2824,
+                    1176
+                ]
+            },
+            "as_expected": {
+                "1": [
+                    2292
+                ]
+            },
+            "different_from_picture": {
+                "-1": [
+                    81,
+                    224
+                ]
+            },
+            "darker_than_expected": {
+                "-1": [
+                    3819
+                ]
+            },
+            "off": {
+                "-1": [
+                    1824
+                ]
+            },
+            "navy": {
+                "1": [
+                    3599
+                ]
+            },
+            "spot_on": {
+                "1": [
+                    3368
+                ]
+            },
+            "burnt_orange_instead_of_brown": {
+                "-1": [
+                    2434
+                ]
+            },
+            "pretty": {
+                "1": [
+                    3626,
+                    820,
+                    3326
+                ]
+            },
+            "light_beige": {
+                "1": [
+                    3363
+                ]
+            },
+            "awesome": {
+                "1": [
+                    2648
+                ]
+            },
+            "grey": {
+                "1": [
+                    3599
+                ]
+            },
+            "matches_with_many_colors": {
+                "1": [
+                    2743
+                ]
+            },
+            "peachy_pink": {
+                "1": [
+                    360
+                ]
+            },
+            "not_as_bright_as_pictured": {
+                "-1": [
+                    1318
+                ]
+            },
+            "different_than_pictured": {
+                "-1": [
+                    3284,
+                    3422,
+                    3476,
+                    3602,
+                    3683
+                ]
+            },
+            "emerald_green": {
+                "1": [
+                    3221
+                ]
+            },
+            "off_from_picture": {
+                "-1": [
+                    2412,
+                    2450
+                ]
+            },
+            "baby_blue": {
+                "1": [
+                    2214
+                ]
+            },
+            "flat_black": {
+                "1": [
+                    2276
+                ]
+            },
+            "vibrant": {
+                "1": [
+                    993,
+                    3652,
+                    3210,
+                    1681,
+                    4018,
+                    1886,
+                    470,
+                    1532,
+                    2238
+                ]
+            },
+            "light_brown": {
+                "1": [
+                    319
+                ]
+            },
+            "not_as_pictured": {
+                "-1": [
+                    594,
+                    1435
+                ]
+            },
+            "lighter_than_navy": {
+                "1": [
+                    1984
+                ]
+            },
+            "green_liked": {
+                "1": [
+                    887
+                ]
+            },
+            "doesnt_fade_much": {
+                "1": [
+                    1656
+                ]
+            },
+            "true_navy": {
+                "1": [
+                    25
+                ]
+            },
+            "not_as_described": {
+                "-1": [
+                    1970
+                ]
+            },
+            "stunning": {
+                "1": [
+                    2776,
+                    2973
+                ]
+            },
+            "beautiful": {
+                "1": [
+                    3778,
+                    2182,
+                    1674,
+                    874,
+                    3213,
+                    270,
+                    1758,
+                    3221,
+                    2037,
+                    2743,
+                    3900,
+                    3198,
+                    3807
+                ]
+            },
+            "soft_pink": {
+                "1": [
+                    3499
+                ]
+            },
+            "burnt_orange": {
+                "1": [
+                    82
+                ]
+            },
+            "peach_not_khaki": {
+                "-1": [
+                    3422
+                ]
+            },
+            "better_than_expected": {
+                "1": [
+                    1339
+                ]
+            },
+            "not_dark_blue": {
+                "-1": [
+                    3975
+                ]
+            },
+            "grey_with_white_plaid": {
+                "-1": [
+                    3975
+                ]
+            },
+            "peach_not_pink": {
+                "-1": [
+                    4039
+                ]
+            },
+            "bright_orange": {
+                "-1": [
+                    2685
+                ]
+            },
+            "true_to_picture": {
+                "1": [
+                    1771
+                ]
+            },
+            "fantastic": {
+                "1": [
+                    2770
+                ]
+            },
+            "rust_or_burnt_orange_not_brown": {
+                "-1": [
+                    3476,
+                    3602
+                ]
+            },
+            "bright": {
+                "1": [
+                    2541
+                ]
+            },
+            "red": {
+                "1": [
+                    2238
+                ]
+            },
+            "not_sage_green": {
+                "-1": [
+                    2214
+                ]
+            },
+            "exact_as_pictured": {
+                "1": [
+                    993,
+                    1886,
+                    1971
+                ]
+            },
+            "light_dark_brown": {
+                "-1": [
+                    3819
+                ]
+            },
+            "not_navy": {
+                "1": [
+                    2044
+                ],
+                "-1": [
+                    2743
+                ]
+            },
+            "trendy": {
+                "1": [
+                    1062
+                ]
+            },
+            "barbie_pink": {
+                "-1": [
+                    2045
+                ]
+            },
+            "lighter_than_pictured": {
+                "-1": [
+                    2813
+                ]
+            },
+            "not_as_advertised": {
+                "-1": [
+                    3751
+                ]
+            },
+            "not_same_as_photo": {
+                "-1": [
+                    241
+                ]
+            },
+            "lilac_tint": {
+                "-1": [
+                    1824
+                ]
+            },
+            "navy_blue": {
+                "1": [
+                    1593
+                ]
+            },
+            "black": {
+                "1": [
+                    2780
+                ]
+            },
+            "gentle": {
+                "1": [
+                    3280
+                ]
+            },
+            "matches_photo": {
+                "1": [
+                    2223
+                ]
+            },
+            "not_true_black": {
+                "-1": [
+                    1102
+                ]
+            },
+            "cute": {
+                "1": [
+                    806
+                ]
+            },
+            "perfect_for_spring_or_summer": {
+                "1": [
+                    3034
+                ]
+            },
+            "peach_instead_of_khaki": {
+                "-1": [
+                    1216
+                ]
+            },
+            "purple": {
+                "1": [
+                    3363
+                ]
+            },
+            "not_vibrant_yellow": {
+                "-1": [
+                    3281
+                ]
+            },
+            "lighter_than_image": {
+                "-1": [
+                    695
+                ]
+            },
+            "gorgeous_pink": {
+                "1": [
+                    503
+                ]
+            },
+            "more_peach_than_brown": {
+                "-1": [
+                    2772
+                ]
+            },
+            "neutral_pink": {
+                "1": [
+                    2388
+                ]
+            },
+            "blue_shade_loved": {
+                "1": [
+                    1382
+                ]
+            },
+            "light_green": {
+                "1": [
+                    105
+                ]
+            },
+            "gorgeous": {
+                "1": [
+                    1087,
+                    2887
+                ]
+            },
+            "old_rose_instead_of_expected": {
+                "1": [
+                    1282
+                ]
+            },
+            "exact": {
+                "1": [
+                    1213
+                ]
+            },
+            "mint_green": {
+                "1": [
+                    2074,
+                    2981
+                ]
+            },
+            "dark_hunter_green": {
+                "-1": [
+                    1318
+                ]
+            },
+            "limited": {
+                "-1": [
+                    3617,
+                    2674,
+                    1687
+                ]
+            },
+            "green_summery": {
+                "1": [
+                    99
+                ]
+            },
+            "lighter_than_expected": {
+                "1": [
+                    2355
+                ],
+                "-1": [
+                    540
+                ]
+            },
+            "looks_like_dark_navy_blue": {
+                "-1": [
+                    96
+                ]
+            },
+            "stains_other_clothes": {
+                "-1": [
+                    1773
+                ]
+            },
+            "darker_than_picture": {
+                "-1": [
+                    1287
+                ]
+            },
+            "baby_pink": {
+                "-1": [
+                    1768
+                ]
+            },
+            "fresh": {
+                "1": [
+                    2824
+                ]
+            },
+            "love": {
+                "1": [
+                    2285,
+                    1459,
+                    2253
+                ]
+            },
+            "good": {
+                "1": [
+                    2714
+                ]
+            },
+            "more_pink_than_purple": {
+                "-1": [
+                    2930
+                ]
+            },
+            "adorable": {
+                "1": [
+                    3280
+                ]
+            },
+            "washed_out": {
+                "-1": [
+                    2345
+                ]
+            },
+            "deep_forest_green": {
+                "1": [
+                    1394
+                ]
+            },
+            "bright_pink": {
+                "1": [
+                    1532,
+                    1572,
+                    3606
+                ],
+                "-1": [
+                    1064
+                ]
+            },
+            "summertime": {
+                "1": [
+                    3280
+                ]
+            },
+            "purpley": {
+                "-1": [
+                    2345
+                ]
+            }
+        },
+        "lapel_and_collar": {
+            "out_of_whack": {
+                "-1": [
+                    3551
+                ]
+            },
+            "moves_forward": {
+                "-1": [
+                    3551
+                ]
+            },
+            "perfect_size": {
+                "1": [
+                    2464
+                ]
+            }
+        },
+        "pleating": {
+            "pretty": {
+                "1": [
+                    806
+                ]
+            }
+        },
+        "buttons": {
+            "brown": {
+                "-1": [
+                    1917
+                ]
+            },
+            "cheap_feeling": {
+                "-1": [
+                    1003
+                ]
+            },
+            "not_well_attached": {
+                "-1": [
+                    2904
+                ]
+            },
+            "nice_on_sleeves": {
+                "1": [
+                    3821
+                ]
+            },
+            "disliked_colors": {
+                "-1": [
+                    2944
+                ]
+            },
+            "plastic_colored": {
+                "1": [
+                    454
+                ]
+            },
+            "decorative_on_cuffs": {
+                "-1": [
+                    454
+                ]
+            },
+            "plastic": {
+                "-1": [
+                    1003
+                ]
+            },
+            "cheap_looking_on_arms": {
+                "-1": [
+                    3782
+                ]
+            },
+            "gaudy": {
+                "-1": [
+                    731
+                ]
+            },
+            "fall_off_easily": {
+                "-1": [
+                    257,
+                    379,
+                    3998,
+                    3991
+                ]
+            },
+            "changed_to_silver_embossed_metal": {
+                "1": [
+                    2712
+                ]
+            },
+            "liked": {
+                "1": [
+                    3960
+                ]
+            },
+            "high_placement": {
+                "-1": [
+                    4072
+                ]
+            },
+            "nice_detail_on_arms": {
+                "1": [
+                    2731
+                ]
+            },
+            "ugly_on_arms": {
+                "-1": [
+                    3782
+                ]
+            },
+            "cheap": {
+                "-1": [
+                    2904
+                ]
+            }
+        },
+        "glitter": {
+            "disliked": {
+                "-1": [
+                    2276
+                ]
+            }
+        },
+        "back_and_front": {
+            "looks_good": {
+                "1": [
+                    894
+                ]
+            },
+            "not_liked": {
+                "-1": [
+                    894
+                ]
+            }
+        },
+        "pockets": {
+            "deep": {
+                "1": [
+                    4004
+                ]
+            },
+            "absent": {
+                "-1": [
+                    3842
+                ]
+            },
+            "has_pockets": {
+                "1": [
+                    540
+                ]
+            },
+            "weird_placed": {
+                "-1": [
+                    401
+                ]
+            }
+        },
+        "details": {
+            "nice": {
+                "1": [
+                    3727
+                ]
+            }
+        }
+    },
+    "construction": {
+        "band": {
+            "disliked": {
+                "-1": [
+                    521
+                ]
+            },
+            "gives_shape": {
+                "1": [
+                    2674
+                ]
+            }
+        },
+        "closure": {
+            "misaligned": {
+                "-1": [
+                    596
+                ]
+            },
+            "no_buttons": {
+                "1": [
+                    2355,
+                    501,
+                    1415
+                ]
+            },
+            "no_front_closure": {
+                "-1": [
+                    1266
+                ]
+            },
+            "open_front": {
+                "1": [
+                    1415
+                ]
+            },
+            "cuff_buttons": {
+                "1": [
+                    37
+                ]
+            },
+            "need_additional_on_cuffs": {
+                "-1": [
+                    3708
+                ]
+            },
+            "disliked": {
+                "-1": [
+                    3548
+                ]
+            },
+            "inside_button_not_sewn_well": {
+                "-1": [
+                    1829
+                ]
+            },
+            "one_button": {
+                "1": [
+                    454
+                ]
+            },
+            "fall_off_easily": {
+                "-1": [
+                    1709
+                ]
+            },
+            "missing": {
+                "-1": [
+                    3632,
+                    2738,
+                    3551
+                ]
+            },
+            "cheap": {
+                "-1": [
+                    550
+                ]
+            },
+            "fell_off": {
+                "-1": [
+                    430
+                ]
+            },
+            "present": {
+                "1": [
+                    3803
+                ]
+            },
+            "fell_off_first_day": {
+                "-1": [
+                    1785
+                ]
+            },
+            "extra_provided": {
+                "1": [
+                    2738
+                ]
+            },
+            "fell_off_easily": {
+                "-1": [
+                    2496
+                ]
+            }
+        },
+        "overall": {
+            "low_quality": {
+                "-1": [
+                    1264
+                ]
+            },
+            "cheaply_made": {
+                "-1": [
+                    2542,
+                    3551
+                ]
+            },
+            "good_for_price": {
+                "1": [
+                    3053
+                ]
+            },
+            "beautifully_made": {
+                "1": [
+                    2434
+                ]
+            },
+            "uncomfortable": {
+                "-1": [
+                    812,
+                    816,
+                    1290
+                ]
+            },
+            "no_hanging_threads": {
+                "1": [
+                    975
+                ]
+            },
+            "not_lined": {
+                "1": [
+                    3360
+                ],
+                "-1": [
+                    3467
+                ]
+            },
+            "good_quality": {
+                "1": [
+                    3120,
+                    3250
+                ]
+            },
+            "excellent_workmanship": {
+                "1": [
+                    1214
+                ]
+            },
+            "fake_pockets": {
+                "-1": [
+                    3467
+                ]
+            },
+            "poor": {
+                "-1": [
+                    2772
+                ]
+            },
+            "weird_shaped": {
+                "-1": [
+                    3653
+                ]
+            },
+            "needs_steaming": {
+                "-1": [
+                    3761
+                ]
+            },
+            "tailored_nicely": {
+                "1": [
+                    3010
+                ]
+            },
+            "wrinkles_more": {
+                "-1": [
+                    1915
+                ]
+            },
+            "has_lining": {
+                "1": [
+                    260,
+                    501
+                ]
+            },
+            "cut_nicely": {
+                "1": [
+                    3358
+                ]
+            },
+            "perfect_structure": {
+                "1": [
+                    1845
+                ]
+            },
+            "full_of_wrinkles": {
+                "-1": [
+                    816
+                ]
+            },
+            "poorly_made": {
+                "-1": [
+                    1261,
+                    1709
+                ]
+            },
+            "nice_finishing": {
+                "1": [
+                    1528
+                ]
+            },
+            "nicely_made": {
+                "1": [
+                    3289,
+                    2874
+                ]
+            },
+            "finished_off_well": {
+                "1": [
+                    1394
+                ]
+            },
+            "tailor_made": {
+                "1": [
+                    2874
+                ]
+            },
+            "needs_pressing_after_washing": {
+                "-1": [
+                    761
+                ]
+            },
+            "good_cutting": {
+                "1": [
+                    1457
+                ]
+            },
+            "well_made": {
+                "1": [
+                    3107,
+                    1167,
+                    975,
+                    1553,
+                    1652,
+                    501,
+                    3318,
+                    503,
+                    1817,
+                    3487
+                ]
+            },
+            "shabby_finishing": {
+                "-1": [
+                    3467
+                ]
+            },
+            "machine_washable": {
+                "1": [
+                    761
+                ]
+            },
+            "bottom_flails_open": {
+                "-1": [
+                    1290
+                ]
+            },
+            "only_two_buttons": {
+                "-1": [
+                    1290
+                ]
+            },
+            "poorly_put_together": {
+                "-1": [
+                    785
+                ]
+            },
+            "made_well": {
+                "1": [
+                    2559
+                ]
+            },
+            "doesnt_collect_lint": {
+                "1": [
+                    939
+                ]
+            },
+            "has_slight_give": {
+                "1": [
+                    760
+                ]
+            },
+            "restricts_arm_movement": {
+                "-1": [
+                    1290
+                ]
+            }
+        },
+        "shape_and_cut": {
+            "less_tailored": {
+                "-1": [
+                    4143
+                ]
+            },
+            "not_too_square": {
+                "1": [
+                    4097
+                ]
+            },
+            "very_flattering": {
+                "1": [
+                    3727
+                ]
+            },
+            "flattering": {
+                "1": [
+                    1682
+                ]
+            }
+        },
+        "details": {
+            "no_fillers": {
+                "1": [
+                    2865
+                ]
+            },
+            "well_done": {
+                "1": [
+                    4102
+                ]
+            },
+            "no_shoulder_pads": {
+                "1": [
+                    2865
+                ]
+            },
+            "can_fold_sleeves_to_show_lining": {
+                "1": [
+                    2966
+                ]
+            },
+            "good_attention_to_detail": {
+                "1": [
+                    1674
+                ]
+            }
+        },
+        "care_and_maintenance": {
+            "professional_washing_recommended": {
+                "-1": [
+                    454
+                ]
+            },
+            "dry_cleaning_best": {
+                "1": [
+                    4018
+                ]
+            },
+            "washes_and_dries_well": {
+                "1": [
+                    3641
+                ]
+            },
+            "easy_to_care_for": {
+                "1": [
+                    3189,
+                    319
+                ]
+            },
+            "easy_to_wash": {
+                "1": [
+                    774
+                ]
+            },
+            "machine_washable": {
+                "1": [
+                    2115,
+                    501
+                ]
+            },
+            "no_wrinkle_after_drying": {
+                "1": [
+                    3189
+                ]
+            },
+            "needs_steaming_before_wear": {
+                "-1": [
+                    454
+                ]
+            },
+            "easy_to_iron": {
+                "1": [
+                    774
+                ]
+            }
+        },
+        "shoulder_pads": {
+            "thin": {
+                "-1": [
+                    566
+                ]
+            },
+            "lightly_padded": {
+                "1": [
+                    2027
+                ]
+            },
+            "not_overly_padded": {
+                "1": [
+                    1551
+                ]
+            },
+            "not_pinned": {
+                "-1": [
+                    3551
+                ]
+            },
+            "add_structure": {
+                "1": [
+                    2433
+                ]
+            },
+            "need_adjustment": {
+                "-1": [
+                    3551
+                ]
+            },
+            "not_loved": {
+                "-1": [
+                    2433
+                ]
+            },
+            "present": {
+                "-1": [
+                    3960,
+                    2022
+                ]
+            },
+            "robust": {
+                "1": [
+                    2772
+                ]
+            },
+            "well_made": {
+                "1": [
+                    3318
+                ]
+            },
+            "sewn_in": {
+                "-1": [
+                    3444
+                ]
+            },
+            "missing": {
+                "-1": [
+                    3632
+                ]
+            },
+            "great_size": {
+                "1": [
+                    3318
+                ]
+            },
+            "removable": {
+                "1": [
+                    2648,
+                    2674
+                ]
+            },
+            "misplaced": {
+                "-1": [
+                    596
+                ]
+            },
+            "uneven": {
+                "-1": [
+                    1104
+                ]
+            },
+            "padded": {
+                "1": [
+                    760,
+                    3369,
+                    1088
+                ]
+            }
+        },
+        "collar": {
+            "lapel": {
+                "1": [
+                    32
+                ]
+            },
+            "lapel_collar": {
+                "1": [
+                    37
+                ]
+            }
+        },
+        "thread": {
+            "hanging_out": {
+                "-1": [
+                    550
+                ]
+            },
+            "one_thread_messed_up": {
+                "-1": [
+                    1457
+                ]
+            }
+        },
+        "origin": {
+            "made_in_usa": {
+                "1": [
+                    3695
+                ]
+            },
+            "from_china": {
+                "-1": [
+                    70
+                ]
+            }
+        },
+        "stiffness": {
+            "stiff": {
+                "-1": [
+                    3960
+                ]
+            }
+        },
+        "sleeve": {
+            "can_be_rolled_up": {
+                "1": [
+                    760
+                ]
+            },
+            "interesting": {
+                "1": [
+                    3280
+                ]
+            },
+            "long": {
+                "1": [
+                    32
+                ]
+            },
+            "scrunched": {
+                "1": [
+                    260
+                ]
+            },
+            "cropped": {
+                "1": [
+                    3239
+                ]
+            }
+        },
+        "pocket": {
+            "functional": {
+                "1": [
+                    3360,
+                    3589
+                ]
+            },
+            "faux_lapel_pocket_disliked": {
+                "-1": [
+                    2363
+                ]
+            },
+            "no_pockets": {
+                "-1": [
+                    3280
+                ]
+            },
+            "too_far_back": {
+                "-1": [
+                    2556
+                ]
+            },
+            "two_functional_flap_pockets": {
+                "1": [
+                    37
+                ]
+            },
+            "has_two_actual_pockets": {
+                "1": [
+                    2714
+                ]
+            },
+            "handy": {
+                "1": [
+                    1267
+                ]
+            },
+            "large": {
+                "1": [
+                    1267
+                ]
+            },
+            "deep": {
+                "1": [
+                    3444,
+                    2343
+                ]
+            },
+            "side": {
+                "1": [
+                    32
+                ]
+            },
+            "present": {
+                "1": [
+                    3851,
+                    3652
+                ]
+            },
+            "real": {
+                "1": [
+                    2355
+                ]
+            },
+            "break_up_slick_material": {
+                "1": [
+                    454
+                ]
+            },
+            "on_both_sides": {
+                "1": [
+                    760
+                ]
+            },
+            "imitation": {
+                "-1": [
+                    2411
+                ]
+            },
+            "non_functional": {
+                "-1": [
+                    3703,
+                    399
+                ]
+            },
+            "big": {
+                "1": [
+                    1804
+                ]
+            },
+            "fairly_large": {
+                "1": [
+                    3360
+                ]
+            },
+            "fake": {
+                "-1": [
+                    1495
+                ]
+            },
+            "different_from_picture": {
+                "-1": [
+                    1435
+                ]
+            },
+            "has_pockets": {
+                "1": [
+                    408,
+                    3387,
+                    1904,
+                    1142
+                ]
+            }
+        },
+        "stretch": {
+            "not_much_stretch": {
+                "-1": [
+                    426
+                ]
+            }
+        },
+        "hems": {
+            "fraying": {
+                "-1": [
+                    2244
+                ]
+            },
+            "poorly_made": {
+                "-1": [
+                    2244
+                ]
+            }
+        },
+        "lining": {
+            "front_lined": {
+                "1": [
+                    866
+                ]
+            },
+            "well_sewn": {
+                "1": [
+                    4102
+                ]
+            },
+            "completely_lined": {
+                "1": [
+                    695
+                ]
+            },
+            "no_lining": {
+                "-1": [
+                    2612,
+                    2527
+                ]
+            },
+            "fully_lined": {
+                "1": [
+                    3907,
+                    37
+                ]
+            },
+            "lined": {
+                "1": [
+                    1415
+                ]
+            },
+            "functional_pockets": {
+                "1": [
+                    695
+                ]
+            },
+            "not_lined": {
+                "-1": [
+                    3764,
+                    202
+                ]
+            }
+        },
+        "layering": {
+            "easy": {
+                "1": [
+                    4004
+                ]
+            }
+        },
+        "stitching_and_seams": {
+            "uneven": {
+                "-1": [
+                    3018
+                ]
+            },
+            "gaps_visible": {
+                "-1": [
+                    2595
+                ]
+            },
+            "stitching_errors": {
+                "-1": [
+                    980,
+                    1193
+                ]
+            },
+            "bound_for_professional_finish": {
+                "1": [
+                    3613
+                ]
+            },
+            "not_secure": {
+                "-1": [
+                    2595
+                ]
+            },
+            "fell_apart_second_wear": {
+                "-1": [
+                    1785
+                ]
+            },
+            "wide": {
+                "-1": [
+                    3018
+                ]
+            },
+            "even_stitching": {
+                "1": [
+                    319
+                ]
+            },
+            "sloppy_hem": {
+                "-1": [
+                    338
+                ]
+            },
+            "coming_undone": {
+                "-1": [
+                    2085
+                ]
+            },
+            "awful": {
+                "-1": [
+                    2085
+                ]
+            },
+            "open_inside": {
+                "-1": [
+                    806
+                ]
+            },
+            "not_good": {
+                "-1": [
+                    2741
+                ]
+            },
+            "well_done": {
+                "1": [
+                    3444
+                ]
+            },
+            "crooked": {
+                "-1": [
+                    1398
+                ]
+            }
+        },
+        "button_holes": {
+            "fraying": {
+                "-1": [
+                    2244
+                ]
+            }
+        },
+        "packaging": {
+            "arrived_rumpled": {
+                "-1": [
+                    2238
+                ]
+            }
+        },
+        "packability": {
+            "packable": {
+                "1": [
+                    844
+                ]
+            },
+            "creases_difficult_to_remove": {
+                "-1": [
+                    844
+                ]
+            },
+            "packs_well": {
+                "1": [
+                    1818
+                ]
+            }
+        },
+        "comfort": {
+            "comfortable": {
+                "1": [
+                    2865,
+                    3234,
+                    2955,
+                    3013
+                ]
+            }
+        }
+    }
+}

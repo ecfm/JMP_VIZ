@@ -1,0 +1,1563 @@
+{
+  "Dimensions|Accuracy|Inaccurate": [
+    "ATTR_14",
+    "ATTR_151",
+    "ATTR_509",
+    "ATTR_311",
+    "ATTR_322",
+    "ATTR_469"
+  ],
+  "Flow Characteristics|General Water Flow": [
+    "perf_82",
+    "perf_149",
+    "perf_23",
+    "perf_130"
+  ],
+  "Dimensions|Size|Availability": [
+    "ATTR_212"
+  ],
+  "Material Properties|Non-Stick": [
+    "perf_14",
+    "perf_494"
+  ],
+  "Other": [
+    "ATTR_133",
+    "ATTR_508"
+  ],
+  "Material Properties|Flexibility|Retains Bent Shape": [
+    "perf_49",
+    "perf_432",
+    "ATTR_379",
+    "perf_517",
+    "perf_197",
+    "perf_192",
+    "perf_325",
+    "perf_518"
+  ],
+  "Surface Condition|Stickiness:Material Properties": [
+    "ATTR_487",
+    "ATTR_406",
+    "ATTR_427",
+    "ATTR_455"
+  ],
+  "Flow Characteristics|Discharge Capability": [
+    "perf_225"
+  ],
+  "Dimensions|Size|Specifications": [
+    "ATTR_304"
+  ],
+  "Packaging|Method|Individual Pieces": [
+    "ATTR_452"
+  ],
+  "Dimensions|Diameter|General": [
+    "ATTR_400"
+  ],
+  "Packaging|Labeling|Lack of": [
+    "ATTR_129"
+  ],
+  "Surface Condition|Self-adhesive": [
+    "ATTR_37"
+  ],
+  "Performance|Pressure Handling|Poor Pressure Handling": [
+    "perf_514",
+    "perf_421",
+    "perf_430"
+  ],
+  "Surface Condition|Appearance|Kinks": [
+    "ATTR_252",
+    "ATTR_458"
+  ],
+  "Sensory Properties|Taste|Mild Chemical Aftertaste": [
+    "perf_296"
+  ],
+  "Dimensions|Diameter|Inner|Comparison": [
+    "ATTR_230",
+    "ATTR_368"
+  ],
+  "Surface Properties|Adhesion|Not Sticky": [
+    "ATTR_468",
+    "perf_306"
+  ],
+  "Durability|Longevity|Better Quality Than Original": [
+    "perf_329"
+  ],
+  "Durability|Strength|Withstands Pressure": [
+    "perf_221",
+    "perf_279"
+  ],
+  "Physical Properties|Softness": [
+    "ATTR_58",
+    "ATTR_354"
+  ],
+  "Dimensions|General Measurement": [
+    "ATTR_82",
+    "ATTR_88",
+    "ATTR_104",
+    "ATTR_121",
+    "ATTR_231",
+    "ATTR_407",
+    "ATTR_448",
+    "ATTR_483"
+  ],
+  "Resistance|Outdoor Conditions Resistance:Resistant to Outdoor Conditions": [
+    "perf_123",
+    "perf_345"
+  ],
+  "Material Properties|Flexibility|Resists Collapse": [
+    "perf_161",
+    "perf_264",
+    "perf_336",
+    "perf_407",
+    "perf_367"
+  ],
+  "Shape|Cross Section:Physical Characteristics": [
+    "ATTR_438",
+    "ATTR_61",
+    "ATTR_84",
+    "ATTR_63"
+  ],
+  "Transparency|Translucent": [
+    "ATTR_296",
+    "ATTR_287",
+    "ATTR_506",
+    "ATTR_93",
+    "ATTR_207",
+    "ATTR_415",
+    "ATTR_97",
+    "ATTR_314"
+  ],
+  "Material Properties|Flexibility|Prone to Kinking": [
+    "ATTR_409",
+    "perf_61",
+    "perf_67",
+    "perf_94",
+    "perf_512",
+    "perf_182",
+    "perf_238",
+    "perf_364",
+    "perf_222",
+    "perf_13"
+  ],
+  "Packaging|Labeling|Stamped Lettering": [
+    "ATTR_365"
+  ],
+  "Product Accuracy:Description Match": [
+    "ATTR_504",
+    "ATTR_208",
+    "ATTR_169"
+  ],
+  "Accessories|Fasteners": [
+    "ATTR_87"
+  ],
+  "Performance|Flushing Performance:Easy to Flush": [
+    "perf_409"
+  ],
+  "Durability|Longevity|Replacement for Worn Tubing": [
+    "perf_310",
+    "perf_374"
+  ],
+  "Material Properties|Flexibility|Can Be Pinched with Clamps": [
+    "perf_59"
+  ],
+  "Safety|Non-toxic": [
+    "perf_261"
+  ],
+  "Sensory Properties|Odor|Can be Removed": [
+    "perf_333"
+  ],
+  "Material Properties|Flexibility|Resistant to Kinking": [
+    "perf_106",
+    "perf_394",
+    "perf_35",
+    "perf_89",
+    "perf_203",
+    "perf_237",
+    "perf_136",
+    "perf_274",
+    "perf_175",
+    "perf_369",
+    "perf_365",
+    "perf_416",
+    "perf_425",
+    "perf_234",
+    "perf_405",
+    "perf_326",
+    "perf_440",
+    "perf_181"
+  ],
+  "Color|Original Match": [
+    "ATTR_375",
+    "ATTR_465",
+    "ATTR_170",
+    "ATTR_186"
+  ],
+  "Dimensions|Length|Specific Length": [
+    "ATTR_215",
+    "ATTR_27",
+    "ATTR_268",
+    "ATTR_137",
+    "ATTR_12",
+    "ATTR_156",
+    "ATTR_267",
+    "ATTR_474",
+    "ATTR_376",
+    "ATTR_413",
+    "ATTR_475",
+    "ATTR_11",
+    "ATTR_187",
+    "ATTR_55",
+    "ATTR_85",
+    "ATTR_355",
+    "ATTR_86",
+    "ATTR_277"
+  ],
+  "Safety:Certification": [
+    "ATTR_303"
+  ],
+  "Transparency|Not Clear": [
+    "ATTR_96",
+    "ATTR_203",
+    "ATTR_500"
+  ],
+  "Durability|Structural Integrity|Splits Easily": [
+    "perf_308",
+    "perf_466"
+  ],
+  "Packaging|Presentation|Tightly Wrapped": [
+    "ATTR_70",
+    "ATTR_467"
+  ],
+  "Connection and Compatibility|Connection Quality|Disconnection Issues": [
+    "perf_451",
+    "perf_378"
+  ],
+  "Performance|Pressure Handling|Bursting Under Pressure": [
+    "perf_212",
+    "perf_281",
+    "perf_456",
+    "perf_470"
+  ],
+  "Performance|Vibration Performance|Vibration Isolation": [
+    "perf_22",
+    "perf_15"
+  ],
+  "Packaging|Condition|Torn and Damp": [
+    "ATTR_453"
+  ],
+  "Protection|Wire Protection": [
+    "perf_487"
+  ],
+  "Durability|Packaging Impact:No Kinks from Packaging": [
+    "perf_473"
+  ],
+  "Flow Characteristics|Air Flow:Air Supply Capability": [
+    "perf_150",
+    "perf_55"
+  ],
+  "Packaging|Condition|Poor Internal": [
+    "ATTR_130"
+  ],
+  "Material Properties|Flexibility|Stiffer Than Expensive Options": [
+    "perf_92"
+  ],
+  "Durability|Strength|Robust": [
+    "ATTR_119",
+    "perf_95",
+    "ATTR_149",
+    "ATTR_383",
+    "perf_164",
+    "ATTR_202",
+    "perf_85",
+    "ATTR_403",
+    "perf_176",
+    "perf_198",
+    "perf_190",
+    "perf_241"
+  ],
+  "Material Properties|Flexibility|Poor Knotting": [
+    "perf_134"
+  ],
+  "Material Properties|Flexibility|More Flexible Than Original": [
+    "perf_343",
+    "perf_495"
+  ],
+  "Material Properties|Flexibility|Hard to Work With": [
+    "perf_91"
+  ],
+  "Material|Composition|Plastic": [
+    "ATTR_269",
+    "ATTR_64",
+    "ATTR_75",
+    "ATTR_385",
+    "ATTR_462"
+  ],
+  "Physical Characteristics|Markings": [
+    "ATTR_135"
+  ],
+  "Color|Discolored": [
+    "ATTR_110",
+    "ATTR_323"
+  ],
+  "Material Properties|Flexibility|Becomes Stiffer Over Time": [
+    "perf_93"
+  ],
+  "Value:Price|Low": [
+    "ATTR_366"
+  ],
+  "Surface Properties|Provides Friction": [
+    "perf_509"
+  ],
+  "Reusability|Reusable:Can be Reused": [
+    "perf_215"
+  ],
+  "Versatility|Fluid Compatibility:Compatible with Multiple Fluids": [
+    "perf_179",
+    "perf_312"
+  ],
+  "Markings|Print": [
+    "ATTR_256"
+  ],
+  "Shape|Shape Retention:Physical Characteristics": [
+    "ATTR_102",
+    "ATTR_443",
+    "ATTR_459",
+    "ATTR_428",
+    "ATTR_223"
+  ],
+  "Performance|Holds Prime": [
+    "perf_9"
+  ],
+  "Usability|Shape Management|Pre-existing Kinks": [
+    "perf_327"
+  ],
+  "Material|Properties|Flexibility": [
+    "ATTR_191",
+    "ATTR_150",
+    "ATTR_216",
+    "ATTR_79",
+    "ATTR_209",
+    "ATTR_335",
+    "ATTR_424",
+    "ATTR_464",
+    "ATTR_59",
+    "ATTR_101",
+    "ATTR_250",
+    "ATTR_140",
+    "ATTR_141",
+    "ATTR_264",
+    "ATTR_378",
+    "ATTR_196",
+    "ATTR_307",
+    "ATTR_388",
+    "ATTR_283",
+    "ATTR_334"
+  ],
+  "Durability|Longevity|Long Lasting": [
+    "perf_508",
+    "perf_72",
+    "perf_77",
+    "perf_167",
+    "perf_322",
+    "perf_393"
+  ],
+  "Performance|Workability": [
+    "ATTR_161",
+    "ATTR_190"
+  ],
+  "Internal Structure:Deformity": [
+    "ATTR_511"
+  ],
+  "Connection and Compatibility|Compatibility|Incompatible with Other Fittings": [
+    "perf_166",
+    "perf_353",
+    "perf_226",
+    "perf_227",
+    "perf_235",
+    "perf_338",
+    "perf_442",
+    "perf_78",
+    "perf_207",
+    "perf_476",
+    "perf_477",
+    "perf_483",
+    "perf_503",
+    "perf_504",
+    "perf_505",
+    "perf_24",
+    "perf_349",
+    "perf_283",
+    "perf_27",
+    "perf_80",
+    "perf_379",
+    "perf_380",
+    "perf_387",
+    "perf_392",
+    "perf_414",
+    "perf_126",
+    "perf_127",
+    "perf_128",
+    "perf_337",
+    "perf_490",
+    "perf_351",
+    "perf_352",
+    "perf_284",
+    "perf_480"
+  ],
+  "Suitability|Meets Expectations": [
+    "perf_56",
+    "perf_441"
+  ],
+  "Surface Condition|Edges:Appearance": [
+    "ATTR_418",
+    "ATTR_445"
+  ],
+  "Cleaning and Maintenance|Easy to Maintain": [
+    "perf_74",
+    "perf_299",
+    "perf_101",
+    "perf_229",
+    "perf_305",
+    "perf_218",
+    "perf_389",
+    "perf_276"
+  ],
+  "Sensory Characteristics|Taste|Neutral": [
+    "ATTR_246"
+  ],
+  "Resistance|Mechanical Resistance:Chain Resistant": [
+    "perf_249"
+  ],
+  "Resistance|Wear Resistance|No Wear": [
+    "perf_265"
+  ],
+  "Water Quality Impact|Taste Impact:Does Not Affect Taste": [
+    "perf_335"
+  ],
+  "Connection and Compatibility|Connection Quality|Secure Attachment": [
+    "perf_29",
+    "perf_348",
+    "perf_350",
+    "perf_28",
+    "perf_79",
+    "perf_478",
+    "perf_381"
+  ],
+  "Usability|Shape Retention|Loses Shape Easily": [
+    "perf_183",
+    "perf_51"
+  ],
+  "Material Properties|Elasticity|High Elasticity": [
+    "ATTR_441",
+    "perf_236",
+    "perf_99",
+    "perf_439",
+    "perf_396",
+    "perf_173",
+    "perf_289",
+    "perf_321",
+    "perf_354",
+    "perf_168"
+  ],
+  "Material Properties|Flexibility|Heating Limitations": [
+    "perf_342"
+  ],
+  "Material|Properties|Stretchiness": [
+    "ATTR_433"
+  ],
+  "Material|Quality|Grade": [
+    "ATTR_183",
+    "ATTR_182",
+    "ATTR_261",
+    "ATTR_344"
+  ],
+  "Chemical Properties:Solvent Release|Solvent Emissions": [
+    "perf_449",
+    "perf_450"
+  ],
+  "Material Properties|Flexibility|Reshapable with Heat": [
+    "perf_228"
+  ],
+  "Material Properties|Flexibility|Easily Folding": [
+    "perf_119"
+  ],
+  "Material Properties|Malleability": [
+    "perf_388"
+  ],
+  "Usability|Ease of Cutting:Easy to Cut": [
+    "perf_300",
+    "perf_484",
+    "perf_216",
+    "perf_248",
+    "perf_259",
+    "perf_489",
+    "perf_472",
+    "perf_372",
+    "perf_446",
+    "perf_383",
+    "perf_165",
+    "perf_298"
+  ],
+  "Material Properties|Toughness": [
+    "ATTR_253",
+    "perf_162",
+    "ATTR_148",
+    "ATTR_442",
+    "perf_6"
+  ],
+  "Usability|Storage and Organization|Easy to Unravel": [
+    "perf_244"
+  ],
+  "Economic Aspects|Cost Effectiveness:Economical for Size and Length": [
+    "perf_231"
+  ],
+  "Sensory Characteristics|Odor|Neutral": [
+    "ATTR_485",
+    "ATTR_232",
+    "ATTR_271",
+    "ATTR_245"
+  ],
+  "Durability|Structural Integrity|Cracks Over Time": [
+    "perf_199"
+  ],
+  "Durability|Failure|Quick Failure": [
+    "perf_48",
+    "perf_280",
+    "perf_290",
+    "perf_357",
+    "perf_399",
+    "perf_426"
+  ],
+  "Packaging|Presentation|Zip Tied": [
+    "ATTR_71"
+  ],
+  "Color|White": [
+    "ATTR_109",
+    "ATTR_447",
+    "ATTR_94",
+    "ATTR_17",
+    "ATTR_217",
+    "ATTR_350",
+    "ATTR_205"
+  ],
+  "Quantity|Small Amount": [
+    "ATTR_194"
+  ],
+  "Color|Blue Tinted": [
+    "ATTR_482"
+  ],
+  "Performance|Sealing Performance|Poor Sealing": [
+    "perf_1",
+    "perf_324",
+    "perf_510",
+    "perf_413"
+  ],
+  "Resistance|Dirt Resistance:Collects Dirt": [
+    "perf_463"
+  ],
+  "Surface Condition|Finish:Quality": [
+    "ATTR_222"
+  ],
+  "Durability|Longevity|Possibly Less Durable Than Original": [
+    "perf_346"
+  ],
+  "Safety|Food Safety:Food Grade": [
+    "ATTR_115",
+    "ATTR_239",
+    "perf_454",
+    "ATTR_414",
+    "perf_213"
+  ],
+  "Surface Condition|Appearance|No Branding": [
+    "ATTR_288"
+  ],
+  "Performance|Pressure Handling|Swells Under Pressure": [
+    "perf_242",
+    "perf_142",
+    "perf_429"
+  ],
+  "Sensory Properties|Color|No Yellowing": [
+    "perf_141"
+  ],
+  "Usability|Shape Management|Permanently Crimped": [
+    "perf_50"
+  ],
+  "Protection|Sharp Edge Coverage": [
+    "perf_377"
+  ],
+  "Usability|Storage and Organization|Easy to Coil": [
+    "perf_245"
+  ],
+  "Sensory Properties|Odor|Odorless": [
+    "ATTR_237",
+    "perf_437"
+  ],
+  "Material|Composition|Purity": [
+    "ATTR_241"
+  ],
+  "Value:Price|General": [
+    "ATTR_153",
+    "ATTR_154"
+  ],
+  "Sensory Properties|Odor|Does Not Harbor Odors": [
+    "perf_255"
+  ],
+  "Sensory Properties|Sound:Pops During Air Flow": [
+    "perf_422"
+  ],
+  "Visual Characteristics:Appearance": [
+    "ATTR_397",
+    "ATTR_298",
+    "ATTR_69"
+  ],
+  "Dimensions|Diameter|Specific Size": [
+    "ATTR_176",
+    "ATTR_210"
+  ],
+  "Packaging|Presentation|Not Folded": [
+    "ATTR_218",
+    "ATTR_219"
+  ],
+  "Flow Characteristics|Flow Visibility": [
+    "perf_84",
+    "perf_140",
+    "perf_391",
+    "perf_87",
+    "perf_88",
+    "perf_103"
+  ],
+  "Connection and Compatibility|Ease of Installation|Difficult to Install": [
+    "perf_347",
+    "perf_382",
+    "perf_481"
+  ],
+  "Material Properties|Flexibility|Easy to Bend": [
+    "perf_189",
+    "perf_288",
+    "perf_282",
+    "perf_250"
+  ],
+  "Color|Green": [
+    "ATTR_98",
+    "ATTR_53"
+  ],
+  "Material|Composition|Type": [
+    "ATTR_73",
+    "ATTR_446"
+  ],
+  "Sensory Characteristics|Taste|Chemical": [
+    "ATTR_247"
+  ],
+  "Performance|Suction Performance:Suction Capability": [
+    "perf_412"
+  ],
+  "Dimensions|Length|Long": [
+    "ATTR_89",
+    "ATTR_56",
+    "ATTR_172",
+    "ATTR_274",
+    "ATTR_19",
+    "ATTR_36"
+  ],
+  "Packaging|Method|Dispenser Box": [
+    "ATTR_30",
+    "ATTR_211",
+    "ATTR_340"
+  ],
+  "Sensory Properties|Color|Limited Color Options": [
+    "perf_58"
+  ],
+  "Flow Characteristics|Water Delivery Capability": [
+    "perf_139"
+  ],
+  "Color|Purple": [
+    "ATTR_326",
+    "ATTR_396"
+  ],
+  "Durability|Build Quality|Decent Quality": [
+    "perf_157"
+  ],
+  "Dimensions|Length|Accuracy": [
+    "ATTR_68"
+  ],
+  "Durability|Structural Integrity|Breaks Easily": [
+    "perf_120",
+    "perf_194",
+    "perf_467",
+    "perf_445"
+  ],
+  "Flow Characteristics|Pressure Requirements:Requires Positive Pressure": [
+    "perf_132"
+  ],
+  "Material|Quality|Overall": [
+    "ATTR_16",
+    "ATTR_233",
+    "ATTR_238",
+    "ATTR_377",
+    "ATTR_331",
+    "ATTR_507",
+    "ATTR_24"
+  ],
+  "Suitability|Brewing Suitability:Suitable for Brewing": [
+    "perf_314"
+  ],
+  "Resistance|Wear Resistance|Low Resistance": [
+    "perf_143"
+  ],
+  "Sensory Properties|Odor|Persistent Smell": [
+    "perf_332"
+  ],
+  "Shape|Overall Form:Physical Characteristics": [
+    "ATTR_18",
+    "ATTR_62",
+    "ATTR_195",
+    "ATTR_315",
+    "ATTR_476",
+    "ATTR_60",
+    "ATTR_329",
+    "ATTR_380",
+    "ATTR_399"
+  ],
+  "Water Quality Impact|Odor Impact:Leaves Odor": [
+    "perf_334"
+  ],
+  "Material|Properties|Cleanliness": [
+    "ATTR_353",
+    "ATTR_348",
+    "ATTR_352"
+  ],
+  "Material Properties|Flexibility|Low Flexibility": [
+    "perf_66",
+    "perf_185",
+    "perf_492",
+    "ATTR_188",
+    "perf_398"
+  ],
+  "Storage|Not Long Term": [
+    "ATTR_123"
+  ],
+  "Durability|Strength|Tear Resistant": [
+    "perf_25",
+    "perf_435"
+  ],
+  "Sensory Properties|Taste|Tasteless": [
+    "perf_111",
+    "perf_428",
+    "perf_415",
+    "perf_129",
+    "perf_438"
+  ],
+  "Dimensions|Size|Small": [
+    "ATTR_333",
+    "ATTR_15",
+    "ATTR_327",
+    "ATTR_164",
+    "ATTR_235",
+    "ATTR_401",
+    "ATTR_484"
+  ],
+  "Color|Red": [
+    "ATTR_92"
+  ],
+  "Material|Properties|Clarity": [
+    "ATTR_9",
+    "ATTR_132",
+    "ATTR_240",
+    "ATTR_336"
+  ],
+  "Physical Properties|Weight": [
+    "ATTR_488",
+    "ATTR_221"
+  ],
+  "Packaging|Presentation|Not on Spool": [
+    "ATTR_390"
+  ],
+  "Safety|Flammability": [
+    "perf_263"
+  ],
+  "Material|Properties|Strength": [
+    "ATTR_393",
+    "ATTR_471",
+    "ATTR_158"
+  ],
+  "Resistance|Cutting Resistance:Resists Cutting": [
+    "perf_151"
+  ],
+  "Durability|Longevity|Vulnerable to Tension": [
+    "perf_447"
+  ],
+  "Durability|Too Fragile for Water Flossers": [
+    "perf_400"
+  ],
+  "Manufacturing:Origin": [
+    "ATTR_510"
+  ],
+  "Suitability|Application Specific Suitability|Suitable for Specific Applications": [
+    "perf_315",
+    "perf_223"
+  ],
+  "Material Properties|Flexibility|Easy to Manipulate": [
+    "perf_424",
+    "perf_410",
+    "perf_172"
+  ],
+  "Durability|Longevity|Endures Environmental Conditions": [
+    "perf_20",
+    "perf_71",
+    "perf_122",
+    "perf_304"
+  ],
+  "Quality|Overall": [
+    "ATTR_300"
+  ],
+  "Quality|Condition": [
+    "ATTR_410"
+  ],
+  "Dimensions|Diameter|Inner|Measurement": [
+    "ATTR_0",
+    "ATTR_5",
+    "ATTR_6",
+    "ATTR_38",
+    "ATTR_39",
+    "ATTR_42",
+    "ATTR_43",
+    "ATTR_47",
+    "ATTR_142",
+    "ATTR_404",
+    "ATTR_155",
+    "ATTR_165",
+    "ATTR_166",
+    "ATTR_310",
+    "ATTR_313",
+    "ATTR_174",
+    "ATTR_175",
+    "ATTR_201",
+    "ATTR_258",
+    "ATTR_265",
+    "ATTR_364",
+    "ATTR_490",
+    "ATTR_492",
+    "ATTR_496"
+  ],
+  "Usability|General Usability|Alternative Uses": [
+    "perf_358"
+  ],
+  "Sensory Properties|Appearance:Flimsy Looking": [
+    "ATTR_502",
+    "ATTR_128",
+    "ATTR_263",
+    "ATTR_382",
+    "perf_90",
+    "perf_154",
+    "perf_62",
+    "perf_53"
+  ],
+  "Color|Black": [
+    "ATTR_35",
+    "ATTR_54"
+  ],
+  "Connection and Compatibility|Compatibility|Compatible with Specific Models": [
+    "perf_482"
+  ],
+  "Material Properties|Flexibility|Moderate Flexibility": [
+    "perf_33",
+    "perf_47",
+    "perf_0"
+  ],
+  "Performance|Vacuum Performance|Not Suitable for Vacuum": [
+    "perf_253"
+  ],
+  "Performance|Pressure Handling|Handles Pressure Well": [
+    "perf_137",
+    "perf_16",
+    "perf_145",
+    "perf_301"
+  ],
+  "Material Properties|Flexibility|Easy to Route": [
+    "perf_107",
+    "perf_114"
+  ],
+  "Physical Properties|Uniformity": [
+    "ATTR_480"
+  ],
+  "Sensory Characteristics|Odor|Slight": [
+    "ATTR_270"
+  ],
+  "Performance|Pressure Handling|Collapse Under Pressure": [
+    "perf_469"
+  ],
+  "Material|Properties|Stain Resistance": [
+    "ATTR_330",
+    "ATTR_347"
+  ],
+  "Material Properties|Rigidity|Low Rigidity": [
+    "perf_124",
+    "perf_417",
+    "perf_519"
+  ],
+  "Material Properties|Insulation": [
+    "perf_427"
+  ],
+  "Material Properties|High Permeability": [
+    "perf_110"
+  ],
+  "Compatibility:Specific Equipment Fit": [
+    "ATTR_357",
+    "ATTR_358",
+    "ATTR_359",
+    "ATTR_369",
+    "ATTR_370",
+    "ATTR_373",
+    "ATTR_162",
+    "ATTR_163"
+  ],
+  "Sensory Characteristics|Odor|Strong|Toxic": [
+    "ATTR_486"
+  ],
+  "Dimensions|Wall Thickness|Specific Measurement": [
+    "ATTR_106",
+    "ATTR_362",
+    "ATTR_107",
+    "ATTR_421",
+    "ATTR_337",
+    "ATTR_422",
+    "ATTR_495",
+    "ATTR_497",
+    "ATTR_498",
+    "ATTR_499"
+  ],
+  "Material Properties|Firmness|Firm": [
+    "perf_54",
+    "ATTR_435",
+    "perf_5",
+    "perf_42",
+    "perf_52"
+  ],
+  "Durability|Strength|Not Sturdy": [
+    "perf_12",
+    "perf_220",
+    "perf_497",
+    "perf_498"
+  ],
+  "Markings|Printed Lettering": [
+    "ATTR_206"
+  ],
+  "Performance|Pressure Handling|Limited Pressure Handling": [
+    "perf_211",
+    "perf_455",
+    "perf_252",
+    "perf_202",
+    "perf_386",
+    "perf_419"
+  ],
+  "Usability|Shape Management|Can be Straightened": [
+    "perf_152",
+    "perf_272"
+  ],
+  "Performance|Effective Leak Prevention": [
+    "perf_331",
+    "perf_390",
+    "perf_285"
+  ],
+  "Versatility|Multiple Uses:Various Purposes": [
+    "perf_247",
+    "perf_311"
+  ],
+  "Usability|Shape Retention|Loses Tube Shape": [
+    "ATTR_420",
+    "perf_468"
+  ],
+  "Material|Composition|Food Grade": [
+    "ATTR_387"
+  ],
+  "Packaging|Labeling|Size and Length Markings": [
+    "ATTR_317"
+  ],
+  "Safety|Tissue Compatibility:Non-irritating": [
+    "perf_262"
+  ],
+  "Material Properties|Flexibility|Flexible Fitting": [
+    "perf_344"
+  ],
+  "Performance|Overall Performance|Works Well": [
+    "perf_57",
+    "perf_206",
+    "perf_81",
+    "perf_246",
+    "perf_186",
+    "perf_144",
+    "perf_278",
+    "perf_359",
+    "perf_187",
+    "perf_214",
+    "perf_330"
+  ],
+  "Packaging|Method|Spool": [
+    "ATTR_316",
+    "ATTR_338",
+    "ATTR_460"
+  ],
+  "Material|Structure|Thickness": [
+    "ATTR_214",
+    "ATTR_426"
+  ],
+  "Safety|Abrasion Resistance": [
+    "perf_376"
+  ],
+  "Performance|Pressure Handling|General Pressure Handling": [
+    "perf_411"
+  ],
+  "Resistance|Chemical Resistance": [
+    "perf_404",
+    "perf_138",
+    "perf_436",
+    "perf_496",
+    "perf_271",
+    "perf_38",
+    "perf_39",
+    "perf_73",
+    "perf_205",
+    "perf_270",
+    "perf_402",
+    "perf_269",
+    "perf_256",
+    "perf_403",
+    "perf_501",
+    "perf_502",
+    "perf_297"
+  ],
+  "Durability|Longevity|Degrades Over Time": [
+    "perf_448"
+  ],
+  "Usability|Shape Retention|Maintains Shape": [
+    "ATTR_398",
+    "perf_108",
+    "perf_184"
+  ],
+  "Packaging|Condition|Tangled": [
+    "ATTR_391"
+  ],
+  "Material Properties|Rigidity|High Rigidity": [
+    "ATTR_100",
+    "ATTR_198",
+    "ATTR_367",
+    "ATTR_160",
+    "ATTR_457",
+    "perf_471",
+    "perf_169",
+    "ATTR_425",
+    "perf_153",
+    "perf_362",
+    "perf_43"
+  ],
+  "Packaging|Presentation|Crimped Bundled": [
+    "ATTR_423"
+  ],
+  "Physical Characteristics|Internal Structure": [
+    "ATTR_512"
+  ],
+  "Sensory Characteristics|Odor|Strong|Chemical": [
+    "ATTR_302",
+    "ATTR_124",
+    "ATTR_244",
+    "ATTR_328",
+    "ATTR_451"
+  ],
+  "Quantity|Bulk": [
+    "ATTR_31"
+  ],
+  "Suitability|Application Specific Suitability|Unsuitable for Specific Applications": [
+    "perf_19",
+    "perf_459",
+    "perf_313"
+  ],
+  "Dimensions|Wall Thickness|Thin": [
+    "ATTR_83",
+    "ATTR_167",
+    "ATTR_229",
+    "ATTR_242",
+    "ATTR_266",
+    "ATTR_23",
+    "ATTR_281",
+    "ATTR_454",
+    "ATTR_65",
+    "ATTR_324",
+    "ATTR_363",
+    "ATTR_200"
+  ],
+  "Color|Color Options": [
+    "ATTR_408",
+    "ATTR_228",
+    "ATTR_297"
+  ],
+  "Reusability|Can be Autoclaved": [
+    "perf_7"
+  ],
+  "Material|Structure|Reinforcement": [
+    "ATTR_251",
+    "ATTR_193",
+    "ATTR_178",
+    "ATTR_117"
+  ],
+  "Material Properties|Flexibility|High Flexibility": [
+    "perf_18",
+    "perf_230",
+    "perf_171",
+    "ATTR_249",
+    "ATTR_405",
+    "ATTR_138",
+    "ATTR_33",
+    "ATTR_34",
+    "ATTR_78",
+    "ATTR_99",
+    "ATTR_157",
+    "ATTR_254",
+    "perf_4",
+    "perf_32",
+    "perf_188",
+    "perf_286",
+    "perf_395",
+    "ATTR_477",
+    "ATTR_392",
+    "ATTR_437",
+    "perf_10",
+    "perf_46",
+    "perf_100",
+    "ATTR_349",
+    "perf_361",
+    "perf_11",
+    "perf_17",
+    "perf_433",
+    "perf_63",
+    "perf_75",
+    "perf_201",
+    "perf_210",
+    "perf_363"
+  ],
+  "Dimensions|Length|Short": [
+    "ATTR_168",
+    "ATTR_275",
+    "ATTR_278",
+    "ATTR_67",
+    "ATTR_276",
+    "ATTR_306"
+  ],
+  "Material|Properties|Malleability": [
+    "ATTR_436"
+  ],
+  "Surface Condition|Appearance|Clean": [
+    "ATTR_126",
+    "ATTR_478"
+  ],
+  "Durability|Failure|General Failure": [
+    "perf_254",
+    "perf_233"
+  ],
+  "Sensory Characteristics|Odor|Strong|Gasoline": [
+    "ATTR_290"
+  ],
+  "Dimensions|Diameter|Outer|Measurement": [
+    "ATTR_3",
+    "ATTR_356",
+    "ATTR_361",
+    "ATTR_489",
+    "ATTR_26",
+    "ATTR_44",
+    "ATTR_46",
+    "ATTR_48",
+    "ATTR_80",
+    "ATTR_81",
+    "ATTR_40",
+    "ATTR_41",
+    "ATTR_45",
+    "ATTR_491",
+    "ATTR_76",
+    "ATTR_113",
+    "ATTR_136",
+    "ATTR_173",
+    "ATTR_292",
+    "ATTR_105",
+    "ATTR_213",
+    "ATTR_342",
+    "ATTR_411",
+    "ATTR_412",
+    "ATTR_332",
+    "ATTR_473",
+    "ATTR_1",
+    "ATTR_2",
+    "ATTR_4",
+    "ATTR_7",
+    "ATTR_225",
+    "ATTR_389",
+    "ATTR_259",
+    "ATTR_293",
+    "ATTR_360",
+    "ATTR_449",
+    "ATTR_493",
+    "ATTR_494"
+  ],
+  "Durability|Performance": [
+    "ATTR_122"
+  ],
+  "Durability|Structural Integrity|No Holes": [
+    "perf_191"
+  ],
+  "Economic Aspects|Good Price": [
+    "perf_232",
+    "perf_318"
+  ],
+  "Performance|Pressure Handling|Collapses Under Suction": [
+    "perf_224",
+    "perf_418",
+    "perf_112",
+    "perf_243",
+    "perf_458",
+    "perf_431"
+  ],
+  "Dimensions|Diameter|Outer|Specific Fit": [
+    "ATTR_371",
+    "ATTR_374",
+    "ATTR_8"
+  ],
+  "Dimensions|Comparison": [
+    "ATTR_305"
+  ],
+  "Durability|Structural Integrity|Resistant to Damage": [
+    "perf_370",
+    "perf_406"
+  ],
+  "Durability|Strength|Resilient": [
+    "perf_36"
+  ],
+  "Material Properties|Flexibility|Temperature Resistant Flexibility": [
+    "perf_209"
+  ],
+  "Dimensions|Size|Specific": [
+    "ATTR_257",
+    "ATTR_440"
+  ],
+  "Cleaning and Maintenance|Difficult to Clean": [
+    "perf_219"
+  ],
+  "Dimensions|Wall Thickness|Thick": [
+    "ATTR_114",
+    "ATTR_143",
+    "ATTR_260",
+    "ATTR_226",
+    "ATTR_295",
+    "ATTR_320",
+    "ATTR_112",
+    "ATTR_57",
+    "ATTR_381",
+    "ATTR_419",
+    "ATTR_220",
+    "ATTR_325",
+    "ATTR_234",
+    "ATTR_103",
+    "ATTR_243",
+    "ATTR_416",
+    "ATTR_179",
+    "ATTR_159",
+    "ATTR_450",
+    "ATTR_282",
+    "ATTR_134",
+    "ATTR_32",
+    "ATTR_66",
+    "ATTR_180"
+  ],
+  "Sensory Characteristics|Odor|Strong|Unpleasant": [
+    "ATTR_466"
+  ],
+  "Material|Properties|Durability": [
+    "ATTR_319"
+  ],
+  "Color|Yellow": [
+    "ATTR_227",
+    "ATTR_95"
+  ],
+  "Economic Aspects|Good Value": [
+    "perf_317"
+  ],
+  "Dimensions|Diameter|Outer|Comparison": [
+    "ATTR_309"
+  ],
+  "Durability|Longevity|Indestructible": [
+    "perf_163"
+  ],
+  "Quantity|Sufficient": [
+    "ATTR_341"
+  ],
+  "Packaging|Method|Plastic Bag": [
+    "ATTR_280",
+    "ATTR_339"
+  ],
+  "Durability|Connection Stability:Holds Well": [
+    "perf_115"
+  ],
+  "Material Properties|Temperature Resistance|Low Temperature Resistance": [
+    "perf_355",
+    "perf_464"
+  ],
+  "Material Properties|Temperature Resistance|Cool Weather Flexibility": [
+    "perf_373"
+  ],
+  "Material|Composition|Rubber-like": [
+    "ATTR_199",
+    "ATTR_139",
+    "ATTR_386",
+    "ATTR_463"
+  ],
+  "Performance|Algae Prevention:Prevents Algae Growth": [
+    "perf_30"
+  ],
+  "Transparency|Opaque": [
+    "ATTR_25",
+    "ATTR_204",
+    "ATTR_346"
+  ],
+  "Accessories|Clamps": [
+    "ATTR_299"
+  ],
+  "Material Properties|Temperature Resistance|High Temperature Resistance": [
+    "ATTR_472",
+    "ATTR_345",
+    "perf_96",
+    "perf_116",
+    "perf_500",
+    "perf_266",
+    "perf_37",
+    "perf_267",
+    "perf_356",
+    "perf_268",
+    "perf_105",
+    "perf_295",
+    "perf_159",
+    "perf_177",
+    "perf_257",
+    "perf_408",
+    "perf_294",
+    "perf_104",
+    "perf_303",
+    "perf_44",
+    "perf_196",
+    "perf_511",
+    "perf_465",
+    "perf_452",
+    "perf_302",
+    "perf_460",
+    "perf_475",
+    "perf_86",
+    "perf_474",
+    "perf_240",
+    "perf_195",
+    "perf_328",
+    "perf_309",
+    "perf_217",
+    "perf_434",
+    "perf_499",
+    "use_155",
+    "use_321",
+    "use_606",
+    "use_494",
+    "use_579"
+  ],
+  "Material Properties|Composition:Contains Plasticizers": [
+    "perf_118"
+  ],
+  "Flow Characteristics|Siphoning Capability": [
+    "perf_147"
+  ],
+  "Performance|Sealing Performance|Good Sealing": [
+    "perf_109",
+    "perf_69",
+    "perf_178",
+    "perf_68",
+    "perf_401",
+    "perf_21",
+    "perf_70"
+  ],
+  "Material Properties|Flexibility|Collapses Easily": [
+    "perf_65",
+    "perf_76",
+    "perf_135",
+    "perf_251",
+    "perf_513",
+    "perf_366",
+    "perf_287",
+    "perf_131",
+    "perf_420",
+    "perf_457",
+    "perf_146"
+  ],
+  "Material|Composition|Silicone": [
+    "ATTR_10",
+    "ATTR_144",
+    "ATTR_28",
+    "ATTR_90",
+    "ATTR_285",
+    "ATTR_49",
+    "ATTR_72",
+    "ATTR_224",
+    "ATTR_461",
+    "ATTR_51",
+    "ATTR_286",
+    "ATTR_505"
+  ],
+  "Surface Condition|Texture:Material Properties": [
+    "ATTR_118",
+    "ATTR_318",
+    "ATTR_116",
+    "ATTR_429",
+    "ATTR_430",
+    "ATTR_456",
+    "ATTR_21",
+    "ATTR_22",
+    "ATTR_479",
+    "ATTR_434"
+  ],
+  "Performance|Vibration Performance|Noticeable Vibration": [
+    "perf_83"
+  ],
+  "Durability|Build Quality|Poor Quality": [
+    "perf_323"
+  ],
+  "Usability|Shape Management|Removable Kinks": [
+    "perf_239"
+  ],
+  "Workability:Easy to Process|Easy to Process": [
+    "perf_117"
+  ],
+  "Usability|General Usability|Easy to Work With": [
+    "perf_516",
+    "perf_3",
+    "perf_443",
+    "perf_31",
+    "perf_158",
+    "perf_204",
+    "perf_193"
+  ],
+  "Surface Condition|Appearance|Industrial": [
+    "ATTR_501"
+  ],
+  "Transparency|Clear": [
+    "ATTR_50",
+    "ATTR_91",
+    "ATTR_470",
+    "ATTR_236",
+    "ATTR_145",
+    "ATTR_29",
+    "ATTR_177",
+    "ATTR_108",
+    "ATTR_52",
+    "ATTR_351",
+    "ATTR_481",
+    "ATTR_444"
+  ],
+  "Material Properties|Rigidity|Moderate Rigidity": [
+    "perf_293"
+  ],
+  "Material Properties|Elasticity|Low Elasticity": [
+    "ATTR_131",
+    "perf_520",
+    "ATTR_431",
+    "ATTR_432",
+    "perf_423"
+  ],
+  "Value:Price|Expensive": [
+    "ATTR_308"
+  ],
+  "Surface Properties|Effective Gripping": [
+    "perf_444",
+    "perf_375",
+    "perf_485"
+  ],
+  "Usability|Dimensional Stability:Maintains Diameter": [
+    "perf_2"
+  ],
+  "Material Properties|Flexibility|Requires Careful Handling": [
+    "perf_45",
+    "perf_200",
+    "perf_515",
+    "perf_340",
+    "perf_341",
+    "perf_60"
+  ],
+  "Material Properties|Firmness|Soft": [
+    "ATTR_192",
+    "ATTR_111",
+    "ATTR_439",
+    "ATTR_197",
+    "ATTR_255",
+    "ATTR_417",
+    "ATTR_284",
+    "perf_34",
+    "perf_493",
+    "ATTR_146",
+    "ATTR_171",
+    "perf_160",
+    "ATTR_147",
+    "perf_360",
+    "perf_319",
+    "perf_320"
+  ],
+  "Usability|Shape Management|Difficult to Straighten": [
+    "perf_8",
+    "perf_307"
+  ],
+  "Packaging|Presentation|Poorly Packaged": [
+    "ATTR_272"
+  ],
+  "Surface Condition|Coating:Slimy": [
+    "ATTR_289"
+  ],
+  "Safety|Puncture Resistance": [
+    "perf_275"
+  ],
+  "Performance|Pressure Handling|Resists Ballooning": [
+    "perf_368"
+  ],
+  "Packaging|Method|Well Packed": [
+    "ATTR_20",
+    "ATTR_184",
+    "ATTR_301",
+    "ATTR_185"
+  ],
+  "Dimensions|Accuracy|Accurate": [
+    "ATTR_120",
+    "ATTR_395",
+    "ATTR_127",
+    "ATTR_312",
+    "ATTR_321",
+    "ATTR_13",
+    "ATTR_294",
+    "ATTR_384",
+    "ATTR_125",
+    "ATTR_181",
+    "ATTR_248",
+    "ATTR_503",
+    "ATTR_189",
+    "ATTR_394",
+    "perf_41"
+  ],
+  "Connection and Compatibility|Ease of Installation|Easy to Install": [
+    "perf_258",
+    "perf_277",
+    "perf_273",
+    "perf_125",
+    "perf_113",
+    "perf_260",
+    "perf_461",
+    "perf_479"
+  ],
+  "Material Properties|Flexibility|Springs Back": [
+    "perf_174",
+    "perf_180",
+    "perf_64"
+  ],
+  "Durability|Structural Integrity|No Leaks": [
+    "perf_488"
+  ],
+  "Surface Properties|Adhesion|Sticks Well": [
+    "perf_102",
+    "perf_371"
+  ]
+}
