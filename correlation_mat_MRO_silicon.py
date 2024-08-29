@@ -314,12 +314,17 @@ def display_clicked_reviews(click_data, plot_type, x_value, y_value):
         point = click_data['points'][0]
         i, j = y_text.index(point['y']), x_text.index(point['x'])
         reviews = review_matrix[i][j]
+        selected_x = x_text[j]
+        selected_y = y_text[i]
+        content = [
+            dcc.Markdown(f"Selected: X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True)
+        ]
         if reviews:
-            return [html.Div([
-                dcc.Markdown(f"Review {idx + 1}: {review}", dangerously_allow_html=True)
-            ]) for idx, review in enumerate(set(reviews))]
+            reviews_text = "<br>".join([f"Review {idx + 1}: {review}" for idx, review in enumerate(set(reviews))])
+            content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
         else:
-            return [html.P("No reviews available for this selection.")]
+            content.append(html.P("No reviews available for this selection."))
+        return content
     return []
 
 if __name__ == '__main__':
