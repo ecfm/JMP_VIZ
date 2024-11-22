@@ -8,11 +8,69 @@ import plotly.colors
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_silicon_tube")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_cables")
+
+# Language translations
+TRANSLATIONS = {
+    'en': {
+        'login': 'Login',
+        'username': 'Username',
+        'password': 'Password',
+        'enter_username': 'Enter username',
+        'enter_password': 'Enter password',
+        'invalid_credentials': 'Invalid credentials',
+        'logout': 'Logout',
+        'plot_type': 'Plot Type:',
+        'use_vs_attr_perf': 'Use v.s. Attribute + Performance',
+        'perf_vs_attr': 'Performance v.s. Attribute',
+        'y_axis_category': 'Y-axis Category:',
+        'x_axis_category': 'X-axis Category:',
+        'num_y_features': 'Number of Y Features:',
+        'num_x_features': 'Number of X Features:',
+        'all_level_0': 'All [Level 0]',
+        'reviews': 'Reviews',
+        'no_reviews': 'No reviews available for this selection.',
+        'selected': 'Selected:',
+        'review': 'Review',
+        'satisfaction_level': 'Satisfaction Level',
+        'unsatisfied': 'Unsatisfied',
+        'neutral': 'Neutral',
+        'satisfied': 'Satisfied',
+        'use_attr_perf_title': 'Usage v.s. Product Performance and Attributes',
+        'perf_attr_title': 'Performance v.s. Attributes',
+    },
+    'zh': {
+        'login': '登录',
+        'username': '用户名',
+        'password': '密码',
+        'enter_username': '请输入用户名',
+        'enter_password': '请输入密码',
+        'invalid_credentials': '用户名或密码错误',
+        'logout': '退出登录',
+        'plot_type': '图表类型：',
+        'use_vs_attr_perf': '用途 vs. 属性 + 性能',
+        'perf_vs_attr': '性能 vs. 属性',
+        'y_axis_category': 'Y轴类别：',
+        'x_axis_category': 'X轴类别：',
+        'num_y_features': 'Y特征数量：',
+        'num_x_features': 'X特征数量：',
+        'all_level_0': '全部 [层级 0]',
+        'reviews': '评论',
+        'no_reviews': '该选择没有可用的评论。',
+        'selected': '已选择：',
+        'review': '评论',
+        'satisfaction_level': '满意度',
+        'unsatisfied': '不满意',
+        'neutral': '中性',
+        'satisfied': '满意',
+        'use_attr_perf_title': '用途 vs. 产品属性和性能',
+        'perf_attr_title': '性能 vs. 属性',
+    }
+}
 
 # Authentication configuration
 VALID_USERNAME = "xsight"
@@ -161,9 +219,11 @@ login_layout = html.Div([
 
 main_layout = html.Div([
     html.Div([
-        html.Button('Logout', id='logout-button', style={'float': 'right', 'margin': '10px'}),
         html.Div([
-            html.Label('Plot Type:'),
+        html.Button('Logout', id='logout-button', style={'float': 'right', 'margin': '10px'}),
+    ]),
+        html.Div([
+            html.Label(id='plot-type-label'),
             dcc.RadioItems(
                 id='plot-type',
                 options=[
@@ -176,38 +236,38 @@ main_layout = html.Div([
         ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),
         html.Div([
             html.Div([
-                html.Label('Y-axis Category:'),
-                dcc.Dropdown(
-                    id='y-axis-dropdown',
-                    options=[{'label': 'All [Level 0]', 'value': 'all'}],
-                    value='all',
-                    placeholder="Select a category for Y-axis"
-                ),
-                html.Label('Number of Y Features:', style={'marginTop': '10px'}),
+            html.Label(id='y-axis-label'),  # Changed to use ID
+            dcc.Dropdown(
+                id='y-axis-dropdown',
+                options=[{'label': 'All [Level 0]', 'value': 'all'}],
+                value='all',
+                placeholder="Select a category for Y-axis"
+            ),
+            html.Label(id='num-y-features-label', style={'marginTop': '10px'}),  # Changed to use ID
                 dcc.Slider(
                     id='y-features-slider',
                     min=1,
                     max=10,
-                    value=5,
+                    value=7,
                     step=1,  # Ensure integer steps
                     marks=None,
                     tooltip={"placement": "bottom", "always_visible": True}
                 ),
             ], style={'width': '48%', 'display': 'inline-block'}),
             html.Div([
-                html.Label('X-axis Category:'),
-                dcc.Dropdown(
-                    id='x-axis-dropdown',
-                    options=[{'label': 'All [Level 0]', 'value': 'all'}],
-                    value='all',
-                    placeholder="Select a category for X-axis"
-                ),
-                html.Label('Number of X Features:', style={'marginTop': '10px'}),
+            html.Label(id='x-axis-label'), 
+            dcc.Dropdown(
+                id='x-axis-dropdown',
+                options=[{'label': 'All [Level 0]', 'value': 'all'}],
+                value='all',
+                placeholder="Select a category for X-axis"
+            ),
+            html.Label(id='num-x-features-label', style={'marginTop': '10px'}),
                 dcc.Slider(
                     id='x-features-slider',
                     min=1,
                     max=10,
-                    value=5,
+                    value=7,
                     step=1,  # Ensure integer steps
                     marks=None,
                     tooltip={"placement": "bottom", "always_visible": True}
@@ -226,6 +286,18 @@ main_layout = html.Div([
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
+    # Move language selector to upper left and adjust styling
+    html.Div([
+        dcc.RadioItems(
+            id='language-selector',
+            options=[
+                {'label': 'English', 'value': 'en'},
+                {'label': '中文', 'value': 'zh'}
+            ],
+            value='zh',
+            style={'float': 'left', 'margin': '10px'}  # Changed from 'right' to 'left'
+        ),
+    ], style={'width': '100%', 'clear': 'both'}),  # Added container div with clear
     html.Div(id='page-content')
 ])
 
@@ -253,11 +325,11 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     if plot_type == 'use_attr_perf':
         x_path_to_sents_dict = get_cached_dict('use_sents', x_category)
         y_path_to_ids_dict = get_cached_dict('attr_perf_ids', y_category)
-        title = 'Silicone Tube Usage v.s. Product Performance and Attributes'
+        title_key = 'use_attr_perf_title'
     else:  # perf_attr
         x_path_to_sents_dict = get_cached_dict('perf_sents', x_category)
         y_path_to_ids_dict = get_cached_dict('attr_ids', y_category)
-        title = 'Silicone Tube Performance v.s. Attributes'
+        title_key = 'perf_attr_title'
 
     matrix, sentiment_matrix, review_matrix = create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict)
     
@@ -291,7 +363,7 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     else:
         y_text = [path[len(y_category)+1:] for path in top_y_paths]
         
-    plot_data_cache[plot_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title)
+    plot_data_cache[plot_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key) 
     return plot_data_cache[plot_key]
 
 def get_options(value, top_paths):
@@ -327,14 +399,55 @@ def login_callback(n_clicks, username, password):
         return '/', ''
     return dash.no_update, html.Div('Invalid credentials', style={'color': 'red'})
 
-# And replace the page routing callback with this:
+@app.callback(
+    [Output('plot-type-label', 'children'),
+     Output('plot-type', 'options')],
+    [Input('language-selector', 'value')]
+)  # Added missing closing parenthesis
+def update_plot_type_labels(language):
+    options = [
+        {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
+        {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
+    ]
+    return TRANSLATIONS[language]['plot_type'], options
+
 @app.callback(
     Output('page-content', 'children'),
-    [Input('url', 'pathname')]
+    [Input('url', 'pathname'),
+     Input('language-selector', 'value')]
 )
-def display_page(pathname):
+def display_page(pathname, language='en'):
     if pathname == '/login' or not current_user.is_authenticated:
-        return login_layout
+        return html.Div([
+            html.H2(TRANSLATIONS[language]['login'], style={'textAlign': 'center', 'marginTop': '50px'}),
+            html.Div([
+                html.Div([
+                    
+                    html.Label(TRANSLATIONS[language]['username']),
+                    dcc.Input(
+                        id='username-input',
+                        type='text',
+                        placeholder=TRANSLATIONS[language]['enter_username'],
+                        style={'width': '100%', 'marginBottom': '10px'}
+                    ),
+                    html.Label(TRANSLATIONS[language]['password']),
+                    dcc.Input(
+                        id='password-input',
+                        type='password',
+                        placeholder=TRANSLATIONS[language]['enter_password'],
+                        style={'width': '100%', 'marginBottom': '10px'}
+                    ),
+                    html.Button(TRANSLATIONS[language]['login'], id='login-button', n_clicks=0),
+                    html.Div(id='login-error')
+                ], style={
+                    'width': '300px',
+                    'margin': '0 auto',
+                    'padding': '20px',
+                    'border': '1px solid #ddd',
+                    'borderRadius': '5px'
+                })
+            ])
+        ])
     if pathname == '/':
         return main_layout
     return login_layout
@@ -351,6 +464,22 @@ def logout_callback(n_clicks, pathname):
         return '/login'
     return pathname
 
+# Add new callback to update the labels
+@app.callback(
+    [Output('y-axis-label', 'children'),
+     Output('x-axis-label', 'children'),
+     Output('num-y-features-label', 'children'),
+     Output('num-x-features-label', 'children')],
+    [Input('language-selector', 'value')]
+)
+def update_axis_labels(language):
+    return (
+        TRANSLATIONS[language]['y_axis_category'],
+        TRANSLATIONS[language]['x_axis_category'],
+        TRANSLATIONS[language]['num_y_features'],
+        TRANSLATIONS[language]['num_x_features']
+    )
+
 @app.callback(
     [Output('x-axis-dropdown', 'options'),
      Output('y-axis-dropdown', 'options'),
@@ -363,12 +492,14 @@ def logout_callback(n_clicks, pathname):
      Input('x-axis-dropdown', 'value'),
      Input('y-axis-dropdown', 'value'),
      Input('x-features-slider', 'value'),
-     Input('y-features-slider', 'value')]
+     Input('y-features-slider', 'value'),
+     Input('language-selector', 'value')]
 )
-def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y):
+def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
+    
     # Get data for the graph
     if plot_type == 'use_attr_perf':
         x_dict = get_cached_dict('use_sents', x_value)
@@ -385,8 +516,36 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y):
     top_n_x = min(top_n_x, max_x)
     top_n_y = min(top_n_y, max_y)
     
-    matrix, sentiment_matrix, review_matrix, x_text, y_text, title = get_plot_data(
+    matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key = get_plot_data(
         plot_type, x_value, y_value, top_n_x, top_n_y
+    )
+    
+    # Calculate dynamic dimensions based on number of features
+    # Height calculation
+    base_height = 400
+    min_height = 300
+    additional_height_per_feature = 40
+    dynamic_height = max(
+        min_height,
+        base_height + max(0, len(y_text) - 5) * additional_height_per_feature
+    )
+    
+    # Width calculation
+    base_width = 600
+    min_width = 400
+    additional_width_per_feature = 100  # More space needed for X-axis labels
+    max_width = 1200  # Maximum width to prevent the plot from becoming too wide
+    
+    # Calculate width based on the length of x-axis labels and number of features
+    avg_label_length = sum(len(str(label)) for label in x_text) / len(x_text) if x_text else 0
+    width_factor = max(1, avg_label_length / 15)  # Adjust width more for longer labels
+    
+    dynamic_width = min(
+        max_width,
+        max(
+            min_width,
+            base_width + max(0, len(x_text) - 5) * additional_width_per_feature * width_factor
+        )
     )
     
     # Create the heatmap figure
@@ -411,20 +570,44 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y):
                     line_color="rgba(0,0,0,0)",
                 )
 
+    # Calculate dynamic margins based on label lengths
+    max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
+    left_margin = min(200, max(80, max_y_label_length * 7))  # Adjust left margin based on Y-axis label length
+    
     fig.update_layout(
-        title=title,
-        xaxis=dict(tickangle=45, tickmode='array', tickvals=list(range(len(x_text))), ticktext=x_text),
-        yaxis=dict(tickmode='array', tickvals=list(range(len(y_text))), ticktext=y_text),
-        width=800,
-        height=400,
+        title=TRANSLATIONS[language][title_key],
+        xaxis=dict(
+            tickangle=45,
+            tickmode='array',
+            tickvals=list(range(len(x_text))),
+            ticktext=x_text,
+        ),
+        yaxis=dict(
+            tickmode='array',
+            tickvals=list(range(len(y_text))),
+            ticktext=y_text,
+        ),
+        width=dynamic_width,
+        height=dynamic_height,
+        margin=dict(
+            l=left_margin,    # Dynamic left margin
+            r=50,            # Right margin
+            t=50,            # Top margin
+            b=100,           # Bottom margin for x-axis labels
+            autoexpand=True  # Allow margins to adjust automatically if needed
+        )
     )
 
     fig.update_layout(
         coloraxis=dict(
             colorbar=dict(
-                title="Satisfaction Level",
+                title=TRANSLATIONS[language]['satisfaction_level'],
                 tickvals=[0, 0.5, 1],
-                ticktext=["Unsatisfied", "Neutral", "Satisfied"],
+                ticktext=[
+                    TRANSLATIONS[language]['unsatisfied'],
+                    TRANSLATIONS[language]['neutral'],
+                    TRANSLATIONS[language]['satisfied']
+                ],
             ),
             colorscale=px.colors.diverging.RdBu,
         )
@@ -443,14 +626,15 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y):
 
 @app.callback(
     Output('reviews-content', 'children'),
-    [Input('correlation-matrix', 'clickData')],
+    [Input('correlation-matrix', 'clickData'),
+     Input('language-selector', 'value')],
     [State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
      State('y-axis-dropdown', 'value'),
      State('x-features-slider', 'value'),
      State('y-features-slider', 'value')]
 )
-def display_clicked_reviews(click_data, plot_type, x_value, y_value, top_n_x, top_n_y):
+def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, top_n_x, top_n_y):
     if click_data:
         matrix, sentiment_matrix, review_matrix, x_text, y_text, title = get_plot_data(
             plot_type, x_value, y_value, top_n_x, top_n_y
@@ -461,14 +645,13 @@ def display_clicked_reviews(click_data, plot_type, x_value, y_value, top_n_x, to
         selected_x = x_text[j]
         selected_y = y_text[i]
         content = [
-            dcc.Markdown(f"Selected: X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True)
+            dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True)
         ]
         if reviews:
-            # Remove the set() to show all reviews including duplicates
-            reviews_text = "<br>".join([f"Review {idx + 1}: {review}" for idx, review in enumerate(reviews)])
+            reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
             content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
         else:
-            content.append(html.P("No reviews available for this selection."))
+            content.append(html.P(TRANSLATIONS[language]['no_reviews']))
         return content
     return []
 

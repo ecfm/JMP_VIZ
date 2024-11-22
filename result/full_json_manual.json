@@ -95,55 +95,6 @@
                     3123,
                     3309
                 ]
-            },
-            "suitable_for_corporate_world": {
-                "1": [
-                    4143
-                ]
-            },
-            "business_appointments": {
-                "1": [
-                    4018
-                ]
-            },
-            "suitable_for_court": {
-                "1": [
-                    396
-                ]
-            },
-            "work": {
-                "1": [
-                    2796,
-                    4018,
-                    821,
-                    408,
-                    3996,
-                    319,
-                    2714
-                ]
-            },
-            "suitable_for_casual_work_environment": {
-                "1": [
-                    3548
-                ]
-            },
-            "not_for_business": {
-                "-1": [
-                    2783
-                ]
-            },
-            "good_for_work": {
-                "1": [
-                    2306,
-                    2269,
-                    397,
-                    2247,
-                    4004,
-                    3900,
-                    998,
-                    1607,
-                    3403
-                ]
             }
         },
         "casual": {

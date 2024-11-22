@@ -1,0 +1,1702 @@
+{
+  "连接系统 (Connection System)|端接方式 (Terminal Connection)|磁性连接 (Magnetic Connection)": [
+    "ATTR_281"
+  ],
+  "使用性能 (Usage Performance)|连接操作 (Connection Operations)|连接简易度 (Connection Ease)": [
+    "perf_585",
+    "perf_61",
+    "perf_407",
+    "perf_178",
+    "perf_421",
+    "perf_817",
+    "perf_517",
+    "perf_589",
+    "perf_822",
+    "perf_95"
+  ],
+  "数据传输性能 (Data Transfer Performance)|传输速度 (Transfer Speed)|速度表现 (Speed Performance)|_": [
+    "perf_724",
+    "perf_213",
+    "perf_9",
+    "perf_649",
+    "perf_209",
+    "perf_8",
+    "perf_657",
+    "perf_224",
+    "perf_236",
+    "perf_628",
+    "perf_258",
+    "perf_342",
+    "perf_656",
+    "perf_249",
+    "perf_531",
+    "perf_259",
+    "perf_260",
+    "perf_235",
+    "perf_237",
+    "perf_251",
+    "perf_250"
+  ],
+  "可靠性 (Reliability)|耐久性 (Durability)|化学耐受性 (Chemical Resistance)": [
+    "perf_411",
+    "perf_393",
+    "perf_442",
+    "perf_598"
+  ],
+  "适配器特性 (Adapter Features)|功能设计 (Functional Design)|插座间距 (Socket Spacing)": [
+    "ATTR_661",
+    "ATTR_684"
+  ],
+  "数据传输性能 (Data Transfer Performance)|协议支持 (Protocol Support)|数据协议兼容性 (Data Protocol Compatibility)": [
+    "perf_252",
+    "perf_559",
+    "perf_569",
+    "perf_672",
+    "perf_234",
+    "perf_513",
+    "perf_668",
+    "perf_75"
+  ],
+  "使用性能 (Usage Performance)|线缆管理 (Cable Management)|存储方便性 (Storage Convenience)": [
+    "perf_632",
+    "perf_211"
+  ],
+  "线缆结构 (Cable Construction)|导线特性 (Wire Characteristics)|屏蔽层 (Shielding)": [
+    "ATTR_26"
+  ],
+  "连接器 (Connector)|连接质量 (Connection Quality)|配合度 (Fitting)": [
+    "ATTR_154",
+    "ATTR_745",
+    "ATTR_585",
+    "ATTR_534",
+    "ATTR_153",
+    "ATTR_799",
+    "ATTR_178",
+    "ATTR_562",
+    "ATTR_306",
+    "ATTR_499",
+    "ATTR_43"
+  ],
+  "配件与包装 (Accessories & Packaging)|随附配件 (Included Accessories)|电源组件 (Power Components)": [
+    "ATTR_428",
+    "ATTR_283",
+    "ATTR_282",
+    "ATTR_429"
+  ],
+  "材料品质 (Material Quality)|耐用性 (Durability)|结构强度 (Structural Strength)": [
+    "ATTR_609",
+    "ATTR_437",
+    "ATTR_516",
+    "ATTR_427",
+    "ATTR_149"
+  ],
+  "线材特征 (Cable Properties)|物理特性 (Physical Traits)|重量 (Weight)|Very heavy": [
+    "ATTR_222",
+    "ATTR_602"
+  ],
+  "线材特征 (Cable Properties)|尺寸规格 (Dimensions)|厚度 (Thickness)": [
+    "ATTR_348",
+    "ATTR_199",
+    "ATTR_359",
+    "ATTR_618",
+    "ATTR_331",
+    "ATTR_34",
+    "ATTR_701",
+    "ATTR_616",
+    "ATTR_303",
+    "ATTR_718",
+    "ATTR_156",
+    "ATTR_27",
+    "ATTR_571",
+    "ATTR_548",
+    "ATTR_605",
+    "ATTR_102",
+    "ATTR_628",
+    "ATTR_760",
+    "ATTR_277",
+    "ATTR_352",
+    "ATTR_641",
+    "ATTR_518",
+    "ATTR_70",
+    "ATTR_440",
+    "ATTR_135",
+    "ATTR_141",
+    "ATTR_148",
+    "ATTR_117",
+    "ATTR_565",
+    "ATTR_732",
+    "ATTR_779",
+    "ATTR_38",
+    "ATTR_733",
+    "ATTR_526",
+    "ATTR_597",
+    "ATTR_407"
+  ],
+  "线缆结构 (Cable Construction)|柔韧性 (Flexibility)|弯曲特性 (Bending Properties)": [
+    "ATTR_458",
+    "ATTR_36",
+    "ATTR_723",
+    "ATTR_138",
+    "ATTR_637",
+    "ATTR_64",
+    "ATTR_722",
+    "ATTR_63",
+    "ATTR_766",
+    "ATTR_369"
+  ],
+  "功能性能 (Functional Performance)|连接功能 (Connection Functions)|连接可靠性 (Connection Reliability)": [
+    "perf_679",
+    "perf_42",
+    "perf_468",
+    "perf_39",
+    "perf_512",
+    "perf_562",
+    "perf_469",
+    "perf_671"
+  ],
+  "电力传输 (Power Transmission)|电气特性 (Electrical Characteristics)|连接导电性 (Connection Conductivity)": [
+    "perf_417",
+    "perf_757",
+    "perf_450",
+    "perf_315",
+    "perf_426",
+    "perf_427"
+  ],
+  "防护性能 (Protection Performance)|结构防护 (Structural Protection)|热防护 (Thermal Protection)": [
+    "perf_844"
+  ],
+  "信号传输 (Signal Transmission)|连接稳定性 (Connection Stability)|稳定连接 (Stable Connection)": [
+    "perf_712",
+    "perf_711",
+    "perf_642",
+    "perf_721",
+    "perf_519",
+    "perf_523",
+    "perf_109",
+    "perf_357"
+  ],
+  "耐用性 (Durability)|强度等级 (Strength Level)|耐用 (Durable)": [
+    "ATTR_115",
+    "ATTR_224",
+    "ATTR_173",
+    "ATTR_542",
+    "ATTR_823",
+    "ATTR_715",
+    "ATTR_824",
+    "ATTR_150",
+    "ATTR_598",
+    "ATTR_151",
+    "ATTR_514",
+    "ATTR_714",
+    "ATTR_144"
+  ],
+  "物理特性 (Physical Characteristics)|维护性能 (Maintenance Performance)|切割能力 (Cutting Ability)": [
+    "perf_328",
+    "perf_422",
+    "perf_435",
+    "perf_332",
+    "perf_409"
+  ],
+  "设备兼容性 (Device Compatibility)|软件兼容 (Software Compatibility)|系统支持 (System Support)": [
+    "perf_35",
+    "perf_50",
+    "perf_463",
+    "perf_472",
+    "perf_500",
+    "perf_509"
+  ],
+  "物理特性 (Physical Characteristics)|安装与配置 (Installation and Setup)|安装难度 (Installation Difficulty)": [
+    "perf_475",
+    "perf_462",
+    "perf_497",
+    "perf_594",
+    "perf_461",
+    "perf_608",
+    "perf_477",
+    "perf_478",
+    "perf_593",
+    "perf_494"
+  ],
+  "配件与包装 (Accessories & Packaging)|包装情况 (Packaging)|包装盒 (Box)|_": [
+    "ATTR_420",
+    "ATTR_765",
+    "ATTR_249",
+    "ATTR_376",
+    "ATTR_633",
+    "ATTR_632",
+    "ATTR_251",
+    "ATTR_785",
+    "ATTR_621",
+    "ATTR_165",
+    "ATTR_252",
+    "ATTR_22",
+    "ATTR_247"
+  ],
+  "线缆结构 (Cable Structure)|保护设计 (Protection Design)|编织层 (Braiding)": [
+    "ATTR_654",
+    "ATTR_300"
+  ],
+  "技术规格 (Technical Specifications)|设备兼容性 (Device Compatibility)|主板接口 (Motherboard Interface)": [
+    "ATTR_798",
+    "ATTR_790",
+    "ATTR_395",
+    "ATTR_289"
+  ],
+  "适配器特性 (Adapter Features)|功能设计 (Functional Design)|插座方向 (Socket Orientation)": [
+    "ATTR_757",
+    "ATTR_71",
+    "ATTR_72",
+    "ATTR_753"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|羊毛 (Wool)": [
+    "ATTR_774",
+    "ATTR_784",
+    "ATTR_773"
+  ],
+  "可靠性 (Reliability)|耐久性 (Durability)|物理损耗 (Physical Wear)": [
+    "perf_344",
+    "perf_707",
+    "perf_726",
+    "perf_621",
+    "perf_855",
+    "perf_717",
+    "perf_379",
+    "perf_705",
+    "perf_504",
+    "perf_772",
+    "perf_688",
+    "perf_392",
+    "perf_378",
+    "perf_725",
+    "perf_646",
+    "perf_325",
+    "perf_695"
+  ],
+  "连接性能 (Connection Performance)|设备识别 (Device Recognition)|区域兼容 (Regional Compatibility)": [
+    "perf_809"
+  ],
+  "材料 (Material)|导体材料 (Conductor Material)|铜 (Copper)": [
+    "ATTR_334",
+    "ATTR_544",
+    "ATTR_226",
+    "ATTR_327",
+    "ATTR_214",
+    "ATTR_506",
+    "ATTR_239",
+    "ATTR_345"
+  ],
+  "功能表现 (Functional Performance)|专项功能 (Specific Functionality)|机械控制 (Mechanical Control)": [
+    "perf_464"
+  ],
+  "连接器 (Connector)|物理结构 (Physical Structure)|连接机制 (Connection Mechanism)": [
+    "ATTR_825",
+    "ATTR_808",
+    "ATTR_743",
+    "ATTR_272",
+    "ATTR_295"
+  ],
+  "配件与包装 (Accessories & Packaging)|包装情况 (Packaging)|包装盒 (Box)|Well-packaged": [
+    "ATTR_46",
+    "ATTR_800"
+  ],
+  "信号传输 (Signal Transmission)|信号处理 (Signal Processing)|信号强度 (Signal Strength)": [
+    "perf_818",
+    "perf_176",
+    "perf_795",
+    "perf_545",
+    "perf_796",
+    "perf_788",
+    "perf_52",
+    "perf_189",
+    "perf_785",
+    "perf_547",
+    "perf_786"
+  ],
+  "电力传输 (Power Transmission)|充电性能 (Charging Performance)|充电兼容性 (Charging Compatibility)": [
+    "perf_245",
+    "perf_722",
+    "perf_623",
+    "perf_247",
+    "perf_612",
+    "perf_567",
+    "perf_262",
+    "perf_655",
+    "perf_244",
+    "perf_617",
+    "perf_666",
+    "perf_13",
+    "perf_350",
+    "perf_650",
+    "perf_611",
+    "perf_626",
+    "perf_804",
+    "perf_622",
+    "perf_677",
+    "perf_613",
+    "perf_73"
+  ],
+  "功能性能 (Functional Performance)|环境适应性 (Environmental Adaptability)|干扰处理 (Interference Handling)": [
+    "perf_515"
+  ],
+  "电力传输 (Power Transmission)|电力输出 (Power Output)|供电容量 (Power Capacity)": [
+    "perf_811",
+    "perf_274",
+    "perf_290",
+    "perf_91",
+    "perf_396",
+    "perf_92",
+    "perf_388",
+    "perf_763",
+    "perf_300",
+    "perf_280",
+    "perf_692",
+    "perf_574",
+    "perf_573",
+    "perf_99",
+    "perf_756",
+    "perf_761",
+    "perf_273",
+    "perf_289",
+    "perf_760"
+  ],
+  "物理特性 (Physical Characteristics)|适应性能 (Adaptability)|灵活性 (Flexibility)": [
+    "perf_277"
+  ],
+  "线缆结构 (Cable Structure)|外部组件 (External Components)|外壳 (Shell)": [
+    "ATTR_547",
+    "ATTR_670",
+    "ATTR_546"
+  ],
+  "使用性能 (Usage Performance)|识别操作 (Identification Operations)|可视性 (Visibility)": [
+    "perf_301"
+  ],
+  "适配器特性 (Adapter Features)|功能设计 (Functional Design)|转换机制 (Conversion Mechanism)": [
+    "ATTR_550",
+    "ATTR_549",
+    "ATTR_578",
+    "ATTR_537",
+    "ATTR_568",
+    "ATTR_567",
+    "ATTR_588",
+    "ATTR_497"
+  ],
+  "可靠性 (Reliability)|耐久性 (Durability)|埋设耐久性 (Burial Durability)": [
+    "perf_431",
+    "perf_398"
+  ],
+  "信号传输 (Signal Transmission)|连接稳定性 (Connection Stability)|断断续续 (Intermittent Connection)|_": [
+    "perf_595",
+    "perf_703",
+    "perf_159",
+    "perf_609",
+    "perf_579",
+    "perf_597",
+    "perf_864",
+    "perf_1",
+    "perf_229",
+    "perf_22",
+    "perf_157",
+    "perf_44",
+    "perf_5",
+    "perf_835",
+    "perf_596",
+    "perf_603"
+  ],
+  "使用性能 (Usage Performance)|识别操作 (Identification Operations)|线缆标识 (Wire Identification)": [
+    "perf_408"
+  ],
+  "线缆结构 (Cable Construction)|物理规格 (Physical Specifications)|长度 (Length)|_": [
+    "ATTR_54",
+    "ATTR_231",
+    "ATTR_789",
+    "ATTR_682",
+    "ATTR_709",
+    "ATTR_626",
+    "ATTR_284",
+    "ATTR_697",
+    "ATTR_260",
+    "ATTR_414",
+    "ATTR_699",
+    "ATTR_205",
+    "ATTR_320",
+    "ATTR_453",
+    "ATTR_772",
+    "ATTR_354",
+    "ATTR_113",
+    "ATTR_206",
+    "ATTR_161",
+    "ATTR_662",
+    "ATTR_601",
+    "ATTR_436",
+    "ATTR_452",
+    "ATTR_167",
+    "ATTR_794",
+    "ATTR_230",
+    "ATTR_180",
+    "ATTR_454",
+    "ATTR_315",
+    "ATTR_262",
+    "ATTR_294",
+    "ATTR_259",
+    "ATTR_521",
+    "ATTR_759",
+    "ATTR_639",
+    "ATTR_708",
+    "ATTR_768",
+    "ATTR_681",
+    "ATTR_445",
+    "ATTR_649",
+    "ATTR_802",
+    "ATTR_411",
+    "ATTR_383",
+    "ATTR_258",
+    "ATTR_166",
+    "ATTR_613",
+    "ATTR_676",
+    "ATTR_275",
+    "ATTR_129",
+    "ATTR_627",
+    "ATTR_131",
+    "ATTR_382",
+    "ATTR_793",
+    "ATTR_207",
+    "ATTR_796",
+    "ATTR_264",
+    "ATTR_114",
+    "ATTR_188",
+    "ATTR_285",
+    "ATTR_797",
+    "ATTR_92",
+    "ATTR_344",
+    "ATTR_698",
+    "ATTR_527",
+    "ATTR_221",
+    "ATTR_204",
+    "ATTR_119",
+    "ATTR_795",
+    "ATTR_474",
+    "ATTR_629",
+    "ATTR_392",
+    "ATTR_710",
+    "ATTR_558",
+    "ATTR_53",
+    "ATTR_625",
+    "ATTR_541",
+    "ATTR_182",
+    "ATTR_168",
+    "ATTR_184",
+    "ATTR_465",
+    "ATTR_675",
+    "ATTR_270",
+    "ATTR_203",
+    "ATTR_132"
+  ],
+  "物理性能 (Physical Performance)|温度适应性 (Temperature Adaptability)|工作温度范围 (Operating Temperature Range)": [
+    "perf_755",
+    "perf_293",
+    "perf_812",
+    "perf_778",
+    "perf_578",
+    "perf_321"
+  ],
+  "耐用性 (Durability)|强度等级 (Strength Level)|重型 (Heavy Duty)": [
+    "ATTR_87",
+    "ATTR_179",
+    "ATTR_717",
+    "ATTR_271",
+    "ATTR_299",
+    "ATTR_198"
+  ],
+  "物理特性 (Physical Characteristics)|结构设计 (Structural Design)|线材特性 (Cable Properties)": [
+    "perf_610",
+    "perf_618",
+    "perf_94",
+    "perf_587",
+    "perf_798",
+    "perf_601",
+    "perf_813"
+  ],
+  "线材特征 (Cable Properties)|尺寸规格 (Dimensions)|体积大小 (Size)": [
+    "ATTR_755",
+    "ATTR_751",
+    "ATTR_431",
+    "ATTR_5",
+    "ATTR_51",
+    "ATTR_663",
+    "ATTR_246",
+    "ATTR_42",
+    "ATTR_1",
+    "ATTR_569",
+    "ATTR_490",
+    "ATTR_422",
+    "ATTR_255"
+  ],
+  "线材特征 (Cable Properties)|结构 (Construction)|整体构造 (Build Structure)": [
+    "ATTR_690",
+    "ATTR_655",
+    "ATTR_763",
+    "ATTR_656",
+    "ATTR_463",
+    "ATTR_658",
+    "ATTR_771",
+    "ATTR_17",
+    "ATTR_464"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|低温应变性能 (Cold Temperature Response)": [
+    "perf_759",
+    "perf_693",
+    "perf_299",
+    "perf_777",
+    "perf_758"
+  ],
+  "线材特征 (Cable Properties)|外观 (Appearance)|表面质地 (Surface Texture)": [
+    "ATTR_752",
+    "ATTR_509",
+    "ATTR_778",
+    "ATTR_777"
+  ],
+  "防护性能 (Protection Performance)|环境防护 (Environmental Protection)|防水性能 (Water Resistance)": [
+    "perf_765",
+    "perf_286",
+    "perf_287",
+    "perf_410",
+    "perf_776",
+    "perf_400",
+    "perf_304",
+    "perf_766",
+    "perf_430"
+  ],
+  "视频表现 (Video Performance)|响应性能 (Response Performance)|延迟表现 (Latency)": [
+    "perf_525"
+  ],
+  "物理性能 (Physical Performance)|温度适应性 (Temperature Adaptability)|耐热性能 (Heat Tolerance)": [
+    "perf_331",
+    "perf_81",
+    "perf_690",
+    "perf_77",
+    "perf_444",
+    "perf_330",
+    "perf_80",
+    "perf_630",
+    "perf_689",
+    "perf_846",
+    "perf_313"
+  ],
+  "视频表现 (Video Performance)|显示效果 (Display Output)|色彩准确度 (Color Accuracy)": [
+    "perf_154"
+  ],
+  "线材特征 (Cable Properties)|外观 (Appearance)|颜色 (Color)": [
+    "ATTR_711",
+    "ATTR_228",
+    "ATTR_59",
+    "ATTR_782",
+    "ATTR_761",
+    "ATTR_769",
+    "ATTR_619",
+    "ATTR_787",
+    "ATTR_573",
+    "ATTR_700",
+    "ATTR_496",
+    "ATTR_775",
+    "ATTR_304",
+    "ATTR_786",
+    "ATTR_174",
+    "ATTR_780",
+    "ATTR_528",
+    "ATTR_291",
+    "ATTR_781",
+    "ATTR_650",
+    "ATTR_712",
+    "ATTR_557",
+    "ATTR_421",
+    "ATTR_630",
+    "ATTR_229",
+    "ATTR_4",
+    "ATTR_591",
+    "ATTR_68"
+  ],
+  "结构 (Construction)|保护结构 (Protection)|保护元件 (Protective Elements)": [
+    "ATTR_234",
+    "ATTR_213"
+  ],
+  "功能性能 (Functional Performance)|连接功能 (Connection Functions)|响应性能 (Responsiveness)": [
+    "perf_862"
+  ],
+  "可靠性 (Reliability)|使用寿命 (Service Life)|预期使用寿命 (Expected Lifespan)": [
+    "perf_97",
+    "perf_347",
+    "perf_371",
+    "perf_387",
+    "perf_783",
+    "perf_348",
+    "perf_110",
+    "perf_126",
+    "perf_267",
+    "perf_565",
+    "perf_333",
+    "perf_129",
+    "perf_397"
+  ],
+  "防护性能 (Protection Performance)|环境防护 (Environmental Protection)|全天候防护 (All-weather Protection)": [
+    "perf_775",
+    "perf_298",
+    "perf_413",
+    "perf_432",
+    "perf_272",
+    "perf_773",
+    "perf_575",
+    "perf_390",
+    "perf_399",
+    "perf_682",
+    "perf_412",
+    "perf_443"
+  ],
+  "电力传输 (Power Transmission)|电力输出 (Power Output)|供电质量 (Power Delivery Quality)": [
+    "perf_803",
+    "perf_746",
+    "perf_354",
+    "perf_359",
+    "perf_374",
+    "perf_373",
+    "perf_375",
+    "perf_281",
+    "perf_383",
+    "perf_308",
+    "perf_369",
+    "perf_240",
+    "perf_356",
+    "perf_733",
+    "perf_748",
+    "perf_360",
+    "perf_361",
+    "perf_362",
+    "perf_701",
+    "perf_358",
+    "perf_246"
+  ],
+  "功能性能 (Functional Performance)|保护功能 (Protection Functions)|数据安全 (Data Security)": [
+    "perf_807"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|塑料 (Plastic)": [
+    "ATTR_47",
+    "ATTR_190",
+    "ATTR_145",
+    "ATTR_730"
+  ],
+  "使用性能 (Usage Performance)|连接操作 (Connection Operations)|接线操作 (Wire Operations)": [
+    "perf_441",
+    "perf_424",
+    "perf_440",
+    "perf_395",
+    "perf_319",
+    "perf_318",
+    "perf_323",
+    "perf_448",
+    "perf_419",
+    "perf_322",
+    "perf_317",
+    "perf_420"
+  ],
+  "功能性能 (Functional Performance)|保护功能 (Protection Functions)|安全保护 (Safety Protection)": [
+    "perf_810",
+    "perf_801",
+    "perf_845",
+    "perf_310",
+    "perf_320",
+    "perf_340",
+    "perf_741",
+    "perf_749",
+    "perf_276"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|聚氯乙烯 (PVC)": [
+    "ATTR_183"
+  ],
+  "线材特征 (Cable Properties)|外观 (Appearance)|外观状况 (Visual Condition)": [
+    "ATTR_33",
+    "ATTR_660",
+    "ATTR_554",
+    "ATTR_438",
+    "ATTR_108",
+    "ATTR_553",
+    "ATTR_94",
+    "ATTR_475",
+    "ATTR_725",
+    "ATTR_35",
+    "ATTR_473",
+    "ATTR_533",
+    "ATTR_693",
+    "ATTR_0",
+    "ATTR_410",
+    "ATTR_290",
+    "ATTR_48",
+    "ATTR_620",
+    "ATTR_659",
+    "ATTR_776",
+    "ATTR_409"
+  ],
+  "物理特性 (Physical Characteristics)|结构设计 (Structural Design)|布局设计 (Layout Design)": [
+    "perf_750",
+    "perf_805"
+  ],
+  "物理特性 (Physical Characteristics)|适应性能 (Adaptability)|配置选项 (Configuration Options)": [
+    "perf_659",
+    "perf_802",
+    "perf_294"
+  ],
+  "外观标识 (Visual Identification)|标签系统 (Labeling System)|识别标记 (Identification Marks)": [
+    "ATTR_250",
+    "ATTR_333",
+    "ATTR_405",
+    "ATTR_736",
+    "ATTR_30",
+    "ATTR_419",
+    "ATTR_418"
+  ],
+  "适配器特性 (Adapter Features)|数量规格 (Quantity Specifications)|插座数量 (Socket Count)": [
+    "ATTR_683",
+    "ATTR_756",
+    "ATTR_666",
+    "ATTR_678",
+    "ATTR_667",
+    "ATTR_694"
+  ],
+  "可靠性 (Reliability)|使用寿命 (Service Life)|使用可靠性 (Usage Reliability)": [
+    "perf_268",
+    "perf_502",
+    "perf_576",
+    "perf_198",
+    "perf_197",
+    "perf_196"
+  ],
+  "结构 (Construction)|绝缘层 (Insulation)|绝缘厚度 (Insulation Thickness)|material": [
+    "ATTR_238",
+    "ATTR_356",
+    "ATTR_328",
+    "ATTR_223"
+  ],
+  "线缆结构 (Cable Structure)|外部组件 (External Components)|电源按钮 (Power Button)": [
+    "ATTR_706"
+  ],
+  "防护性能 (Protection Performance)|结构防护 (Structural Protection)|机械防护 (Mechanical Protection)": [
+    "perf_241",
+    "perf_847",
+    "perf_401",
+    "perf_180"
+  ],
+  "连接组件 (Connection Components)|接头特征 (Connector Features)|接头类型 (Connector Types)": [
+    "ATTR_130",
+    "ATTR_122",
+    "ATTR_126",
+    "ATTR_624",
+    "ATTR_120",
+    "ATTR_384",
+    "ATTR_104",
+    "ATTR_88",
+    "ATTR_85",
+    "ATTR_84",
+    "ATTR_611",
+    "ATTR_515",
+    "ATTR_413",
+    "ATTR_121",
+    "ATTR_559",
+    "ATTR_98",
+    "ATTR_416"
+  ],
+  "线材特征 (Cable Properties)|尺寸规格 (Dimensions)|长度 (Length)": [
+    "ATTR_106",
+    "ATTR_404"
+  ],
+  "线缆结构 (Cable Structure)|外部组件 (External Components)|端口 (Ports)": [
+    "ATTR_762"
+  ],
+  "信号传输 (Signal Transmission)|连接稳定性 (Connection Stability)|断断续续 (Intermittent Connection)|Poor connection": [
+    "perf_604",
+    "perf_702"
+  ],
+  "连接性能 (Connection Performance)|设备识别 (Device Recognition)|多设备支持 (Multi-Device Support)": [
+    "perf_635",
+    "perf_297",
+    "perf_46"
+  ],
+  "材料 (Material)|表面处理 (Surface Treatment)|镀层 (Plating)": [
+    "ATTR_719",
+    "ATTR_672",
+    "ATTR_21",
+    "ATTR_477",
+    "ATTR_489",
+    "ATTR_146",
+    "ATTR_575"
+  ],
+  "数据传输性能 (Data Transfer Performance)|传输速度 (Transfer Speed)|传输问题 (Transfer Issues)": [
+    "perf_225",
+    "perf_238"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|橡胶 (Rubber)": [
+    "ATTR_535",
+    "ATTR_317",
+    "ATTR_564",
+    "ATTR_504",
+    "ATTR_520",
+    "ATTR_586"
+  ],
+  "连接系统 (Connection System)|端接方式 (Terminal Connection)|安装机制 (Mounting Mechanism)": [
+    "ATTR_469",
+    "ATTR_397",
+    "ATTR_679",
+    "ATTR_487",
+    "ATTR_704",
+    "ATTR_379",
+    "ATTR_391",
+    "ATTR_483",
+    "ATTR_380",
+    "ATTR_390"
+  ],
+  "设备兼容性 (Device Compatibility)|硬件兼容 (Hardware Compatibility)|外围设备 (Peripheral Devices)": [
+    "perf_123",
+    "perf_122",
+    "perf_842",
+    "perf_833",
+    "perf_837",
+    "perf_484",
+    "perf_841",
+    "perf_832",
+    "perf_838",
+    "perf_506",
+    "perf_542",
+    "perf_543",
+    "perf_541",
+    "perf_839",
+    "perf_840",
+    "perf_473"
+  ],
+  "连接器 (Connector)|连接质量 (Connection Quality)|材料与做工 (Material & Construction)": [
+    "ATTR_152",
+    "ATTR_158",
+    "ATTR_41",
+    "ATTR_40",
+    "ATTR_100",
+    "ATTR_582",
+    "ATTR_449",
+    "ATTR_140",
+    "ATTR_99",
+    "ATTR_159",
+    "ATTR_160",
+    "ATTR_729",
+    "ATTR_648",
+    "ATTR_741",
+    "ATTR_39"
+  ],
+  "技术规格 (Technical Specifications)|设备兼容性 (Device Compatibility)|供电设备 (Power Devices)": [
+    "ATTR_501",
+    "ATTR_313"
+  ],
+  "设备兼容性 (Device Compatibility)|硬件兼容 (Hardware Compatibility)|接口适配 (Port Adaptation)": [
+    "perf_624",
+    "perf_563",
+    "perf_652",
+    "perf_72",
+    "perf_74",
+    "perf_24",
+    "perf_730",
+    "perf_536",
+    "perf_537",
+    "perf_552",
+    "perf_535",
+    "perf_729",
+    "perf_625"
+  ],
+  "线材特征 (Cable Properties)|结构 (Construction)|端部设计 (End Design)": [
+    "ATTR_461",
+    "ATTR_507",
+    "ATTR_577",
+    "ATTR_143"
+  ],
+  "电力传输 (Power Transmission)|电力输出 (Power Output)|电源指示 (Power Indication)": [
+    "perf_275",
+    "perf_769",
+    "perf_487",
+    "perf_295",
+    "perf_550"
+  ],
+  "连接器 (Connector)|接口类型 (Interface Type)|多接口设计 (Multiple Ports)": [
+    "ATTR_200",
+    "ATTR_581",
+    "ATTR_536",
+    "ATTR_580",
+    "ATTR_560",
+    "ATTR_525",
+    "ATTR_529",
+    "ATTR_530",
+    "ATTR_493",
+    "ATTR_211"
+  ],
+  "防护性能 (Protection Performance)|环境防护 (Environmental Protection)|户外适应性 (Outdoor Adaptability)": [
+    "perf_302",
+    "perf_770",
+    "perf_288",
+    "perf_764",
+    "perf_296",
+    "perf_429"
+  ],
+  "结构 (Construction)|绝缘层 (Insulation)|防水性能 (Water Resistance)": [
+    "ATTR_279"
+  ],
+  "线缆结构 (Cable Construction)|导线特性 (Wire Characteristics)|编织层 (Braiding)": [
+    "ATTR_95",
+    "ATTR_125",
+    "ATTR_142",
+    "ATTR_147",
+    "ATTR_638",
+    "ATTR_86",
+    "ATTR_293"
+  ],
+  "物理特性 (Physical Characteristics)|线材特性 (Cable Properties)|编织质地 (Braiding Quality)": [
+    "perf_827",
+    "perf_826",
+    "perf_825"
+  ],
+  "线材特征 (Cable Properties)|物理特性 (Physical Traits)|标记 (Markings)": [
+    "ATTR_351"
+  ],
+  "配件与包装 (Accessories & Packaging)|随附配件 (Included Accessories)|保护套 (Protective Cover)": [
+    "ATTR_65",
+    "ATTR_61"
+  ],
+  "功能性能 (Functional Performance)|保护功能 (Protection Functions)|防水性能 (Water Protection)": [
+    "perf_282"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|卷绕性能 (Coiling Behavior)": [
+    "perf_685",
+    "perf_686",
+    "perf_753",
+    "perf_694"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|形状保持性 (Shape Retention)": [
+    "perf_782",
+    "perf_781",
+    "perf_793"
+  ],
+  "结构 (Construction)|保护结构 (Protection)|应变消除 (Strain Relief)": [
+    "ATTR_29",
+    "ATTR_127"
+  ],
+  "电力传输 (Power Transmission)|电气特性 (Electrical Characteristics)|信号干扰 (Signal Interference)": [
+    "perf_696",
+    "perf_710",
+    "perf_704",
+    "perf_713",
+    "perf_418"
+  ],
+  "物理特性 (Physical Characteristics)|维护性能 (Maintenance Performance)|维护便利性 (Maintenance Convenience)": [
+    "perf_824",
+    "perf_210"
+  ],
+  "音频表现 (Audio Performance)|声音品质 (Sound Quality)|声音清晰度 (Sound Clarity)": [
+    "perf_169",
+    "perf_163",
+    "perf_522",
+    "perf_56",
+    "perf_819",
+    "perf_544",
+    "perf_184",
+    "perf_66",
+    "perf_600",
+    "perf_530",
+    "perf_188",
+    "perf_57",
+    "perf_834",
+    "perf_524",
+    "perf_175",
+    "perf_67"
+  ],
+  "材料 (Material)|表面处理 (Surface Treatment)|外层护套 (Jacketing)": [
+    "ATTR_366",
+    "ATTR_355",
+    "ATTR_347"
+  ],
+  "适配器特性 (Adapter Features)|功能设计 (Functional Design)|分线设计 (Splitter Design)": [
+    "ATTR_430",
+    "ATTR_169",
+    "ATTR_192",
+    "ATTR_584",
+    "ATTR_185"
+  ],
+  "线缆结构 (Cable Construction)|物理规格 (Physical Specifications)|长度 (Length)|Long cable": [
+    "ATTR_263",
+    "ATTR_89"
+  ],
+  "功能表现 (Functional Performance)|初始功能 (Initial Functionality)|启动状态 (Startup State)": [
+    "perf_540",
+    "perf_85",
+    "perf_533",
+    "perf_680",
+    "perf_527",
+    "perf_202",
+    "perf_38",
+    "perf_155",
+    "perf_23",
+    "perf_382",
+    "perf_203",
+    "perf_380",
+    "perf_6"
+  ],
+  "配件与包装 (Accessories & Packaging)|随附配件 (Included Accessories)|存储袋 (Storage Pouch)": [
+    "ATTR_574",
+    "ATTR_511",
+    "ATTR_523",
+    "ATTR_563",
+    "ATTR_494",
+    "ATTR_531",
+    "ATTR_570",
+    "ATTR_556"
+  ],
+  "线材特征 (Cable Properties)|物理特性 (Physical Traits)|重量 (Weight)|_": [
+    "ATTR_137",
+    "ATTR_69",
+    "ATTR_412",
+    "ATTR_488",
+    "ATTR_707",
+    "ATTR_737",
+    "ATTR_640",
+    "ATTR_480",
+    "ATTR_455",
+    "ATTR_171",
+    "ATTR_572",
+    "ATTR_191"
+  ],
+  "视频表现 (Video Performance)|显示效果 (Display Output)|刷新率 (Refresh Rate)": [
+    "perf_105",
+    "perf_124",
+    "perf_104",
+    "perf_125",
+    "perf_138",
+    "perf_141",
+    "perf_146",
+    "perf_230",
+    "perf_149",
+    "perf_139",
+    "perf_137",
+    "perf_158",
+    "perf_140",
+    "perf_142"
+  ],
+  "可靠性 (Reliability)|使用寿命 (Service Life)|过早失效 (Premature Failure)": [
+    "perf_352",
+    "perf_242",
+    "perf_82",
+    "perf_182",
+    "perf_792",
+    "perf_453",
+    "perf_735",
+    "perf_784"
+  ],
+  "连接性能 (Connection Performance)|连接标准支持 (Connection Standard Support)|接口协议 (Interface Protocols)": [
+    "perf_619",
+    "perf_231",
+    "perf_265",
+    "perf_264",
+    "perf_220",
+    "perf_219",
+    "perf_376",
+    "perf_221",
+    "perf_218",
+    "perf_526",
+    "perf_256"
+  ],
+  "技术规格 (Technical Specifications)|认证与标识 (Certification & Labeling)|技术标识 (Technical Labeling)": [
+    "ATTR_365"
+  ],
+  "线材特征 (Cable Properties)|尺寸规格 (Dimensions)|接触面积 (Contact Surface)": [
+    "ATTR_481"
+  ],
+  "配件与包装 (Accessories & Packaging)|包装情况 (Packaging)|配件完整性 (Component Completeness)": [
+    "ATTR_705",
+    "ATTR_623",
+    "ATTR_398",
+    "ATTR_387",
+    "ATTR_396",
+    "ATTR_273",
+    "ATTR_233",
+    "ATTR_232",
+    "ATTR_622",
+    "ATTR_806",
+    "ATTR_266",
+    "ATTR_389",
+    "ATTR_386",
+    "ATTR_466"
+  ],
+  "技术规格 (Technical Specifications)|设备兼容性 (Device Compatibility)|数据设备 (Data Devices)": [
+    "ATTR_434",
+    "ATTR_432",
+    "ATTR_268",
+    "ATTR_502",
+    "ATTR_280",
+    "ATTR_498",
+    "ATTR_433"
+  ],
+  "技术规格 (Technical Specifications)|设备兼容性 (Device Compatibility)|音频设备 (Audio Devices)": [
+    "ATTR_500"
+  ],
+  "线缆结构 (Cable Structure)|保护设计 (Protection Design)|插头保护 (Plug Protection)": [
+    "ATTR_225",
+    "ATTR_193",
+    "ATTR_163",
+    "ATTR_218",
+    "ATTR_67",
+    "ATTR_202",
+    "ATTR_187"
+  ],
+  "连接器 (Connector)|物理结构 (Physical Structure)|接口配置 (Port Configuration)": [
+    "ATTR_220",
+    "ATTR_288",
+    "ATTR_677",
+    "ATTR_702",
+    "ATTR_364",
+    "ATTR_55",
+    "ATTR_56",
+    "ATTR_363",
+    "ATTR_685",
+    "ATTR_287"
+  ],
+  "材料品质 (Material Quality)|耐用性 (Durability)|防水性能 (Water Resistance)": [
+    "ATTR_740"
+  ],
+  "音频表现 (Audio Performance)|声音品质 (Sound Quality)|声音特性 (Sound Characteristics)": [
+    "perf_820",
+    "perf_165",
+    "perf_546",
+    "perf_174",
+    "perf_185",
+    "perf_592",
+    "perf_68",
+    "perf_599",
+    "perf_164"
+  ],
+  "适配器特性 (Adapter Features)|数量规格 (Quantity Specifications)|适配器数量 (Adapter Count)|Multiple adapters in a pack": [
+    "ATTR_50",
+    "ATTR_23"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|拉伸特性 (Stretch Characteristics)": [
+    "perf_836"
+  ],
+  "数据传输性能 (Data Transfer Performance)|传输速度 (Transfer Speed)|速度表现 (Speed Performance)|High-speed data transfer": [
+    "perf_723",
+    "perf_212",
+    "perf_222"
+  ],
+  "功能性能 (Functional Performance)|环境适应性 (Environmental Adaptability)|地下使用 (Underground Usage)": [
+    "perf_449"
+  ],
+  "防护性能 (Protection Performance)|结构防护 (Structural Protection)|密封性能 (Sealing Performance)": [
+    "perf_848"
+  ],
+  "功能表现 (Functional Performance)|专项功能 (Specific Functionality)|测量控制 (Measurement Control)": [
+    "perf_489",
+    "perf_458",
+    "perf_491",
+    "perf_503",
+    "perf_466",
+    "perf_507",
+    "perf_467",
+    "perf_483",
+    "perf_490",
+    "perf_481"
+  ],
+  "连接器 (Connector)|物理结构 (Physical Structure)|应变消除 (Strain Relief)": [
+    "ATTR_647"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|常温弯曲性能 (Normal Temperature Bending)|_": [
+    "perf_195",
+    "perf_384",
+    "perf_433",
+    "perf_314",
+    "perf_255",
+    "perf_394",
+    "perf_377",
+    "perf_303",
+    "perf_709",
+    "perf_794",
+    "perf_292",
+    "perf_708",
+    "perf_404",
+    "perf_564",
+    "perf_183",
+    "perf_291",
+    "perf_416",
+    "perf_434",
+    "perf_372",
+    "perf_637",
+    "perf_168",
+    "perf_389"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|硅胶 (Silicone)": [
+    "ATTR_227",
+    "ATTR_503",
+    "ATTR_566",
+    "ATTR_545"
+  ],
+  "使用性能 (Usage Performance)|连接操作 (Connection Operations)|安装便利性 (Installation Convenience)": [
+    "perf_406",
+    "perf_423",
+    "perf_715",
+    "perf_719",
+    "perf_588",
+    "perf_474",
+    "perf_797",
+    "perf_436",
+    "perf_607",
+    "perf_496",
+    "perf_177",
+    "perf_316",
+    "perf_437"
+  ],
+  "连接器 (Connector)|接口类型 (Interface Type)|标准接口 (Standard Ports)": [
+    "ATTR_77",
+    "ATTR_415",
+    "ATTR_52",
+    "ATTR_76",
+    "ATTR_770",
+    "ATTR_643",
+    "ATTR_10",
+    "ATTR_9",
+    "ATTR_8",
+    "ATTR_75",
+    "ATTR_441"
+  ],
+  "线缆结构 (Cable Structure)|保护设计 (Protection Design)|热缩套 (Heat Shrink)": [
+    "ATTR_746"
+  ],
+  "电力传输 (Power Transmission)|电气特性 (Electrical Characteristics)|电压电流表现 (Voltage/Current Behavior)": [
+    "perf_698",
+    "perf_691",
+    "perf_629",
+    "perf_438",
+    "perf_852",
+    "perf_25",
+    "perf_697",
+    "perf_740",
+    "perf_739"
+  ],
+  "连接性能 (Connection Performance)|物理连接 (Physical Connection)|外壳兼容性 (Case Compatibility)": [
+    "perf_675",
+    "perf_620",
+    "perf_676",
+    "perf_678"
+  ],
+  "视频表现 (Video Performance)|显示效果 (Display Output)|画面失真 (Visual Artifacts)": [
+    "perf_152",
+    "perf_134",
+    "perf_135",
+    "perf_113",
+    "perf_132",
+    "perf_133",
+    "perf_107"
+  ],
+  "设备兼容性 (Device Compatibility)|硬件兼容 (Hardware Compatibility)|计算设备 (Computing Devices)": [
+    "perf_653",
+    "perf_36",
+    "perf_667",
+    "perf_45",
+    "perf_335",
+    "perf_100",
+    "perf_337",
+    "perf_336",
+    "perf_121",
+    "perf_150",
+    "perf_366",
+    "perf_651",
+    "perf_18",
+    "perf_49",
+    "perf_334",
+    "perf_119",
+    "perf_102",
+    "perf_101",
+    "perf_120",
+    "perf_103"
+  ],
+  "连接系统 (Connection System)|端接方式 (Terminal Connection)|端子连接 (Terminal Interface)": [
+    "ATTR_485",
+    "ATTR_809",
+    "ATTR_821",
+    "ATTR_476"
+  ],
+  "线缆结构 (Cable Structure)|内部构造 (Internal Construction)|屏蔽层 (Shielding)": [
+    "ATTR_801"
+  ],
+  "材料 (Material)|导体材料 (Conductor Material)|铝 (Aluminum)": [
+    "ATTR_240",
+    "ATTR_728"
+  ],
+  "视频表现 (Video Performance)|显示效果 (Display Output)|分辨率支持 (Resolution Support)": [
+    "perf_117",
+    "perf_148",
+    "perf_147",
+    "perf_253",
+    "perf_145",
+    "perf_130",
+    "perf_216"
+  ],
+  "线缆结构 (Cable Structure)|保护设计 (Protection Design)|模塑结构 (Molding)": [
+    "ATTR_444"
+  ],
+  "线材特征 (Cable Properties)|柔韧度 (Flexibility)|软硬程度 (Pliability)": [
+    "ATTR_576",
+    "ATTR_513",
+    "ATTR_261",
+    "ATTR_101",
+    "ATTR_738",
+    "ATTR_256",
+    "ATTR_543",
+    "ATTR_124",
+    "ATTR_62",
+    "ATTR_116",
+    "ATTR_642",
+    "ATTR_37",
+    "ATTR_668",
+    "ATTR_617",
+    "ATTR_128",
+    "ATTR_456"
+  ],
+  "物理特性 (Physical Characteristics)|接口配合 (Connection Fit)|接口松紧度 (Connection Retention)": [
+    "perf_640",
+    "perf_641",
+    "perf_0",
+    "perf_98",
+    "perf_2",
+    "perf_4",
+    "perf_602",
+    "perf_201",
+    "perf_586",
+    "perf_633",
+    "perf_233",
+    "perf_849",
+    "perf_850",
+    "perf_3",
+    "perf_789"
+  ],
+  "物理特性 (Physical Characteristics)|适应性能 (Adaptability)|可扩展性 (Extensibility)": [
+    "perf_270"
+  ],
+  "信号传输 (Signal Transmission)|信号处理 (Signal Processing)|噪声干扰 (Noise Interference)": [
+    "perf_787",
+    "perf_55",
+    "perf_386",
+    "perf_190",
+    "perf_53",
+    "perf_187",
+    "perf_69"
+  ],
+  "线缆结构 (Cable Construction)|导线特性 (Wire Characteristics)|绝缘层 (Insulation)": [
+    "ATTR_31"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|尼龙 (Nylon)": [
+    "ATTR_645",
+    "ATTR_157",
+    "ATTR_133"
+  ],
+  "外观标识 (Visual Identification)|颜色标记 (Color Marking)|线缆颜色 (Cable Color)": [
+    "ATTR_393",
+    "ATTR_197",
+    "ATTR_96",
+    "ATTR_245",
+    "ATTR_721",
+    "ATTR_257",
+    "ATTR_519",
+    "ATTR_244",
+    "ATTR_307"
+  ],
+  "功能性能 (Functional Performance)|环境适应性 (Environmental Adaptability)|户外使用 (Outdoor Usage)": [
+    "perf_278"
+  ],
+  "配套功能 (Auxiliary Features)|线缆管理 (Cable Management)|整理配件 (Organization Accessories)": [
+    "ATTR_635",
+    "ATTR_551",
+    "ATTR_311",
+    "ATTR_324",
+    "ATTR_522",
+    "ATTR_292",
+    "ATTR_155",
+    "ATTR_312",
+    "ATTR_644",
+    "ATTR_325",
+    "ATTR_510",
+    "ATTR_634",
+    "ATTR_60",
+    "ATTR_636",
+    "ATTR_253",
+    "ATTR_15",
+    "ATTR_512",
+    "ATTR_555",
+    "ATTR_305",
+    "ATTR_532",
+    "ATTR_73"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|金属 (Metal)": [
+    "ATTR_652",
+    "ATTR_424",
+    "ATTR_653",
+    "ATTR_686",
+    "ATTR_3",
+    "ATTR_24",
+    "ATTR_468",
+    "ATTR_657",
+    "ATTR_2",
+    "ATTR_810",
+    "ATTR_687"
+  ],
+  "连接组件 (Connection Components)|兼容性 (Compatibility)|设备匹配 (Device Matching)": [
+    "ATTR_314"
+  ],
+  "电力传输 (Power Transmission)|充电性能 (Charging Performance)|充电速度 (Charging Speed)": [
+    "perf_551",
+    "perf_261",
+    "perf_227",
+    "perf_648",
+    "perf_226",
+    "perf_208",
+    "perf_248",
+    "perf_338",
+    "perf_616",
+    "perf_215",
+    "perf_558",
+    "perf_263",
+    "perf_665",
+    "perf_627",
+    "perf_673",
+    "perf_239",
+    "perf_566",
+    "perf_654",
+    "perf_349",
+    "perf_214",
+    "perf_10"
+  ],
+  "信号传输 (Signal Transmission)|连接稳定性 (Connection Stability)|连接失败 (Connection Failure)": [
+    "perf_520",
+    "perf_518",
+    "perf_521"
+  ],
+  "连接性能 (Connection Performance)|物理连接 (Physical Connection)|端口匹配 (Port Fitting)": [
+    "perf_365",
+    "perf_815",
+    "perf_580"
+  ],
+  "线缆结构 (Cable Construction)|物理规格 (Physical Specifications)|线规 (Wire Gauge)": [
+    "ATTR_332",
+    "ATTR_329",
+    "ATTR_450",
+    "ATTR_57",
+    "ATTR_350",
+    "ATTR_176",
+    "ATTR_181",
+    "ATTR_596",
+    "ATTR_195",
+    "ATTR_118",
+    "ATTR_110",
+    "ATTR_819",
+    "ATTR_196",
+    "ATTR_592",
+    "ATTR_820",
+    "ATTR_367",
+    "ATTR_241",
+    "ATTR_243",
+    "ATTR_595",
+    "ATTR_112",
+    "ATTR_175",
+    "ATTR_362",
+    "ATTR_208",
+    "ATTR_330",
+    "ATTR_111",
+    "ATTR_242",
+    "ATTR_451",
+    "ATTR_459",
+    "ATTR_353",
+    "ATTR_335"
+  ],
+  "连接性能 (Connection Performance)|设备识别 (Device Recognition)|自动检测 (Auto Detection)": [
+    "perf_179",
+    "perf_47",
+    "perf_40",
+    "perf_160",
+    "perf_454"
+  ],
+  "连接性能 (Connection Performance)|连接标准支持 (Connection Standard Support)|专用功能 (Specialized Functions)": [
+    "perf_89",
+    "perf_151",
+    "perf_511"
+  ],
+  "线材特征 (Cable Properties)|结构 (Construction)|开关设计 (Switch Design)": [
+    "ATTR_688"
+  ],
+  "材料 (Material)|主要材质 (Primary Material)|编织材料 (Braided Materials)": [
+    "ATTR_651",
+    "ATTR_646",
+    "ATTR_439",
+    "ATTR_91"
+  ],
+  "使用性能 (Usage Performance)|连接操作 (Connection Operations)|工具需求 (Tool Requirements)": [
+    "perf_716"
+  ],
+  "使用性能 (Usage Performance)|线缆管理 (Cable Management)|整理便利性 (Organization Convenience)": [
+    "perf_368",
+    "perf_446",
+    "perf_279",
+    "perf_447",
+    "perf_307"
+  ],
+  "技术规格 (Technical Specifications)|认证与标识 (Certification & Labeling)|安全认证 (Safety Certification)": [
+    "ATTR_267",
+    "ATTR_66"
+  ],
+  "安全性能 (Safety Performance)|电气安全 (Electrical Safety)|短路防护 (Short Circuit Protection)": [
+    "perf_488",
+    "perf_204"
+  ],
+  "材料 (Material)|导体材料 (Conductor Material)|包铜铝 (Copper Clad Aluminum)": [
+    "ATTR_615",
+    "ATTR_739",
+    "ATTR_604",
+    "ATTR_361"
+  ],
+  "线材特征 (Cable Properties)|物理特性 (Physical Traits)|气味 (Odor)": [
+    "ATTR_812"
+  ],
+  "线缆结构 (Cable Structure)|外部组件 (External Components)|指示灯 (Indicator Light)": [
+    "ATTR_235",
+    "ATTR_186",
+    "ATTR_443",
+    "ATTR_460",
+    "ATTR_219",
+    "ATTR_608",
+    "ATTR_600",
+    "ATTR_583",
+    "ATTR_212",
+    "ATTR_170",
+    "ATTR_164",
+    "ATTR_194"
+  ],
+  "使用性能 (Usage Performance)|线缆管理 (Cable Management)|防缠绕性能 (Tangle Prevention)": [
+    "perf_720",
+    "perf_661"
+  ],
+  "耐用性 (Durability)|强度等级 (Strength Level)|质量 (Quality)": [
+    "ATTR_79",
+    "ATTR_726",
+    "ATTR_385",
+    "ATTR_81",
+    "ATTR_716",
+    "ATTR_400",
+    "ATTR_399",
+    "ATTR_631",
+    "ATTR_316",
+    "ATTR_727",
+    "ATTR_210",
+    "ATTR_816",
+    "ATTR_374"
+  ],
+  "适配器特性 (Adapter Features)|数量规格 (Quantity Specifications)|适配器数量 (Adapter Count)|_": [
+    "ATTR_783",
+    "ATTR_792",
+    "ATTR_664",
+    "ATTR_11",
+    "ATTR_20",
+    "ATTR_665",
+    "ATTR_49",
+    "ATTR_6",
+    "ATTR_12",
+    "ATTR_7"
+  ],
+  "设备兼容性 (Device Compatibility)|软件兼容 (Software Compatibility)|设备支持 (Device Support)": [
+    "perf_681",
+    "perf_851",
+    "perf_71",
+    "perf_514",
+    "perf_549",
+    "perf_501",
+    "perf_309",
+    "perf_560",
+    "perf_570",
+    "perf_577",
+    "perf_528",
+    "perf_153",
+    "perf_582",
+    "perf_78"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|常温弯曲性能 (Normal Temperature Bending)|Stiff": [
+    "ATTR_724",
+    "ATTR_139"
+  ],
+  "物理性能 (Physical Performance)|温度适应性 (Temperature Adaptability)|耐寒性能 (Cold Resistance)": [
+    "perf_306",
+    "perf_754"
+  ],
+  "结构 (Construction)|绝缘层 (Insulation)|绝缘厚度 (Insulation Thickness)|_": [
+    "ATTR_339",
+    "ATTR_349",
+    "ATTR_360",
+    "ATTR_340",
+    "ATTR_338",
+    "ATTR_373"
+  ],
+  "功能性能 (Functional Performance)|连接功能 (Connection Functions)|显示器行为 (Monitor Behavior)": [
+    "perf_111",
+    "perf_83"
+  ],
+  "耐用性 (Durability)|强度等级 (Strength Level)|坚固 (Sturdy)": [
+    "ATTR_265",
+    "ATTR_105",
+    "ATTR_269",
+    "ATTR_408",
+    "ATTR_16",
+    "ATTR_402",
+    "ATTR_162",
+    "ATTR_472",
+    "ATTR_689",
+    "ATTR_19",
+    "ATTR_593",
+    "ATTR_671",
+    "ATTR_478",
+    "ATTR_134",
+    "ATTR_136"
+  ],
+  "线缆结构 (Cable Construction)|导线特性 (Wire Characteristics)|导体结构 (Conductor Structure)": [
+    "ATTR_326",
+    "ATTR_237",
+    "ATTR_372",
+    "ATTR_357",
+    "ATTR_337",
+    "ATTR_336",
+    "ATTR_358",
+    "ATTR_713"
+  ],
+  "电力传输 (Power Transmission)|充电性能 (Charging Performance)|充电稳定性 (Charging Stability)": [
+    "perf_557",
+    "perf_87",
+    "perf_731",
+    "perf_644",
+    "perf_11",
+    "perf_12",
+    "perf_351",
+    "perf_76",
+    "perf_553",
+    "perf_556",
+    "perf_346"
+  ],
+  "物理特性 (Physical Characteristics)|线材特性 (Cable Properties)|线材强度 (Wire Durability)": [
+    "perf_329",
+    "perf_391"
+  ],
+  "线缆结构 (Cable Structure)|内部构造 (Internal Construction)|导线编织 (Wire Braiding)": [
+    "ATTR_346"
+  ],
+  "安全性能 (Safety Performance)|电气安全 (Electrical Safety)|防火性能 (Fire Safety)": [
+    "perf_806"
+  ],
+  "物理性能 (Physical Performance)|柔韧性表现 (Flexibility Behavior)|常温弯曲性能 (Normal Temperature Bending)|Flexible": [
+    "perf_660",
+    "perf_403"
+  ],
+  "安全性能 (Safety Performance)|电气安全 (Electrical Safety)|发热安全 (Thermal Safety)": [
+    "perf_341",
+    "perf_37"
+  ]
+}

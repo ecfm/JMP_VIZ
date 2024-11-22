@@ -4,10 +4,12 @@ from collections import defaultdict
 import pandas as pd
 import re
 
-raw_reviews = pd.read_excel('/Users/maoc/Dropbox (MIT)/JMP/UX168 data and code/data/raw/MRO-0730/硅胶管_V2.xlsx')
-review_id_to_reviews = {row['review_id']: f'<b>{row["review_title"]}</b> {row["评论内容"]}' for index, row in raw_reviews.iterrows()}
 def extract_content_in_parentheses(s):
-    return re.search(r'\((.*?)\)', s).group(1)
+    search_result = re.search(r'\((.*?)\)', s)
+    if search_result:
+        return search_result.group(1)
+    else:
+        return s
 # iterate through all levels of the dict and replace the values with the ids
 def get_id_to_keys(in_dict, id_to_keys=None, prev_keys=[]):
     if id_to_keys is None:
@@ -16,9 +18,13 @@ def get_id_to_keys(in_dict, id_to_keys=None, prev_keys=[]):
         english_key = extract_content_in_parentheses(k)
         if isinstance(v, dict):
             get_id_to_keys(v, id_to_keys, prev_keys+[english_key])
-        else:
+        elif isinstance(v, str):
+            id_to_keys[v] = prev_keys+[english_key]
+        elif isinstance(v, list):
             for id in v:
                 id_to_keys[id] = prev_keys+[english_key]
+        else:
+            raise ValueError(f"{v} is of unknown type {type(v)}")
     return id_to_keys
 
 def get_path_to_ids(id_dict, last=False):
@@ -52,7 +58,7 @@ def merge_values(val1, val2):
         raise ValueError(f"Invalid value type: {type(val1)} of {val1} and {type(val2)} of {val2}")
 
 
-def get_path_to_sents(path_to_ids, id_to_sent_dict):
+def get_path_to_sents(path_to_ids, id_to_sent_dict, review_id_to_reviews):
     path_to_sents = defaultdict(dict)
     for path, ids in path_to_ids.items():
         for id in ids:
@@ -69,14 +75,11 @@ def get_path_to_sents(path_to_ids, id_to_sent_dict):
     return path_to_sents
 
 
-
-# Main execution
-if __name__ == '__main__':
-    RESULT_DIR = "/Users/maoc/Dropbox (MIT)/JMP_VIZ/result/MRO_silicon_tube"
-    with open(os.path.join(RESULT_DIR, "cleaned_use_dict_it4.json"), 'r') as file:
+def generate_viz_files(RESULT_DIR, cleaned_use_file, cleaned_attr_perf_file, review_id_to_reviews):
+    with open(os.path.join(RESULT_DIR, cleaned_use_file), 'r') as file:
         use_id_dict = json.load(file)
 
-    with open(os.path.join(RESULT_DIR, "cleaned_attr_perf_dict_it4.json"), 'r') as file:
+    with open(os.path.join(RESULT_DIR, cleaned_attr_perf_file), 'r') as file:
         attr_perf_dict = json.load(file)
         attr_id_dict = attr_perf_dict['attr']
         perf_id_dict = attr_perf_dict['perf']
@@ -84,20 +87,25 @@ if __name__ == '__main__':
     with open(os.path.join(RESULT_DIR, "use_id_to_values.json"), 'r') as file:
         use_id_to_sents_dict = json.load(file)
 
-    with open(os.path.join(RESULT_DIR, "attr_id_to_values.json"), 'r') as file:
-        attr_id_to_sents_dict = json.load(file)
-
     with open(os.path.join(RESULT_DIR, "perf_id_to_values.json"), 'r') as file:
         perf_id_to_sents_dict = json.load(file)
 
     use_path_to_ids_dict = get_path_to_ids(use_id_dict)
-    use_path_to_sents_dict = get_path_to_sents(use_path_to_ids_dict, use_id_to_sents_dict)
+    use_path_to_sents_dict = get_path_to_sents(use_path_to_ids_dict, use_id_to_sents_dict, review_id_to_reviews)
     attr_path_to_ids_dict = get_path_to_ids(attr_id_dict)
     perf_path_to_ids_dict = get_path_to_ids(perf_id_dict)
     attr_perf_path_to_ids_dict = merge_values(attr_path_to_ids_dict, perf_path_to_ids_dict)
-    perf_path_to_sents_dict = get_path_to_sents(perf_path_to_ids_dict, perf_id_to_sents_dict)
+    perf_path_to_sents_dict = get_path_to_sents(perf_path_to_ids_dict, perf_id_to_sents_dict, review_id_to_reviews)
 
     json.dump(use_path_to_sents_dict, open(os.path.join(RESULT_DIR, "use_path_to_sents_dict.json"), 'w', encoding='utf8'), ensure_ascii=False, indent=2)
     json.dump(attr_perf_path_to_ids_dict, open(os.path.join(RESULT_DIR, "attr_perf_path_to_ids_dict.json"), 'w', encoding='utf8'), ensure_ascii=False, indent=2)
     json.dump(perf_path_to_sents_dict, open(os.path.join(RESULT_DIR, "perf_path_to_sents_dict.json"), 'w', encoding='utf8'), ensure_ascii=False, indent=2)
     json.dump(attr_path_to_ids_dict, open(os.path.join(RESULT_DIR, "attr_path_to_ids_dict.json"), 'w', encoding='utf8'), ensure_ascii=False, indent=2)
+
+# Main execution
+if __name__ == '__main__':
+    RESULT_DIR = "/Users/maoc/Dropbox (MIT)/JMP_VIZ/result/MRO_cables"
+    raw_reviews = pd.read_excel('/Users/maoc/Dropbox (MIT)/JMP/UX168 data and code/data/raw/filtered/cables_asin_review_20241112_filtered_yr2021_info30_group30_100asin.xlsx')
+    review_id_to_reviews = {row['review_id']: f'<b>{row["review_title"]}</b> {row["评论内容"]}' for index, row in raw_reviews.iterrows()}
+
+    generate_viz_files(RESULT_DIR, "cleaned_use_dict_it4.json", "cleaned_attr_perf_dict_it4.json", review_id_to_reviews)
