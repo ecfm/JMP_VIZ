@@ -656,4 +656,4 @@ def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, t
     return []
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, host='0.0.0.0')
