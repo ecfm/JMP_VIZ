@@ -42,7 +42,10 @@ TRANSLATIONS = {
         'satisfied': 'Satisfied',
         'use_attr_perf_title': 'Usage v.s. Product Performance and Attributes',
         'perf_attr_title': 'Performance v.s. Attributes',
-        'review_format': 'Display Format: Review x: ASIN <b>Review Title</b> Review Text'
+        'review_format': 'Display Format: Review x: ASIN (Star Rating) <b>Review Title</b> Review Text',
+        'percentage_explanation': 'Percentage of total mentions',
+        'x_axis_percentage': 'Percentage of total mentions',
+        'y_axis_percentage': 'Percentage of total mentions',
     },
     'zh': {
         'login': '登录',
@@ -70,7 +73,10 @@ TRANSLATIONS = {
         'satisfied': '满意',
         'use_attr_perf_title': '用途 vs. 产品属性和性能',
         'perf_attr_title': '性能 vs. 属性',
-        'review_format': '显示格式： 评论 x: ASIN <b>评论标题</b> 评论内容'
+        'review_format': '显示格式： 评论 x: ASIN (评论星级) <b>评论标题</b> 评论内容',
+        'percentage_explanation': '占总提及次数的百分比',
+        'x_axis_percentage': '(该类别被提及次数%)',
+        'y_axis_percentage': '(该类别被提及次数%)',
     }
 }
 
@@ -115,7 +121,12 @@ def filter_dict(path_to_sents_dict, category):
             filtered_dict[key] = merge_values(filtered_dict[key], sents_dict)
     return filtered_dict
 
-def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict):
+def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_to_sents_dict):
+    # Add N/A entries
+    x_path_to_sents_dict = {**x_path_to_sents_dict, 'N/A': {}}
+    y_path_to_ids_dict = {**y_path_to_ids_dict, 'N/A': []}
+    y_path_to_sents_dict = {**y_path_to_sents_dict, 'N/A': {}}
+    
     matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
     sentiment_matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
     review_matrix = np.empty((len(y_path_to_ids_dict), len(x_path_to_sents_dict)), dtype=object)
@@ -125,26 +136,68 @@ def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict):
         for j in range(review_matrix.shape[1]):
             review_matrix[i, j] = []
     
-    for i, (path1, y_ids) in enumerate(y_path_to_ids_dict.items()):
+    # Get all unique review IDs and reviews
+    all_x_ids = set()
+    all_y_ids = set()
+    
+    for x_sents_dict in x_path_to_sents_dict.values():
+        for sent, reason_rids in x_sents_dict.items():
+            all_x_ids.update(reason_rids.keys())
+    
+    for y_ids in y_path_to_ids_dict.values():
+        all_y_ids.update(y_ids)
+    
+    # Process matrix including N/A
+    for i, ((path1, y_ids), y_sents_dict) in enumerate(zip(y_path_to_ids_dict.items(), y_path_to_sents_dict.values())):
         for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
-            x_sent_ids = []
+            if path1 == 'N/A' and path2 == 'N/A':
+                continue
+                
+            x_sent_ids = set()
+            unique_reviews = set()  # Track unique reviews
+            unique_pos_reviews = set()  # Track unique positive reviews
+            
+            # First collect all reviews and sentiments for this x category
             for sent, reason_rids in x_sents_dict.items():
-                x_sent_ids.extend(reason_rids.keys())
-            x_sent_ids = set(x_sent_ids)
-            co_mention_ids = (set(y_ids)).intersection(x_sent_ids)
-            co_mentions = 0
-            pos_mentions = 0
-            for sent, reason_rids in x_sents_dict.items():
-                for cm_id in co_mention_ids:
-                    if cm_id in reason_rids:
-                        reviews = reason_rids[cm_id]
-                        review_matrix[i, j].extend(reviews)  # Extend instead of assign
-                        co_mentions += len(reviews)
-                        if sent == '+':
-                            pos_mentions += len(reviews)
-            matrix[i, j] = co_mentions
-            if co_mentions > 0:
-                sentiment_matrix[i, j] = pos_mentions / co_mentions
+                x_sent_ids.update(reason_rids.keys())
+                for rid, reviews in reason_rids.items():
+                    if rid in y_ids:  # Co-mention case
+                        for review in reviews:
+                            unique_reviews.add(review)
+                            if sent == '+':
+                                unique_pos_reviews.add(review)
+            
+            # Handle N/A cases
+            if path1 == 'N/A':
+                # Reviews that mention X but not any Y
+                unique_x_only = x_sent_ids - all_y_ids
+                for sent, reason_rids in x_sents_dict.items():
+                    for rid, reviews in reason_rids.items():
+                        if rid in unique_x_only:
+                            for review in reviews:
+                                unique_reviews.add(review)
+                                if sent == '+':
+                                    unique_pos_reviews.add(review)
+            
+            elif path2 == 'N/A':
+                # Reviews that mention Y but not any X
+                # Use y_sents_dict to get sentiment information
+                for sent, reviews in y_sents_dict.items():
+                    for review in reviews:
+                        if review not in unique_reviews:  # Only add if not already counted
+                            unique_reviews.add(review)
+                            if sent == '+':
+                                unique_pos_reviews.add(review)
+            
+            # Store reviews in review matrix
+            review_matrix[i, j] = list(unique_reviews)
+            
+            # Update counts and sentiment
+            num_unique_reviews = len(unique_reviews)
+            matrix[i, j] = num_unique_reviews
+            
+            if num_unique_reviews > 0:
+                sentiment_matrix[i, j] = len(unique_pos_reviews) / num_unique_reviews
                 
     return matrix, sentiment_matrix, review_matrix
 
@@ -156,14 +209,18 @@ def ratio_to_rgb(ratio):
 # Load data
 use_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'use_path_to_sents_dict.json')))
 attr_perf_path_to_ids_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_perf_path_to_ids_dict.json')))
+attr_perf_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_perf_path_to_sents_dict.json')))
 perf_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'perf_path_to_sents_dict.json')))
 attr_path_to_ids_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_ids_dict.json')))
+attr_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_sents_dict.json')))
 
 path_dict_cache = {
+    'attr_sents': (defaultdict(dict), attr_path_to_sents_dict),
     'use_sents': (defaultdict(dict), use_path_to_sents_dict),
     'perf_sents': (defaultdict(dict), perf_path_to_sents_dict),
     'attr_ids': (defaultdict(dict), attr_path_to_ids_dict),
-    'attr_perf_ids': (defaultdict(dict), attr_perf_path_to_ids_dict)
+    'attr_perf_ids': (defaultdict(dict), attr_perf_path_to_ids_dict),
+    'attr_perf_sents': (defaultdict(dict), attr_perf_path_to_sents_dict)
 }
 
 # Initialize Dash app and login manager
@@ -315,57 +372,147 @@ def get_cached_dict(type, category):
 
 plot_data_cache = {}
 
-def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_n_y=2):
+def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_n_y=2, language='en'):
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
     
-    plot_key = f'{plot_type}##{x_category}##{y_category}##{top_n_x}##{top_n_y}'
+    plot_key = f'{plot_type}##{x_category}##{y_category}##{top_n_x}##{top_n_y}##{language}'
     if plot_key in plot_data_cache:
         return plot_data_cache[plot_key]
     
     if plot_type == 'use_attr_perf':
         x_path_to_sents_dict = get_cached_dict('use_sents', x_category)
         y_path_to_ids_dict = get_cached_dict('attr_perf_ids', y_category)
+        y_path_to_sents_dict = get_cached_dict('attr_perf_sents', y_category)
         title_key = 'use_attr_perf_title'
     else:  # perf_attr
         x_path_to_sents_dict = get_cached_dict('perf_sents', x_category)
         y_path_to_ids_dict = get_cached_dict('attr_ids', y_category)
+        y_path_to_sents_dict = get_cached_dict('attr_sents', y_category)
         title_key = 'perf_attr_title'
 
-    matrix, sentiment_matrix, review_matrix = create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict)
+    matrix, sentiment_matrix, review_matrix = create_correlation_matrix(
+        x_path_to_sents_dict, 
+        y_path_to_ids_dict,
+        y_path_to_sents_dict
+    )
     
     # Ensure we don't exceed the available features
-    top_n_x = min(top_n_x, matrix.shape[1])
-    top_n_y = min(top_n_y, matrix.shape[0])
+    top_n_x = min(top_n_x, matrix.shape[1] - 1)  # -1 to account for N/A
+    top_n_y = min(top_n_y, matrix.shape[0] - 1)  # -1 to account for N/A
     
-    # identify top x path indices from summing up the matrix
-    top_x_indices = np.argsort(np.sum(matrix, axis=0))[-top_n_x:]
-    top_x_paths = [list(x_path_to_sents_dict.keys())[i] for i in top_x_indices]
+    # Get sums excluding N/A row/column
+    x_sums = np.sum(matrix[:-1, :], axis=0)  # Exclude N/A row
+    y_sums = np.sum(matrix[:, :-1], axis=1)  # Exclude N/A column
     
-    # identify top y path indices with non-zero sum
-    y_sums = np.sum(matrix, axis=1)
-    non_zero_y = np.where(y_sums > 0)[0]
+    # identify top x path indices from summing up the matrix (excluding N/A)
+    non_zero_x = np.where(x_sums[:-1] > 0)[0]  # Exclude N/A from non-zero check
+    if len(non_zero_x) == 0:  # Handle case with no non-zero values
+        # If x_category is not 'all', use the selected category
+        if x_category != 'all':
+            # Get the index of the selected category
+            x_paths = list(x_path_to_sents_dict.keys())
+            try:
+                selected_idx = x_paths.index(x_category)
+                top_x_indices = np.array([selected_idx])
+            except ValueError:
+                # If category not found, use first available index
+                top_x_indices = np.array([0])
+        else:
+            # If no category selected, use first few indices
+            top_x_indices = np.arange(min(top_n_x, matrix.shape[1]-1))  # -1 to exclude N/A
+    else:
+        top_x_indices = non_zero_x[np.argsort(x_sums[non_zero_x])[-min(top_n_x, len(non_zero_x)):]]
+    
+    # Add N/A index
+    top_x_indices = np.append(top_x_indices, matrix.shape[1]-1)
+    
+    # Get paths excluding N/A
+    x_paths = list(x_path_to_sents_dict.keys())
+    top_x_paths = [x_paths[i] for i in top_x_indices[:-1]]  # Exclude N/A index
+    top_x_paths.append('N/A')  # Add N/A path
+    
+    # identify top y path indices with non-zero sum (excluding N/A)
+    non_zero_y = np.where(y_sums[:-1] > 0)[0]  # Exclude N/A from non-zero check
     if len(non_zero_y) == 0:  # Handle case with no non-zero values
-        top_y_indices = np.arange(min(top_n_y, matrix.shape[0]))
+        # If y_category is not 'all', use the selected category
+        if y_category != 'all':
+            # Get the index of the selected category
+            y_paths = list(y_path_to_ids_dict.keys())
+            try:
+                selected_idx = y_paths.index(y_category)
+                top_y_indices = np.array([selected_idx])
+            except ValueError:
+                # If category not found, use first available index
+                top_y_indices = np.array([0])
+        else:
+            # If no category selected, use first few indices
+            top_y_indices = np.arange(min(top_n_y, matrix.shape[0]-1))  # -1 to exclude N/A
     else:
         top_y_indices = non_zero_y[np.argsort(y_sums[non_zero_y])[-min(top_n_y, len(non_zero_y)):]]
-    top_y_paths = [list(y_path_to_ids_dict.keys())[i] for i in top_y_indices]
+    # Add N/A index
+    top_y_indices = np.append(top_y_indices, matrix.shape[0]-1)
     
+    # Get paths excluding N/A
+    y_paths = list(y_path_to_ids_dict.keys())
+    top_y_paths = [y_paths[i] for i in top_y_indices[:-1]]  # Exclude N/A index
+    top_y_paths.append('N/A')  # Add N/A path
+    
+    # Extract relevant submatrices
     matrix = matrix[top_y_indices, :][:, top_x_indices]
     sentiment_matrix = sentiment_matrix[top_y_indices, :][:, top_x_indices]
     review_matrix = review_matrix[top_y_indices, :][:, top_x_indices]
 
+    # Create clean text without percentages for lookups
     if x_category == 'all':
         x_text = top_x_paths
     else:
-        x_text = [path[len(x_category)+1:] for path in top_x_paths]
+        x_text = [path[len(x_category)+1:] if path != 'N/A' else path for path in top_x_paths]
     if y_category == 'all':
         y_text = top_y_paths
     else:
-        y_text = [path[len(y_category)+1:] for path in top_y_paths]
+        y_text = [path[len(y_category)+1:] if path != 'N/A' else path for path in top_y_paths]
         
-    plot_data_cache[plot_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key) 
+    # Add N/A translations to x_text and y_text where applicable
+    na_translation = {
+        'en': {
+            'use': 'N/A (Uses with no co-mentions)',
+            'perf': 'N/A (Performance aspects with no co-mentions)',
+            'attr': 'N/A (Attributes with no co-mentions)',
+            'attr_perf': 'N/A (Attributes/Performance with no co-mentions)'
+        },
+        'zh': {
+            'use': 'N/A (无共同提及用途)',
+            'perf': 'N/A (无共同提及性能)',
+            'attr': 'N/A (无共同提及属性)',
+            'attr_perf': 'N/A (无共同提及属性/性能)'
+        }
+    }
+    
+    # Determine which N/A translation to use based on plot type and axis
+    if plot_type == 'use_attr_perf':
+        x_na = na_translation[language]['use']
+        y_na = na_translation[language]['attr_perf']
+    else:  # perf_attr
+        x_na = na_translation[language]['perf']
+        y_na = na_translation[language]['attr']
+    
+    x_text = [x_na if txt == 'N/A' else txt for txt in x_text]
+    y_text = [y_na if txt == 'N/A' else txt for txt in y_text]
+    
+    # Calculate percentages (excluding N/A from percentage calculation)
+    non_na_matrix = matrix[:-1, :-1]  # Exclude N/A row and column
+    total_mentions = np.sum(non_na_matrix)
+    
+    x_percentages = np.zeros(len(x_text))
+    x_percentages[:-1] = np.sum(non_na_matrix, axis=0) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(x_text)-1)
+    
+    y_percentages = np.zeros(len(y_text))
+    y_percentages[:-1] = np.sum(non_na_matrix, axis=1) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(y_text)-1)
+    
+    
+    plot_data_cache[plot_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages)
     return plot_data_cache[plot_key]
 
 def get_options(value, top_paths):
@@ -518,9 +665,10 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
     top_n_x = min(top_n_x, max_x)
     top_n_y = min(top_n_y, max_y)
     
-    matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key = get_plot_data(
-        plot_type, x_value, y_value, top_n_x, top_n_y
+    matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages = get_plot_data(
+        plot_type, x_value, y_value, top_n_x, top_n_y, language
     )
+
     
     # Calculate dynamic dimensions based on number of features
     # Height calculation
@@ -556,12 +704,16 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
     # Calculate dynamic margins based on label lengths
     max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
     left_margin = min(200, max(80, max_y_label_length * 7))
-
+        # Create display text with percentages
+    x_display = [f"({perc:.1f}%) {txt}" if not txt.startswith('N/A') else txt 
+             for txt, perc in zip(x_text, x_percentages)]
+    y_display = [f"{txt} ({perc:.1f}%)" if not txt.startswith('N/A') else txt 
+             for txt, perc in zip(y_text, y_percentages)]
     # Add the satisfaction ratio heatmap (color legend)
     fig.add_trace(go.Heatmap(
         z=sentiment_matrix,
-        x=x_text,
-        y=y_text,
+        x=x_display,
+        y=y_display,
         colorscale=px.colors.diverging.RdBu,
         showscale=True,
         opacity=0,
@@ -573,26 +725,40 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
                 TRANSLATIONS[language]['neutral'],
                 TRANSLATIONS[language]['satisfied']
             ],
-            x=1.15
+            x=1.11,
+            y=0.4
         )
     ))
 
     # Add width legend translations
     width_legend_translations = {
         'en': {
-            'explanation': "Width is proportional to the number of reviews"
+            'explanation': "Width is proportional to log(#reviews)"
         },
         'zh': {
-            'explanation': "宽度与评论数量成正比"
+            'explanation': "宽度与log(评论数量)成正比"
         }
     }
 
     # Add the custom shapes for the actual visualization
     max_mentions = np.max(matrix)
-    for i in range(len(y_text)):
-        for j in range(len(x_text)):
+    min_mentions = np.min(matrix[matrix > 0])  # Get minimum non-zero value
+    
+    # Use log scale for width calculation
+    def get_log_width(value, max_val, min_val):
+        if value == 0:
+            return 0
+        # Add 1 to avoid log(1) = 0
+        log_val = np.log(value + 2)
+        log_max = np.log(max_val + 1)
+        log_min = np.log(min_val + 1)
+        # Normalize to 0.8 max width
+        return 0.8 * (log_val - log_min) / (log_max - log_min + 0.000001)
+
+    for i in range(len(y_display)):
+        for j in range(len(x_display)):
             if matrix[i, j] > 0:
-                box_width = 0.8 * matrix[i, j] / max_mentions
+                box_width = get_log_width(matrix[i, j], max_mentions, min_mentions)
                 fig.add_shape(
                     type="rect",
                     x0=j-box_width/2, y0=i-0.4, x1=j+box_width/2, y1=i+0.4,
@@ -606,15 +772,15 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
     example_count = int(matrix[example_i, example_j])
     
     # Constants for width example box and explanation positioning
-    EXAMPLE_BOX_LEFT = 1.1
+    EXAMPLE_BOX_LEFT = 1.05
     EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.12
-    EXAMPLE_BOX_BOTTOM = 1.1 
+    EXAMPLE_BOX_BOTTOM = 1 
     EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.11
 
     BRACKET_TOP = EXAMPLE_BOX_TOP + 0.06
     BRACKET_VERTICAL_LENGTH = 0.03  # Length of vertical bracket lines
 
-    EXPLANATION_X = (EXAMPLE_BOX_LEFT + EXAMPLE_BOX_RIGHT) / 2 + 0.22  # Center explanation above bracket
+    EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5 # Center explanation above bracket
     EXPLANATION_Y = BRACKET_TOP + 0.1  # Position explanation above bracket
 
     # Add explanation text with translation above the bracket
@@ -625,7 +791,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         text=width_legend_translations[language]['explanation'].format(example_count),
         showarrow=False,
         font=dict(size=12),
-        align="center",
+        align="right",
         width=200
     )
 
@@ -663,26 +829,58 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
             line=dict(color="black", width=1)
         )
 
-    # Update layout with even more right margin
+    # Update axis titles with category types
+    axis_category_names = {
+        'en': {
+            'use': 'Uses',
+            'perf': 'Performance',
+            'attr': 'Attributes',
+            'attr_perf': 'Attributes/Performance'
+        },
+        'zh': {
+            'use': '用途',
+            'perf': '性能',
+            'attr': '属性',
+            'attr_perf': '属性/性能'
+        }
+    }
+
+    if plot_type == 'use_attr_perf':
+        x_category_type = axis_category_names[language]['use']
+        y_category_type = axis_category_names[language]['attr_perf']
+    else:  # perf_attr
+        x_category_type = axis_category_names[language]['perf']
+        y_category_type = axis_category_names[language]['attr']
+
     fig.update_layout(
         title=TRANSLATIONS[language][title_key],
         xaxis=dict(
-            tickangle=45,
+            tickangle=20,
             tickmode='array',
-            tickvals=list(range(len(x_text))),
-            ticktext=x_text,
+            tickvals=list(range(len(x_display))),
+            ticktext=x_display,
+            tickfont=dict(size=10),
+            title=dict(
+                text=f"{TRANSLATIONS[language]['x_axis_percentage']} {x_category_type}",
+                font=dict(size=12)
+            )
         ),
         yaxis=dict(
             tickmode='array',
-            tickvals=list(range(len(y_text))),
-            ticktext=y_text,
+            tickvals=list(range(len(y_display))),
+            ticktext=y_display,
+            tickfont=dict(size=10),
+            title=dict(
+                text=f"{y_category_type} {TRANSLATIONS[language]['y_axis_percentage']}",
+                font=dict(size=12)
+            )
         ),
         width=dynamic_width,
         height=dynamic_height,
         margin=dict(
             l=left_margin,
             r=400,  # Increased from 300 to 400 to accommodate the explanation text
-            t=100,
+            t=150,
             b=100,
             autoexpand=True
         )
@@ -718,8 +916,8 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         text=matrix
     )
 
-    x_options = get_options(x_value, x_text)
-    y_options = get_options(y_value, y_text)
+    x_options = get_options(x_value, x_text)  # Use clean text for options
+    y_options = get_options(y_value, y_text)  # Use clean text for options
     
     return x_options, y_options, x_value, y_value, fig, max_x, max_y
 
@@ -735,24 +933,39 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
 )
 def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, top_n_x, top_n_y):
     if click_data:
-        matrix, sentiment_matrix, review_matrix, x_text, y_text, title = get_plot_data(
-            plot_type, x_value, y_value, top_n_x, top_n_y
+        matrix, sentiment_matrix, review_matrix, x_text, y_text, title, x_percentages, y_percentages = get_plot_data(
+            plot_type, x_value, y_value, top_n_x, top_n_y, language
         )
         point = click_data['points'][0]
-        i, j = y_text.index(point['y']), x_text.index(point['x'])
-        reviews = review_matrix[i][j]
-        selected_x = x_text[j]
-        selected_y = y_text[i]
-        content = [
-            dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True),
-            dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
-        ]
-        if reviews:
-            reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
-            content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
-        else:
-            content.append(html.P(TRANSLATIONS[language]['no_reviews']))
-        return content
+        
+        # Get the clicked point coordinates
+        clicked_x = point['x']
+        clicked_y = point['y']
+        
+        # Create display text with percentages (same as in get_plot_data)
+        x_display = [f"({perc:.1f}%) {txt}" if not txt.startswith('N/A') else txt 
+                    for txt, perc in zip(x_text, x_percentages)]
+        y_display = [f"{txt} ({perc:.1f}%)" if not txt.startswith('N/A') else txt 
+                    for txt, perc in zip(y_text, y_percentages)]
+        
+        # Find the index by matching the display text exactly
+        i = y_display.index(clicked_y)
+        j = x_display.index(clicked_x)
+        
+        if i != -1 and j != -1:
+            reviews = review_matrix[i][j]
+            selected_x = x_display[j]  # Use display text for showing to user
+            selected_y = y_display[i]  # Use display text for showing to user
+            content = [
+                dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True),
+                dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
+            ]
+            if reviews:
+                reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
+                content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
+            else:
+                content.append(html.P(TRANSLATIONS[language]['no_reviews']))
+            return content
     return []
 
 if __name__ == '__main__':
