@@ -42,6 +42,7 @@ TRANSLATIONS = {
         'satisfied': 'Satisfied',
         'use_attr_perf_title': 'Usage v.s. Product Performance and Attributes',
         'perf_attr_title': 'Performance v.s. Attributes',
+        'review_format': 'Display Format: Review x: ASIN <b>Review Title</b> Review Text'
     },
     'zh': {
         'login': '登录',
@@ -69,6 +70,7 @@ TRANSLATIONS = {
         'satisfied': '满意',
         'use_attr_perf_title': '用途 vs. 产品属性和性能',
         'perf_attr_title': '性能 vs. 属性',
+        'review_format': '显示格式： 评论 x: ASIN <b>评论标题</b> 评论内容'
     }
 }
 
@@ -530,11 +532,11 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         base_height + max(0, len(y_text) - 5) * additional_height_per_feature
     )
     
-    # Width calculation
-    base_width = 600
-    min_width = 400
-    additional_width_per_feature = 100  # More space needed for X-axis labels
-    max_width = 1200  # Maximum width to prevent the plot from becoming too wide
+    # Width calculation - increase base width to accommodate legends
+    base_width = 800  # Increased from 600
+    min_width = 600  # Increased from 400
+    additional_width_per_feature = 100
+    max_width = 1600  # Increased from 1200
     
     # Calculate width based on the length of x-axis labels and number of features
     avg_label_length = sum(len(str(label)) for label in x_text) / len(x_text) if x_text else 0
@@ -548,17 +550,45 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         )
     )
     
-    # Create the heatmap figure
-    fig = go.Figure(data=go.Heatmap(
+    # Create the base heatmap figure
+    fig = go.Figure()
+
+    # Calculate dynamic margins based on label lengths
+    max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
+    left_margin = min(200, max(80, max_y_label_length * 7))
+
+    # Add the satisfaction ratio heatmap (color legend)
+    fig.add_trace(go.Heatmap(
         z=sentiment_matrix,
         x=x_text,
         y=y_text,
-        colorscale=[[0, 'rgba(255,255,255,0)'], [1, 'rgba(255,255,255,0)']],
-        showscale=False,
+        colorscale=px.colors.diverging.RdBu,
+        showscale=True,
+        opacity=0,
+        colorbar=dict(
+            title=TRANSLATIONS[language]['satisfaction_level'],
+            tickvals=[0, 0.5, 1],
+            ticktext=[
+                TRANSLATIONS[language]['unsatisfied'],
+                TRANSLATIONS[language]['neutral'],
+                TRANSLATIONS[language]['satisfied']
+            ],
+            x=1.15
+        )
     ))
 
-    max_mentions = np.max(matrix)
+    # Add width legend translations
+    width_legend_translations = {
+        'en': {
+            'explanation': "Width is proportional to the number of reviews"
+        },
+        'zh': {
+            'explanation': "宽度与评论数量成正比"
+        }
+    }
 
+    # Add the custom shapes for the actual visualization
+    max_mentions = np.max(matrix)
     for i in range(len(y_text)):
         for j in range(len(x_text)):
             if matrix[i, j] > 0:
@@ -570,10 +600,70 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
                     line_color="rgba(0,0,0,0)",
                 )
 
-    # Calculate dynamic margins based on label lengths
-    max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
-    left_margin = min(200, max(80, max_y_label_length * 7))  # Adjust left margin based on Y-axis label length
+    # Find a good example box from the actual data
+    example_i, example_j = np.unravel_index(np.argmax(matrix), matrix.shape)
+    example_sentiment = sentiment_matrix[example_i, example_j]
+    example_count = int(matrix[example_i, example_j])
     
+    # Constants for width example box and explanation positioning
+    EXAMPLE_BOX_LEFT = 1.1
+    EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.12
+    EXAMPLE_BOX_BOTTOM = 1.1 
+    EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.11
+
+    BRACKET_TOP = EXAMPLE_BOX_TOP + 0.06
+    BRACKET_VERTICAL_LENGTH = 0.03  # Length of vertical bracket lines
+
+    EXPLANATION_X = (EXAMPLE_BOX_LEFT + EXAMPLE_BOX_RIGHT) / 2 + 0.22  # Center explanation above bracket
+    EXPLANATION_Y = BRACKET_TOP + 0.1  # Position explanation above bracket
+
+    # Add explanation text with translation above the bracket
+    fig.add_annotation(
+        xref="paper", yref="paper", 
+        x=EXPLANATION_X,
+        y=EXPLANATION_Y,
+        text=width_legend_translations[language]['explanation'].format(example_count),
+        showarrow=False,
+        font=dict(size=12),
+        align="center",
+        width=200
+    )
+
+    # Add the example box
+    fig.add_shape(
+        type="rect",
+        xref="paper", yref="paper",
+        x0=EXAMPLE_BOX_LEFT, 
+        x1=EXAMPLE_BOX_RIGHT,
+        y0=EXAMPLE_BOX_BOTTOM, 
+        y1=EXAMPLE_BOX_TOP,
+        fillcolor=ratio_to_rgb(example_sentiment),
+        line_color="rgba(0,0,0,0)",
+    )
+
+    # Add bracket at the top of the box
+    fig.add_shape(
+        type="line",
+        xref="paper", yref="paper",
+        x0=EXAMPLE_BOX_LEFT, 
+        x1=EXAMPLE_BOX_RIGHT,
+        y0=BRACKET_TOP, 
+        y1=BRACKET_TOP,
+        line=dict(color="black", width=1)
+    )
+
+    # Add vertical lines for bracket
+    for x in [EXAMPLE_BOX_LEFT, EXAMPLE_BOX_RIGHT]:
+        fig.add_shape(
+            type="line",
+            xref="paper", yref="paper",
+            x0=x, x1=x,
+            y0=BRACKET_TOP, 
+            y1=BRACKET_TOP - BRACKET_VERTICAL_LENGTH,
+            line=dict(color="black", width=1)
+        )
+
+    # Update layout with even more right margin
     fig.update_layout(
         title=TRANSLATIONS[language][title_key],
         xaxis=dict(
@@ -590,31 +680,40 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         width=dynamic_width,
         height=dynamic_height,
         margin=dict(
-            l=left_margin,    # Dynamic left margin
-            r=50,            # Right margin
-            t=50,            # Top margin
-            b=100,           # Bottom margin for x-axis labels
-            autoexpand=True  # Allow margins to adjust automatically if needed
+            l=left_margin,
+            r=400,  # Increased from 300 to 400 to accommodate the explanation text
+            t=100,
+            b=100,
+            autoexpand=True
         )
     )
 
-    fig.update_layout(
-        coloraxis=dict(
-            colorbar=dict(
-                title=TRANSLATIONS[language]['satisfaction_level'],
-                tickvals=[0, 0.5, 1],
-                ticktext=[
-                    TRANSLATIONS[language]['unsatisfied'],
-                    TRANSLATIONS[language]['neutral'],
-                    TRANSLATIONS[language]['satisfied']
-                ],
-            ),
-            colorscale=px.colors.diverging.RdBu,
-        )
+    # First, add the needed translations to both language dictionaries
+    hover_translations = {
+        'en': {
+            'hover_y': 'Y-axis',
+            'hover_x': 'X-axis',
+            'hover_count': 'Count',
+            'hover_satisfaction': 'Satisfaction Ratio'
+        },
+        'zh': {
+            'hover_y': 'Y轴',
+            'hover_x': 'X轴',
+            'hover_count': '数量',
+            'hover_satisfaction': '满意度比例'
+        }
+    }
+
+    # Update hover template with translations
+    hover_template = (
+        f"{hover_translations[language]['hover_y']}: %{{y}}<br>" +
+        f"{hover_translations[language]['hover_x']}: %{{x}}<br>" +
+        f"{hover_translations[language]['hover_count']}: %{{text}}<br>" +
+        f"{hover_translations[language]['hover_satisfaction']}: %{{customdata:.2f}}"
     )
 
     fig.update_traces(
-        hovertemplate="Y: %{y}<br>X: %{x}<br>Count: %{text}<br>Satisfaction Ratio: %{customdata:.2f}",
+        hovertemplate=hover_template,
         customdata=sentiment_matrix,
         text=matrix
     )
@@ -645,7 +744,8 @@ def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, t
         selected_x = x_text[j]
         selected_y = y_text[i]
         content = [
-            dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True)
+            dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True),
+            dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
         ]
         if reviews:
             reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
