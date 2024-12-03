@@ -916,9 +916,8 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
         text=matrix
     )
 
-    x_options = get_options(x_value, x_text)  # Use clean text for options
-    y_options = get_options(y_value, y_text)  # Use clean text for options
-    
+    x_options = get_options(x_value, x_text[:-1])  # Use clean text for options, excluding N/A
+    y_options = get_options(y_value, y_text[-2::-1])  # Use clean text for options, excluding N/A, reverse order
     return x_options, y_options, x_value, y_value, fig, max_x, max_y
 
 @app.callback(
