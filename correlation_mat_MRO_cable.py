@@ -9,10 +9,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user
+import re
+from typing import List, Dict
+from cachetools import TTLCache, cached
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_cables")
 
 # Language translations
 TRANSLATIONS = {
@@ -214,14 +217,13 @@ perf_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'perf_path_to_
 attr_path_to_ids_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_ids_dict.json')))
 attr_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_sents_dict.json')))
 
-path_dict_cache = {
-    'attr_sents': (defaultdict(dict), attr_path_to_sents_dict),
-    'use_sents': (defaultdict(dict), use_path_to_sents_dict),
-    'perf_sents': (defaultdict(dict), perf_path_to_sents_dict),
-    'attr_ids': (defaultdict(dict), attr_path_to_ids_dict),
-    'attr_perf_ids': (defaultdict(dict), attr_perf_path_to_ids_dict),
-    'attr_perf_sents': (defaultdict(dict), attr_perf_path_to_sents_dict)
-}
+# Add new cache configurations
+CACHE_TTL = 3600  # Cache timeout in seconds (1 hour)
+CACHE_MAXSIZE = 100  # Maximum number of items in cache
+
+# Create cache instances
+path_dict_cache = TTLCache(maxsize=CACHE_MAXSIZE, ttl=CACHE_TTL)
+plot_data_cache = TTLCache(maxsize=CACHE_MAXSIZE, ttl=CACHE_TTL)
 
 # Initialize Dash app and login manager
 app = dash.Dash(__name__)
@@ -276,6 +278,41 @@ login_layout = html.Div([
     ])
 ])
 
+# Add new UI elements to main_layout
+search_box = html.Div([
+    html.Div([
+        dcc.Input(
+            id='search-input',
+            type='text',
+            placeholder='e.g. (good|great)&quality or quality&(durable|strong)',
+            style={
+                'width': '70%', 
+                'marginRight': '10px',
+                'padding': '8px',
+                'fontSize': '14px'
+            }
+        ),
+        html.Button(
+            'Search', 
+            id='search-button', 
+            n_clicks=0,
+            style={
+                'padding': '8px 16px',
+                'fontSize': '14px',
+                'cursor': 'pointer'
+            }
+        ),
+    ]),
+    html.Div([
+        html.Div(id='search-examples', style={
+            'marginTop': '8px', 
+            'fontSize': '12px',
+            'color': '#666'
+        })
+    ])
+], style={'marginBottom': '20px'})
+
+
 main_layout = html.Div([
     html.Div([
         html.Div([
@@ -293,6 +330,7 @@ main_layout = html.Div([
                 labelStyle={'display': 'inline-block', 'margin-right': '10px'}
             ),
         ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),
+        search_box,
         html.Div([
             html.Div([
             html.Label(id='y-axis-label'),  # Changed to use ID
@@ -360,35 +398,74 @@ app.layout = html.Div([
     html.Div(id='page-content')
 ])
 
+# Map type to raw dictionaries
+raw_dict_map = {
+    'use_sents': use_path_to_sents_dict,
+    'perf_sents': perf_path_to_sents_dict,
+    'attr_sents': attr_path_to_sents_dict,
+    'attr_perf_sents': attr_perf_path_to_sents_dict,
+    'attr_ids': attr_path_to_ids_dict,
+    'attr_perf_ids': attr_perf_path_to_ids_dict
+}
+
 # Data processing functions
-def get_cached_dict(type, category):
-    dict_cache, raw_dict = path_dict_cache[type]
-    if category in dict_cache:
-        return dict_cache[category]
-    else:
-        filtered_dict = filter_dict(raw_dict, category)
-        dict_cache[category] = filtered_dict
-        return filtered_dict
+@cached(cache=path_dict_cache)
+def get_cached_dict(type: str, category: str, search_query: str = '', return_both: bool = False) -> Dict:
+    """
+    Get filtered dictionary from cache. Can return both sents and ids dicts for attr/attr_perf.
+    """
+    raw_dict = raw_dict_map[type]
+    
+    # Filter by category
+    filtered_dict = filter_dict(raw_dict, category)
+    
+    # Only apply search query filter to sents dictionaries
+    if search_query and search_query.strip() and not type.endswith('_ids'):
+        filtered_dict = filter_dict_by_query(filtered_dict, search_query)
+        
+    # If we need both sents and ids dicts
+    if return_both:
+        if type == 'attr_perf_sents':
+            ids_dict = filter_dict(attr_perf_path_to_ids_dict, category)
+            # Filter ids_dict to match paths in filtered sents dict
+            ids_dict = {path: ids for path, ids in ids_dict.items() 
+                       if path in filtered_dict}
+        elif type == 'attr_sents':
+            ids_dict = filter_dict(attr_path_to_ids_dict, category)
+            # Filter ids_dict to match paths in filtered sents dict
+            ids_dict = {path: ids for path, ids in ids_dict.items() 
+                       if path in filtered_dict}
+        else:
+            raise ValueError(f"Cannot return both dicts for type: {type}")
+            
+        return filtered_dict, ids_dict
+        
+    return filtered_dict
 
-plot_data_cache = {}
-
-def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_n_y=2, language='en'):
+@cached(cache=plot_data_cache)
+def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_n_y=2, language='en', search_query=''):
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
-    plot_key = f'{plot_type}##{x_category}##{y_category}##{top_n_x}##{top_n_y}##{language}'
-    if plot_key in plot_data_cache:
-        return plot_data_cache[plot_key]
+    
+    # Include search_query in cache key only if it's not empty
+    cache_key = (plot_type, x_category, y_category, top_n_x, top_n_y, language, search_query) if search_query else \
+                (plot_type, x_category, y_category, top_n_x, top_n_y, language)
+        
+    if cache_key in plot_data_cache:
+        return plot_data_cache[cache_key]
     
     if plot_type == 'use_attr_perf':
-        x_path_to_sents_dict = get_cached_dict('use_sents', x_category)
-        y_path_to_ids_dict = get_cached_dict('attr_perf_ids', y_category)
-        y_path_to_sents_dict = get_cached_dict('attr_perf_sents', y_category)
+        x_path_to_sents_dict = get_cached_dict('use_sents', x_category, search_query)
+        y_path_to_sents_dict, y_path_to_ids_dict = get_cached_dict(
+            'attr_perf_sents', y_category, search_query, return_both=True
+        )
         title_key = 'use_attr_perf_title'
     else:  # perf_attr
-        x_path_to_sents_dict = get_cached_dict('perf_sents', x_category)
-        y_path_to_ids_dict = get_cached_dict('attr_ids', y_category)
-        y_path_to_sents_dict = get_cached_dict('attr_sents', y_category)
+        x_path_to_sents_dict = get_cached_dict('perf_sents', x_category, search_query)
+        y_path_to_sents_dict, y_path_to_ids_dict = get_cached_dict(
+            'attr_sents', y_category, search_query, return_both=True
+        )
         title_key = 'perf_attr_title'
 
     matrix, sentiment_matrix, review_matrix = create_correlation_matrix(
@@ -511,8 +588,8 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     y_percentages[:-1] = np.sum(non_na_matrix, axis=1) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(y_text)-1)
     
     
-    plot_data_cache[plot_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages)
-    return plot_data_cache[plot_key]
+    plot_data_cache[cache_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages)
+    return plot_data_cache[cache_key]
 
 def get_options(value, top_paths):
     levels = [{'label': 'All [Level 0]', 'value': 'all'}]
@@ -641,23 +718,25 @@ def update_axis_labels(language):
      Input('y-axis-dropdown', 'value'),
      Input('x-features-slider', 'value'),
      Input('y-features-slider', 'value'),
-     Input('language-selector', 'value')]
+     Input('language-selector', 'value'),
+     Input('search-button', 'n_clicks')],
+    [State('search-input', 'value')]
 )
-def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
-    if x_value is None:
-        x_value = 'all'
-    if y_value is None:
-        y_value = 'all'
+def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, search_query):
+    # Handle None or empty search query
+    search_query = search_query if search_query else ''
+    
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
+    
     # Get data for the graph
     if plot_type == 'use_attr_perf':
-        x_dict = get_cached_dict('use_sents', x_value)
-        y_dict = get_cached_dict('attr_perf_ids', y_value)
+        x_dict = get_cached_dict('use_sents', x_value, search_query)
+        y_dict = get_cached_dict('attr_perf_ids', y_value, search_query)
     else:
-        x_dict = get_cached_dict('perf_sents', x_value)
-        y_dict = get_cached_dict('attr_ids', y_value)
+        x_dict = get_cached_dict('perf_sents', x_value, search_query)
+        y_dict = get_cached_dict('attr_ids', y_value, search_query)
     
     # Update slider maximums based on available features
     max_x = len(x_dict)
@@ -668,7 +747,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
     top_n_y = min(top_n_y, max_y)
     
     matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages = get_plot_data(
-        plot_type, x_value, y_value, top_n_x, top_n_y, language
+        plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
     )
 
     
@@ -925,17 +1004,22 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
 @app.callback(
     Output('reviews-content', 'children'),
     [Input('correlation-matrix', 'clickData'),
-     Input('language-selector', 'value')],
+     Input('language-selector', 'value'),
+     Input('search-button', 'n_clicks')],
     [State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
      State('y-axis-dropdown', 'value'),
      State('x-features-slider', 'value'),
-     State('y-features-slider', 'value')]
+     State('y-features-slider', 'value'),
+     State('search-input', 'value')]
 )
-def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, top_n_x, top_n_y):
+def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, y_value, top_n_x, top_n_y, search_query):
     if click_data:
+        # Handle None or empty search query
+        search_query = search_query if search_query else ''
+        
         matrix, sentiment_matrix, review_matrix, x_text, y_text, title, x_percentages, y_percentages = get_plot_data(
-            plot_type, x_value, y_value, top_n_x, top_n_y, language
+            plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
         )
         point = click_data['points'][0]
         
@@ -968,6 +1052,105 @@ def display_clicked_reviews(click_data, language, plot_type, x_value, y_value, t
                 content.append(html.P(TRANSLATIONS[language]['no_reviews']))
             return content
     return []
+
+
+def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
+    """Filter reviews based on search query using regex patterns"""
+    if not query or not query.strip():
+        return reviews
+    
+    try:
+        # Convert operators and clean up query
+        query = query.lower().strip()
+        query = re.sub(r'\s*&\s*', ' and ', query)
+        query = re.sub(r'\s*\|\s*', ' or ', query)
+        
+        # Convert terms to regex patterns
+        terms = []
+        for term in re.findall(r'\w+|[()&|]', query):
+            if term in ('and', 'or', '(', ')'):
+                terms.append(term)
+            else:
+                terms.append(f"('{term}' in review)")
+        
+        # Create and evaluate the filter expression
+        filter_expr = ' '.join(terms)
+        return [review for review in reviews if eval(filter_expr, {'re': re, 'review': review.lower()})]
+    except Exception as e:
+        print(f"Search query error: {str(e)}")
+        return reviews
+
+# Add new helper function to filter dictionaries
+def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
+    """Filter path_to_sents_dict by removing reviews that don't match the query"""
+    if not search_query or not search_query.strip():
+        return path_to_sents_dict
+        
+    filtered_dict = {}
+    for path, sents_dict in path_to_sents_dict.items():
+        # Handle case where value is a list (ids_dict case)
+        if isinstance(sents_dict, list):
+            # For ids_dict, we keep the path if any associated reviews match
+            # We'll need to look up the reviews in the corresponding sents_dict
+            filtered_dict[path] = sents_dict
+            continue
+            
+        # Handle case where value is a dict (sents_dict case)
+        filtered_sents = {}
+        for sent, val in sents_dict.items():
+            if isinstance(val, dict):
+                rid_reviews_dict = val
+                filtered_rids = {}
+                for rid, reviews in rid_reviews_dict.items():
+                    matching_reviews = filter_reviews_by_query(reviews, search_query)
+                if matching_reviews:  # Only keep if there are matching reviews
+                    filtered_rids[rid] = matching_reviews
+                if filtered_rids:  # Only keep sentiment if there are matching reviews
+                    filtered_sents[sent] = filtered_rids
+            elif isinstance(val, list):
+                reviews = val
+                matching_reviews = filter_reviews_by_query(reviews, search_query)
+                if matching_reviews:
+                    filtered_sents[sent] = matching_reviews
+
+        if filtered_sents:  # Only keep path if there are matching reviews
+            filtered_dict[path] = filtered_sents
+            
+    return filtered_dict
+
+# Add new callback for search examples
+@app.callback(
+    Output('search-examples', 'children'),
+    [Input('language-selector', 'value')]
+)
+def update_search_examples(language):
+    examples = {
+        'en': [
+            "Search syntax: Use & (AND), | (OR), () for grouping. Case insensitive.",
+            "Examples:",
+            "- quality & (durable|strong)",
+            "- (good|great|excellent) & (price|cost)",
+            "- (easy|simple) & install & (quick|fast)",
+            "- problem & (not|never|no) & work"
+        ],
+        'zh': [
+            "搜索语法：使用 & (且)，| (或)，() 用于分组。不区分大小写。",
+            "示例：",
+            "- 质量 & (耐用|坚固)",
+            "- (好|优秀|完美) & (价格|成本)",
+            "- (容易|简单) & 安装 & (快速|迅速)",
+            "- 问题 & (不|没|无) & 工作"
+        ]
+    }
+    return [
+        html.P(
+            line, 
+            style={
+                'marginBottom': '4px',
+                'fontStyle': 'italic' if 'syntax' in line.lower() else 'normal'
+            }
+        ) for line in examples[language]
+    ]
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0')
