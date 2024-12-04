@@ -712,7 +712,8 @@ def update_axis_labels(language):
      Output('y-axis-dropdown', 'value'),
      Output('correlation-matrix', 'figure'),
      Output('x-features-slider', 'max'),
-     Output('y-features-slider', 'max')],
+     Output('y-features-slider', 'max'),
+     Output('reviews-content', 'children')],
     [Input('plot-type', 'value'),
      Input('x-axis-dropdown', 'value'),
      Input('y-axis-dropdown', 'value'),
@@ -723,6 +724,14 @@ def update_axis_labels(language):
     [State('search-input', 'value')]
 )
 def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, search_query):
+    ctx = dash.callback_context
+    trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+
+    # Reset selections if search button was clicked
+    if trigger_id == 'search-button.n_clicks':
+        x_value = 'all'
+        y_value = 'all'
+    
     # Handle None or empty search query
     search_query = search_query if search_query else ''
     
@@ -999,22 +1008,35 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
 
     x_options = get_options(x_value, x_text[:-1])  # Use clean text for options, excluding N/A
     y_options = get_options(y_value, y_text[-2::-1])  # Use clean text for options, excluding N/A, reverse order
-    return x_options, y_options, x_value, y_value, fig, max_x, max_y
+    
+    # Return empty list for reviews-content when search button is clicked
+    reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
+    
+    return x_options, y_options, x_value, y_value, fig, max_x, max_y, reviews_content
 
 @app.callback(
-    Output('reviews-content', 'children'),
+    Output('reviews-content', 'children', allow_duplicate=True),
     [Input('correlation-matrix', 'clickData'),
      Input('language-selector', 'value'),
-     Input('search-button', 'n_clicks')],
+     Input('search-button', 'n_clicks')],  # Add search-button as Input
     [State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
      State('y-axis-dropdown', 'value'),
      State('x-features-slider', 'value'),
      State('y-features-slider', 'value'),
-     State('search-input', 'value')]
+     State('search-input', 'value')],
+    prevent_initial_call=True
 )
 def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, y_value, top_n_x, top_n_y, search_query):
-    if click_data:
+    ctx = dash.callback_context
+    trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+    
+    # If search button was clicked, return empty list
+    if trigger_id == 'search-button.n_clicks':
+        return []
+        
+    # Only process click data if the callback was triggered by matrix click
+    if trigger_id == 'correlation-matrix.clickData' and click_data:
         # Handle None or empty search query
         search_query = search_query if search_query else ''
         
@@ -1027,7 +1049,7 @@ def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, 
         clicked_x = point['x']
         clicked_y = point['y']
         
-        # Create display text with percentages (same as in get_plot_data)
+        # Create display text with percentages
         x_display = [f"({perc:.1f}%) {txt}" if not txt.startswith('N/A') else txt 
                     for txt, perc in zip(x_text, x_percentages)]
         y_display = [f"{txt} ({perc:.1f}%)" if not txt.startswith('N/A') else txt 
@@ -1039,8 +1061,8 @@ def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, 
         
         if i != -1 and j != -1:
             reviews = review_matrix[i][j]
-            selected_x = x_display[j]  # Use display text for showing to user
-            selected_y = y_display[i]  # Use display text for showing to user
+            selected_x = x_display[j]
+            selected_y = y_display[i]
             content = [
                 dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True),
                 dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
@@ -1051,7 +1073,8 @@ def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, 
             else:
                 content.append(html.P(TRANSLATIONS[language]['no_reviews']))
             return content
-    return []
+            
+    return dash.no_update
 
 
 def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
@@ -1103,8 +1126,8 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
                 filtered_rids = {}
                 for rid, reviews in rid_reviews_dict.items():
                     matching_reviews = filter_reviews_by_query(reviews, search_query)
-                if matching_reviews:  # Only keep if there are matching reviews
-                    filtered_rids[rid] = matching_reviews
+                    if matching_reviews:  # Only keep if there are matching reviews
+                        filtered_rids[rid] = matching_reviews
                 if filtered_rids:  # Only keep sentiment if there are matching reviews
                     filtered_sents[sent] = filtered_rids
             elif isinstance(val, list):
