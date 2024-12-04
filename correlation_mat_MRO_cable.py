@@ -49,6 +49,7 @@ TRANSLATIONS = {
         'percentage_explanation': 'Percentage of total mentions',
         'x_axis_percentage': 'Percentage of total mentions',
         'y_axis_percentage': 'Percentage of total mentions',
+        'search_placeholder': 'e.g. (good|great)&quality or quality&(durable|strong)',
     },
     'zh': {
         'login': '登录',
@@ -80,6 +81,7 @@ TRANSLATIONS = {
         'percentage_explanation': '占总提及次数的百分比',
         'x_axis_percentage': '(该类别被提及次数%)',
         'y_axis_percentage': '(该类别被提及次数%)',
+        'search_placeholder': '搜索asin或者评论关键词',
     }
 }
 
@@ -278,46 +280,56 @@ login_layout = html.Div([
     ])
 ])
 
-# Add new UI elements to main_layout
-search_box = html.Div([
-    html.Div([
-        dcc.Input(
-            id='search-input',
-            type='text',
-            placeholder='e.g. (good|great)&quality or quality&(durable|strong)',
-            style={
-                'width': '70%', 
-                'marginRight': '10px',
-                'padding': '8px',
-                'fontSize': '14px'
-            }
-        ),
-        html.Button(
-            'Search', 
-            id='search-button', 
-            n_clicks=0,
-            style={
-                'padding': '8px 16px',
-                'fontSize': '14px',
-                'cursor': 'pointer'
-            }
-        ),
-    ]),
-    html.Div([
-        html.Div(id='search-examples', style={
-            'marginTop': '8px', 
-            'fontSize': '12px',
-            'color': '#666'
-        })
-    ])
-], style={'marginBottom': '20px'})
+# Remove the search_box definition from the global scope and move it into a function
+def create_search_box(language='en'):  # Default to English
+    return html.Div([
+        html.Div([
+            dcc.Input(
+                id='search-input',
+                type='text',
+                placeholder=TRANSLATIONS[language]['search_placeholder'],
+                n_submit=0,  # Add this for Enter key handling
+                style={
+                    'width': '70%', 
+                    'marginRight': '10px',
+                    'padding': '8px',
+                    'fontSize': '14px'
+                }
+            ),
+            html.Button(
+                'Search', 
+                id='search-button', 
+                n_clicks=0,
+                style={
+                    'padding': '8px 16px',
+                    'fontSize': '14px',
+                    'cursor': 'pointer'
+                }
+            ),
+        ]),
+        html.Div(id='search-results-info', style={
+            'marginTop': '10px',
+            'fontSize': '14px',
+            'color': '#444444',  # Darker grey text
+            'display': 'inline-block',  # Make div only as wide as content
+            'backgroundColor': '#FFEB3B',  # Bright yellow background
+            'padding': '0 4px',  # Add small horizontal padding
+        }),
+        html.Div([
+            html.Div(id='search-examples', style={
+                'marginTop': '8px', 
+                'fontSize': '12px',
+                'color': '#666'
+            })
+        ])
+    ], style={'marginBottom': '20px'})
 
-
+# Update main_layout to use the function
 main_layout = html.Div([
     html.Div([
         html.Div([
-        html.Button('Logout', id='logout-button', style={'float': 'right', 'margin': '10px'}),
-    ]),
+            html.Button('Logout', id='logout-button', style={'float': 'right', 'margin': '10px'}),
+        ]),
         html.Div([
             html.Label(id='plot-type-label'),
             dcc.RadioItems(
@@ -330,7 +342,7 @@ main_layout = html.Div([
                 labelStyle={'display': 'inline-block', 'margin-right': '10px'}
             ),
         ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),
-        search_box,
+        create_search_box(),  # Use the function here
         html.Div([
             html.Div([
             html.Label(id='y-axis-label'),  # Changed to use ID
@@ -772,7 +784,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     
     # Width calculation - increase base width to accommodate legends
     base_width = 800  # Increased from 600
-    min_width = 600  # Increased from 400
+    min_width = 700  # Increased from 400
     additional_width_per_feature = 100
     max_width = 1600  # Increased from 1200
     
@@ -1153,16 +1165,11 @@ def update_search_examples(language):
             "Examples:",
             "- quality & (durable|strong)",
             "- (good|great|excellent) & (price|cost)",
-            "- (easy|simple) & install & (quick|fast)",
-            "- problem & (not|never|no) & work"
         ],
         'zh': [
-            "搜索语法：使用 & (且)，| (或)，() 用于分组。不区分大小写。",
-            "示例：",
-            "- 质量 & (耐用|坚固)",
-            "- (好|优秀|完美) & (价格|成本)",
-            "- (容易|简单) & 安装 & (快速|迅速)",
-            "- 问题 & (不|没|无) & 工作"
+            "搜索语法：使用 & (且)，| (或)，() 用于分组。不区分大小写。示例：",
+            "- B08NJ2SGDW | B08NJ2SGDW: 搜索asin为 B08NJ2SGDW 或 B08NJ2SGDW 的评论",
+            "- (B08NJ2SGDW|B08NJ2SGDW)&(good|great): 搜索asin为 B08NJ2SGDW 或 B08NJ2SGDW 并且评论中包含 good 或 great 的评论",
         ]
     }
     return [
@@ -1174,6 +1181,112 @@ def update_search_examples(language):
             }
         ) for line in examples[language]
     ]
+
+def normalize_search_query(query: str) -> str:
+    """Normalize search query for display by quoting terms and using readable operators"""
+    if not query or not query.strip():
+        return ""
+        
+    query = query.strip()
+    
+    # First handle parentheses spacing
+    query = re.sub(r'\(\s*', '(', query)
+    query = re.sub(r'\s*\)', ')', query)
+    
+    # Split into tokens while preserving operators and parentheses
+    tokens = re.findall(r'\(|\)|\w+|&|\|', query)
+    
+    # Process tokens
+    normalized = []
+    for token in tokens:
+        if token in ('&', '|'):
+            # Replace operators
+            normalized.append('and' if token == '&' else 'or')
+        elif token in ('(', ')'):
+            # Keep parentheses as-is
+            normalized.append(token)
+        else:
+            # Quote terms
+            normalized.append(f'"{token}"')
+    
+    # Join with proper spacing
+    return ' '.join(normalized)
+
+@app.callback(
+    Output('search-results-info', 'children'),
+    [Input('search-button', 'n_clicks'),
+     Input('language-selector', 'value')],
+    [State('search-input', 'value'),
+     State('plot-type', 'value'),
+     State('x-axis-dropdown', 'value'),
+     State('y-axis-dropdown', 'value')]
+)
+def update_search_results_info(n_clicks, language, search_query, plot_type, x_value, y_value):
+    if not search_query or not search_query.strip():
+        return ''
+        
+    # Get the dictionaries based on plot type
+    if plot_type == 'use_attr_perf':
+        x_dict = get_cached_dict('use_sents', x_value, search_query)
+        y_dict = get_cached_dict('attr_perf_sents', y_value, search_query)
+    else:
+        x_dict = get_cached_dict('perf_sents', x_value, search_query)
+        y_dict = get_cached_dict('attr_sents', y_value, search_query)
+    
+    # Count total unique reviews
+    total_reviews = set()
+    
+    # Count reviews in x_dict
+    for sents_dict in x_dict.values():
+        for sent_dict in sents_dict.values():
+            if isinstance(sent_dict, dict):
+                for reviews in sent_dict.values():
+                    total_reviews.update(reviews)
+            elif isinstance(sent_dict, list):
+                total_reviews.update(sent_dict)
+                
+    # Count reviews in y_dict
+    for sents_dict in y_dict.values():
+        for sent_dict in sents_dict.values():
+            if isinstance(sent_dict, dict):
+                for reviews in sent_dict.values():
+                    total_reviews.update(reviews)
+            elif isinstance(sent_dict, list):
+                total_reviews.update(sent_dict)
+    
+    # Normalize search query
+    normalized_query = normalize_search_query(search_query)
+    
+    # Return translated message with results
+    translations = {
+        'en': {
+            'results': f"Found {len(total_reviews)} reviews matching query: {normalized_query}",
+        },
+        'zh': {
+            'results': f"找到 {len(total_reviews)} 条匹配的评论，搜索条件：{normalized_query}",
+        }
+    }
+    
+    return translations[language]['results']
+
+# Add callback to update placeholder when language changes
+@app.callback(
+    Output('search-input', 'placeholder'),
+    [Input('language-selector', 'value')]
+)
+def update_search_placeholder(language):
+    return TRANSLATIONS[language]['search_placeholder']
+
+# Add new callback for handling Enter key press
+@app.callback(
+    Output('search-button', 'n_clicks'),
+    [Input('search-input', 'n_submit')],
+    [State('search-button', 'n_clicks')]
+)
+def handle_enter_press(n_submit, current_clicks):
+    if n_submit:
+        return (current_clicks or 0) + 1
+    return dash.no_update
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0')
