@@ -744,6 +744,11 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
         x_value = 'all'
         y_value = 'all'
     
+    if x_value is None:
+        x_value = 'all'
+    if y_value is None:
+        y_value = 'all'
+        
     # Handle None or empty search query
     search_query = search_query if search_query else ''
     
