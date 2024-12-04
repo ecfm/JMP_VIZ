@@ -12,7 +12,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, curren
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_cables")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310")
 
 # Language translations
 TRANSLATIONS = {
@@ -376,7 +376,6 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
-    
     plot_key = f'{plot_type}##{x_category}##{y_category}##{top_n_x}##{top_n_y}##{language}'
     if plot_key in plot_data_cache:
         return plot_data_cache[plot_key]
@@ -645,10 +644,13 @@ def update_axis_labels(language):
      Input('language-selector', 'value')]
 )
 def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language):
+    if x_value is None:
+        x_value = 'all'
+    if y_value is None:
+        y_value = 'all'
     # Convert slider values to integers
     top_n_x = int(top_n_x)
     top_n_y = int(top_n_y)
-    
     # Get data for the graph
     if plot_type == 'use_attr_perf':
         x_dict = get_cached_dict('use_sents', x_value)
