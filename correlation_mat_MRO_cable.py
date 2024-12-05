@@ -15,7 +15,7 @@ from cachetools import TTLCache, cached
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/MRO_cables")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310")
 
 # Language translations
 TRANSLATIONS = {
@@ -486,66 +486,33 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
         y_path_to_sents_dict
     )
     
-    # Ensure we don't exceed the available features
-    top_n_x = min(top_n_x, matrix.shape[1] - 1)  # -1 to account for N/A
-    top_n_y = min(top_n_y, matrix.shape[0] - 1)  # -1 to account for N/A
-    
-    # Get sums excluding N/A row/column
-    x_sums = np.sum(matrix[:-1, :], axis=0)  # Exclude N/A row
-    y_sums = np.sum(matrix[:, :-1], axis=1)  # Exclude N/A column
-    
-    # identify top x path indices from summing up the matrix (excluding N/A)
-    non_zero_x = np.where(x_sums[:-1] > 0)[0]  # Exclude N/A from non-zero check
-    if len(non_zero_x) == 0:  # Handle case with no non-zero values
-        # If x_category is not 'all', use the selected category
-        if x_category != 'all':
-            # Get the index of the selected category
-            x_paths = list(x_path_to_sents_dict.keys())
-            try:
-                selected_idx = x_paths.index(x_category)
-                top_x_indices = np.array([selected_idx])
-            except ValueError:
-                # If category not found, use first available index
-                top_x_indices = np.array([0])
+    def process_axis(matrix: np.ndarray, axis: int, top_n: int, paths: list) -> tuple:
+        """Process one axis (x or y) to get indices, paths and percentages.
+        Args:
+            matrix: The correlation matrix
+            axis: 0 for y-axis (rows), 1 for x-axis (columns)
+            top_n: Number of top features to return
+            paths: List of paths for this axis
+        Returns:
+            tuple of (top_indices, top_paths, percentages)
+        """
+        sums = np.sum(matrix, axis=1-axis)  # sum over opposite axis
+        non_zero = np.where(sums > 0)[0]
+        if len(non_zero) == 0:
+            # If there are no non-zero values, show the first top_n features
+            top_indices = np.arange(min(top_n, len(sums)))
         else:
-            # If no category selected, use first few indices
-            top_x_indices = np.arange(min(top_n_x, matrix.shape[1]-1))  # -1 to exclude N/A
-    else:
-        top_x_indices = non_zero_x[np.argsort(x_sums[non_zero_x])[-min(top_n_x, len(non_zero_x)):]]
+            top_indices = non_zero[np.argsort(sums[non_zero])[-min(top_n, len(non_zero)):]]
+        top_paths = [paths[i] for i in top_indices]
+        total_mentions = np.sum(matrix)
+        percentages = np.sum(matrix, axis=1-axis) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(paths))
+        return top_indices, top_paths, percentages
     
-    # Add N/A index
-    top_x_indices = np.append(top_x_indices, matrix.shape[1]-1)
-    
-    # Get paths excluding N/A
-    x_paths = list(x_path_to_sents_dict.keys())
-    top_x_paths = [x_paths[i] for i in top_x_indices[:-1]]  # Exclude N/A index
-    top_x_paths.append('N/A')  # Add N/A path
-    
-    # identify top y path indices with non-zero sum (excluding N/A)
-    non_zero_y = np.where(y_sums[:-1] > 0)[0]  # Exclude N/A from non-zero check
-    if len(non_zero_y) == 0:  # Handle case with no non-zero values
-        # If y_category is not 'all', use the selected category
-        if y_category != 'all':
-            # Get the index of the selected category
-            y_paths = list(y_path_to_ids_dict.keys())
-            try:
-                selected_idx = y_paths.index(y_category)
-                top_y_indices = np.array([selected_idx])
-            except ValueError:
-                # If category not found, use first available index
-                top_y_indices = np.array([0])
-        else:
-            # If no category selected, use first few indices
-            top_y_indices = np.arange(min(top_n_y, matrix.shape[0]-1))  # -1 to exclude N/A
-    else:
-        top_y_indices = non_zero_y[np.argsort(y_sums[non_zero_y])[-min(top_n_y, len(non_zero_y)):]]
-    # Add N/A index
-    top_y_indices = np.append(top_y_indices, matrix.shape[0]-1)
-    
-    # Get paths excluding N/A
-    y_paths = list(y_path_to_ids_dict.keys())
-    top_y_paths = [y_paths[i] for i in top_y_indices[:-1]]  # Exclude N/A index
-    top_y_paths.append('N/A')  # Add N/A path
+    # Process x and y axes
+    x_paths = list(x_path_to_sents_dict.keys()) + ['N/A']
+    y_paths = list(y_path_to_ids_dict.keys()) + ['N/A']
+    top_x_indices, top_x_paths, x_percentages = process_axis(matrix, 1, top_n_x, x_paths)
+    top_y_indices, top_y_paths, y_percentages = process_axis(matrix, 0, top_n_y, y_paths)
     
     # Extract relevant submatrices
     matrix = matrix[top_y_indices, :][:, top_x_indices]
@@ -589,18 +556,10 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     x_text = [x_na if txt == 'N/A' else txt for txt in x_text]
     y_text = [y_na if txt == 'N/A' else txt for txt in y_text]
     
-    # Calculate percentages (excluding N/A from percentage calculation)
-    non_na_matrix = matrix[:-1, :-1]  # Exclude N/A row and column
-    total_mentions = np.sum(non_na_matrix)
+    x_display = [f"({perc:.1f}%) {txt}" for txt, perc in zip(x_text, x_percentages)]
+    y_display = [f"{txt} ({perc:.1f}%)" for txt, perc in zip(y_text, y_percentages)]
     
-    x_percentages = np.zeros(len(x_text))
-    x_percentages[:-1] = np.sum(non_na_matrix, axis=0) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(x_text)-1)
-    
-    y_percentages = np.zeros(len(y_text))
-    y_percentages[:-1] = np.sum(non_na_matrix, axis=1) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(y_text)-1)
-    
-    
-    plot_data_cache[cache_key] = (matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages)
+    plot_data_cache[cache_key] = (matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key)
     return plot_data_cache[cache_key]
 
 def get_options(value, top_paths):
@@ -725,7 +684,9 @@ def update_axis_labels(language):
      Output('correlation-matrix', 'figure'),
      Output('x-features-slider', 'max'),
      Output('y-features-slider', 'max'),
-     Output('reviews-content', 'children')],
+     Output('reviews-content', 'children'),
+     Output('x-features-slider', 'value'),  # Add new output for x slider value
+     Output('y-features-slider', 'value')], # Add new output for y slider value
     [Input('plot-type', 'value'),
      Input('x-axis-dropdown', 'value'),
      Input('y-axis-dropdown', 'value'),
@@ -739,16 +700,18 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
 
-    # Reset selections if search button was clicked
+    # Reset selections and slider values if search button was clicked
     if trigger_id == 'search-button.n_clicks':
         x_value = 'all'
         y_value = 'all'
+        top_n_x = 7  # Reset to default value
+        top_n_y = 7  # Reset to default value
     
     if x_value is None:
         x_value = 'all'
     if y_value is None:
         y_value = 'all'
-        
+
     # Handle None or empty search query
     search_query = search_query if search_query else ''
     
@@ -772,7 +735,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     top_n_x = min(top_n_x, max_x)
     top_n_y = min(top_n_y, max_y)
     
-    matrix, sentiment_matrix, review_matrix, x_text, y_text, title_key, x_percentages, y_percentages = get_plot_data(
+    matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
         plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
     )
 
@@ -784,7 +747,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     additional_height_per_feature = 40
     dynamic_height = max(
         min_height,
-        base_height + max(0, len(y_text) - 5) * additional_height_per_feature
+        base_height + max(0, len(y_display) - 5) * additional_height_per_feature
     )
     
     # Width calculation - increase base width to accommodate legends
@@ -794,14 +757,14 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     max_width = 1600  # Increased from 1200
     
     # Calculate width based on the length of x-axis labels and number of features
-    avg_label_length = sum(len(str(label)) for label in x_text) / len(x_text) if x_text else 0
+    avg_label_length = sum(len(str(label)) for label in x_display) / len(x_display) if x_display else 0
     width_factor = max(1, avg_label_length / 15)  # Adjust width more for longer labels
     
     dynamic_width = min(
         max_width,
         max(
             min_width,
-            base_width + max(0, len(x_text) - 5) * additional_width_per_feature * width_factor
+            base_width + max(0, len(x_display) - 5) * additional_width_per_feature * width_factor
         )
     )
     
@@ -809,13 +772,8 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     fig = go.Figure()
 
     # Calculate dynamic margins based on label lengths
-    max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
+    max_y_label_length = max(len(str(label)) for label in y_display) if y_display else 0
     left_margin = min(200, max(80, max_y_label_length * 7))
-        # Create display text with percentages
-    x_display = [f"({perc:.1f}%) {txt}" if not txt.startswith('N/A') else txt 
-             for txt, perc in zip(x_text, x_percentages)]
-    y_display = [f"{txt} ({perc:.1f}%)" if not txt.startswith('N/A') else txt 
-             for txt, perc in zip(y_text, y_percentages)]
     # Add the satisfaction ratio heatmap (color legend)
     fig.add_trace(go.Heatmap(
         z=sentiment_matrix,
@@ -1029,13 +987,13 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     # Return empty list for reviews-content when search button is clicked
     reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
     
-    return x_options, y_options, x_value, y_value, fig, max_x, max_y, reviews_content
+    return x_options, y_options, x_value, y_value, fig, max_x, max_y, reviews_content, top_n_x, top_n_y
 
 @app.callback(
     Output('reviews-content', 'children', allow_duplicate=True),
     [Input('correlation-matrix', 'clickData'),
      Input('language-selector', 'value'),
-     Input('search-button', 'n_clicks')],  # Add search-button as Input
+     Input('search-button', 'n_clicks')],
     [State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
      State('y-axis-dropdown', 'value'),
@@ -1057,39 +1015,40 @@ def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, 
         # Handle None or empty search query
         search_query = search_query if search_query else ''
         
-        matrix, sentiment_matrix, review_matrix, x_text, y_text, title, x_percentages, y_percentages = get_plot_data(
-            plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
-        )
+        # Get the clicked point data
         point = click_data['points'][0]
         
-        # Get the clicked point coordinates
+        # Extract the raw text without percentages
         clicked_x = point['x']
         clicked_y = point['y']
         
-        # Create display text with percentages
-        x_display = [f"({perc:.1f}%) {txt}" if not txt.startswith('N/A') else txt 
-                    for txt, perc in zip(x_text, x_percentages)]
-        y_display = [f"{txt} ({perc:.1f}%)" if not txt.startswith('N/A') else txt 
-                    for txt, perc in zip(y_text, y_percentages)]
+        # Get the plot data with the current search query
+        matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
+            plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
+        )
         
-        # Find the index by matching the display text exactly
-        i = y_display.index(clicked_y)
-        j = x_display.index(clicked_x)
-        
-        if i != -1 and j != -1:
-            reviews = review_matrix[i][j]
-            selected_x = x_display[j]
-            selected_y = y_display[i]
-            content = [
-                dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{selected_x}</b>, Y=<b>{selected_y}</b>", dangerously_allow_html=True),
-                dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
-            ]
-            if reviews:
-                reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
-                content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
-            else:
-                content.append(html.P(TRANSLATIONS[language]['no_reviews']))
-            return content
+        # Find indices by matching the display text
+        try:
+            i = y_display.index(clicked_y)
+            j = x_display.index(clicked_x)
+            
+            if i != -1 and j != -1:
+                reviews = review_matrix[i][j]
+                content = [
+                    dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{clicked_x}</b>, Y=<b>{clicked_y}</b>", dangerously_allow_html=True),
+                    dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
+                ]
+                if reviews:
+                    reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
+                    content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
+                else:
+                    content.append(html.P(TRANSLATIONS[language]['no_reviews']))
+                return content
+        except ValueError:
+            print(f"Could not find indices for clicked points: x={clicked_x}, y={clicked_y}")
+            print(f"Available x_display: {x_display}")
+            print(f"Available y_display: {y_display}")
+            raise ValueError(f"Could not find indices for clicked points: x={clicked_x}, y={clicked_y} in x_display={x_display} and y_display={y_display}")
             
     return dash.no_update
 
