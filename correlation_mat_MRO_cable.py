@@ -700,12 +700,10 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
 
-    # Reset selections and slider values if search button was clicked
+    # Reset selections if search button was clicked
     if trigger_id == 'search-button.n_clicks':
         x_value = 'all'
         y_value = 'all'
-        top_n_x = 7  # Reset to default value
-        top_n_y = 7  # Reset to default value
     
     if x_value is None:
         x_value = 'all'
@@ -731,9 +729,14 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     max_x = len(x_dict)
     max_y = len(y_dict)
     
-    # Ensure top_n values don't exceed available features
-    top_n_x = min(top_n_x, max_x)
-    top_n_y = min(top_n_y, max_y)
+    # For search reset, set slider values to min(7, max available)
+    if trigger_id == 'search-button.n_clicks':
+        top_n_x = min(7, max_x)  # Reset to default of 7 or max available
+        top_n_y = min(7, max_y)  # Reset to default of 7 or max available
+    else:
+        # Ensure top_n values don't exceed available features
+        top_n_x = min(top_n_x, max_x)
+        top_n_y = min(top_n_y, max_y)
     
     matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
         plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
@@ -954,14 +957,14 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     # First, add the needed translations to both language dictionaries
     hover_translations = {
         'en': {
-            'hover_y': 'Y-axis',
             'hover_x': 'X-axis',
+            'hover_y': 'Y-axis',
             'hover_count': 'Count',
             'hover_satisfaction': 'Satisfaction Ratio'
         },
         'zh': {
-            'hover_y': 'Y轴',
             'hover_x': 'X轴',
+            'hover_y': 'Y轴',
             'hover_count': '数量',
             'hover_satisfaction': '满意度比例'
         }
@@ -969,8 +972,8 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
 
     # Update hover template with translations
     hover_template = (
-        f"{hover_translations[language]['hover_y']}: %{{y}}<br>" +
         f"{hover_translations[language]['hover_x']}: %{{x}}<br>" +
+        f"{hover_translations[language]['hover_y']}: %{{y}}<br>" +
         f"{hover_translations[language]['hover_count']}: %{{text}}<br>" +
         f"{hover_translations[language]['hover_satisfaction']}: %{{customdata:.2f}}"
     )
@@ -987,7 +990,9 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     # Return empty list for reviews-content when search button is clicked
     reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
     
-    return x_options, y_options, x_value, y_value, fig, max_x, max_y, reviews_content, top_n_x, top_n_y
+    # Return both the new slider values and the rest of the outputs
+    return (x_options, y_options, x_value, y_value, fig, max_x, max_y, 
+            reviews_content, top_n_x, top_n_y)
 
 @app.callback(
     Output('reviews-content', 'children', allow_duplicate=True),
