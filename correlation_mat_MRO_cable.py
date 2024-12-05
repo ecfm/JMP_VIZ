@@ -754,10 +754,10 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
     )
     
     # Width calculation - increase base width to accommodate legends
-    base_width = 800  # Increased from 600
-    min_width = 700  # Increased from 400
-    additional_width_per_feature = 100
-    max_width = 1600  # Increased from 1200
+    base_width = 800  
+    min_width = 1200 
+    additional_width_per_feature = 60
+    max_width = 2000
     
     # Calculate width based on the length of x-axis labels and number of features
     avg_label_length = sum(len(str(label)) for label in x_display) / len(x_display) if x_display else 0
@@ -771,12 +771,14 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
         )
     )
     
+    # Calculate dynamic margins based on label lengths
+    max_y_label_length = max(len(str(label)) for label in y_display) if y_display else 0
+    left_margin = min(300, max(150, max_y_label_length * 8))  # Increased margins
+    right_margin = 450  # Increased from 400
+
     # Create the base heatmap figure
     fig = go.Figure()
 
-    # Calculate dynamic margins based on label lengths
-    max_y_label_length = max(len(str(label)) for label in y_display) if y_display else 0
-    left_margin = min(200, max(80, max_y_label_length * 7))
     # Add the satisfaction ratio heatmap (color legend)
     fig.add_trace(go.Heatmap(
         z=sentiment_matrix,
@@ -947,7 +949,7 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
         height=dynamic_height,
         margin=dict(
             l=left_margin,
-            r=400,  # Increased from 300 to 400 to accommodate the explanation text
+            r=right_margin,  # Using the new right_margin
             t=150,
             b=100,
             autoexpand=True
