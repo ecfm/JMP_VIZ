@@ -505,7 +505,7 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
             top_indices = non_zero[np.argsort(sums[non_zero])[-min(top_n, len(non_zero)):]]
         top_paths = [paths[i] for i in top_indices]
         total_mentions = np.sum(matrix)
-        percentages = np.sum(matrix, axis=1-axis) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(paths))
+        percentages = np.sum(matrix[top_indices] if axis == 0 else matrix[:, top_indices], axis=1-axis) / total_mentions * 100 if total_mentions > 0 else np.zeros(len(top_indices))
         return top_indices, top_paths, percentages
     
     # Process x and y axes
