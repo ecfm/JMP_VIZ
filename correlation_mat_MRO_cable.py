@@ -451,7 +451,7 @@ main_layout = html.Div([
                 className='sentiment-filter-horizontal'  # Add class for styling
             ),
             html.Div(id='review-counts', style={'margin': '5px', 'fontSize': '1em', 'color': '#444'}),
-            html.Div(id='reviews-content', style={'maxHeight': '300px', 'overflowY': 'auto', 'border': '2px solid #ddd', 'borderRadius': '5px', 'padding': '10px'})
+            html.Div(id='reviews-content', style={'maxHeight': '1200px', 'overflowY': 'auto', 'border': '2px solid #ddd', 'borderRadius': '5px', 'padding': '10px'})
         ], style={'borderTop': '3px double #ddd'})
     ])
 ])
@@ -1206,7 +1206,7 @@ def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language,
                         srcDoc=html_content,
                         style={
                             'width': '100%',
-                            'height': '300px',
+                            'height': '600px',
                             'border': 'none',
                             'borderRadius': '5px',
                             'backgroundColor': 'white'
