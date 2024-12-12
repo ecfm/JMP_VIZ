@@ -15,7 +15,24 @@ from cachetools import TTLCache, cached
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310_v2")
+
+color_mapping = {
+        '+': '#E6F3FF',  # Blue background
+        '-': '#FFE6E6',  # Red background
+        '?': '#FFFFFF',  # White background
+        'x': '#805AD5',  # Purple border
+        'y': '#38A169',  # Green border
+    }
+
+x_highlight_en = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">Text related to X-axis</span>'
+y_highlight_en = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Text related to Y-axis</span>'
+pos_highlight_en = f'<span style="background-color: {color_mapping["+"]}; color: black; padding: 5px;">Blue background indicates positive sentiment</span>'
+neg_highlight_en = f'<span style="background-color: {color_mapping["-"]}; color: black; padding: 5px;">Red background indicates negative sentiment</span>'
+x_highlight_zh = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X轴相关文本</span>'
+y_highlight_zh = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y轴相关文本</span>'
+pos_highlight_zh = f'<span style="background-color: {color_mapping["+"]}; color: black; padding: 5px;">蓝底表示满意</span>'
+neg_highlight_zh = f'<span style="background-color: {color_mapping["-"]}; color: black; padding: 5px;">红底表示不满意</span>'
 
 # Language translations
 TRANSLATIONS = {
@@ -45,11 +62,17 @@ TRANSLATIONS = {
         'satisfied': 'Satisfied',
         'use_attr_perf_title': 'Usage v.s. Product Performance and Attributes',
         'perf_attr_title': 'Performance v.s. Attributes',
-        'review_format': 'Display Format: Review x: ASIN (Star Rating) <b>Review Title</b> Review Text',
+        'review_format': f'Display Format: Review x: {x_highlight_en} {y_highlight_en} {pos_highlight_en} {neg_highlight_en} ASIN (Star Rating) <b>Review Title</b> Review Text',
         'percentage_explanation': 'Percentage of total mentions',
         'x_axis_percentage': 'Percentage of total mentions',
         'y_axis_percentage': 'Percentage of total mentions',
         'search_placeholder': 'e.g. (good|great)&quality or quality&(durable|strong)',
+        'sentiment_filter': 'Filter Reviews:',
+        'show_all': 'Show All',
+        'show_positive': 'Show Positive',
+        'show_negative': 'Show Negative',
+        'positive_count': 'Positive Reviews: {}',
+        'negative_count': 'Negative Reviews: {}',
     },
     'zh': {
         'login': '登录',
@@ -77,11 +100,17 @@ TRANSLATIONS = {
         'satisfied': '满意',
         'use_attr_perf_title': '用途 vs. 产品属性和性能',
         'perf_attr_title': '性能 vs. 属性',
-        'review_format': '显示格式： 评论 x: ASIN (评论星级) <b>评论标题</b> 评论内容',
+        'review_format': f'显示格式： 评论 x: {x_highlight_zh} {y_highlight_zh} {pos_highlight_zh} {neg_highlight_zh} ASIN (评论星级) <b>评论标题</b> 评论内容',
         'percentage_explanation': '占总提及次数的百分比',
         'x_axis_percentage': '(该类别被提及次数%)',
         'y_axis_percentage': '(该类别被提及次数%)',
         'search_placeholder': '搜索asin或者评论关键词',
+        'sentiment_filter': '评论筛选：',
+        'show_all': '显示全部',
+        'show_positive': '显示正面评论',
+        'show_negative': '显示负面评论',
+        'positive_count': '正面评论数: {}',
+        'negative_count': '负面评论数: {}',
     }
 }
 
@@ -126,41 +155,71 @@ def filter_dict(path_to_sents_dict, category):
             filtered_dict[key] = merge_values(filtered_dict[key], sents_dict)
     return filtered_dict
 
+def extract_review_highlight(review):
+    highlight, review_text = review.split('|||')
+    if '<<<' in highlight:
+        highlight_detail, highlight_reason = highlight.split('<<<')
+        return review_text, highlight_detail, highlight_reason
+    else:
+        return review_text, highlight, None
+
+def reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True):
+    review_htmls = []
+    pos_count = 0
+    for review_text, highlights in review_to_highlight_dict.items():
+        highlight_htmls = []
+        pos_count_list = []
+        detail_to_sent = {}
+        reason_to_sent = {}
+        for sent, highlight_detail, highlight_reason in highlights:
+            if sent == '+':
+                pos_count_list.append(1)
+            elif sent == '-':
+                pos_count_list.append(0)
+            else:
+                # print(f"Warning: {sent} is not a valid sentiment for {highlight_detail}|||{review_text}")
+                pos_count_list.append(0.5)
+                sent = '?'
+            detail_to_sent[highlight_detail] = sent
+            if highlight_reason and display_reason:
+                reason_to_sent[highlight_reason] = sent
+        highlight_htmls.extend([f'<span style="background-color: {color_mapping[sent]}; border: 4px solid {color_mapping[detail_axis]}; color: black; padding: 2px;">{highlight_detail}</span>' for highlight_detail in detail_to_sent.keys()])
+        if display_reason:
+            highlight_htmls.extend([f'<span style="background-color: {color_mapping[sent]}; border: 4px solid {color_mapping["y"]}; color: black; padding: 2px;">{highlight_reason}</span>' for highlight_reason in reason_to_sent.keys()])
+        review_htmls.append(f"{' '.join(highlight_htmls)} {review_text}")
+        pos_count += sum(pos_count_list)/len(pos_count_list)
+    return review_htmls, pos_count
+
 def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_to_sents_dict):
     # Add N/A entries
-    x_path_to_sents_dict = {**x_path_to_sents_dict, 'N/A': {}}
-    y_path_to_ids_dict = {**y_path_to_ids_dict, 'N/A': []}
-    y_path_to_sents_dict = {**y_path_to_sents_dict, 'N/A': {}}
     
-    matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
-    sentiment_matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
-    review_matrix = np.empty((len(y_path_to_ids_dict), len(x_path_to_sents_dict)), dtype=object)
+    matrix = np.zeros((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1)) # +1 for N/A
+    sentiment_matrix = np.zeros((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1)) # +1 for N/A
+    review_matrix = np.empty((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1), dtype=object) # +1 for N/A
     
     # Initialize each cell with its own empty list
     for i in range(review_matrix.shape[0]):
         for j in range(review_matrix.shape[1]):
             review_matrix[i, j] = []
     
-    # Get all unique review IDs and reviews
-    all_x_ids = set()
-    all_y_ids = set()
-    
-    for x_sents_dict in x_path_to_sents_dict.values():
+    x_no_match_review_to_highlight_dict = [defaultdict(list) for _ in range(len(x_path_to_sents_dict))]
+    for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
         for sent, reason_rids in x_sents_dict.items():
-            all_x_ids.update(reason_rids.keys())
-    
-    for y_ids in y_path_to_ids_dict.values():
-        all_y_ids.update(y_ids)
-    
+            for rid, reviews in reason_rids.items():
+                for review in reviews:
+                    review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
+                    x_no_match_review_to_highlight_dict[j][review_text].append((sent, highlight_detail, highlight_reason))
+    y_no_match_review_to_highlight_dict = [defaultdict(list) for _ in range(len(y_path_to_ids_dict))]
+
     # Process matrix including N/A
     for i, ((path1, y_ids), y_sents_dict) in enumerate(zip(y_path_to_ids_dict.items(), y_path_to_sents_dict.values())):
+        for sent, reviews in y_sents_dict.items():
+            for review in reviews:
+                review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
+                y_no_match_review_to_highlight_dict[i][review_text].append((sent, highlight_detail, highlight_reason))
         for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
-            if path1 == 'N/A' and path2 == 'N/A':
-                continue
-                
             x_sent_ids = set()
-            unique_reviews = set()  # Track unique reviews
-            unique_pos_reviews = set()  # Track unique positive reviews
+            review_to_highlight_dict = defaultdict(list)
             
             # First collect all reviews and sentiments for this x category
             for sent, reason_rids in x_sents_dict.items():
@@ -168,42 +227,31 @@ def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_t
                 for rid, reviews in reason_rids.items():
                     if rid in y_ids:  # Co-mention case
                         for review in reviews:
-                            unique_reviews.add(review)
-                            if sent == '+':
-                                unique_pos_reviews.add(review)
-            
-            # Handle N/A cases
-            if path1 == 'N/A':
-                # Reviews that mention X but not any Y
-                unique_x_only = x_sent_ids - all_y_ids
-                for sent, reason_rids in x_sents_dict.items():
-                    for rid, reviews in reason_rids.items():
-                        if rid in unique_x_only:
-                            for review in reviews:
-                                unique_reviews.add(review)
-                                if sent == '+':
-                                    unique_pos_reviews.add(review)
-            
-            elif path2 == 'N/A':
-                # Reviews that mention Y but not any X
-                # Use y_sents_dict to get sentiment information
-                for sent, reviews in y_sents_dict.items():
-                    for review in reviews:
-                        if review not in unique_reviews:  # Only add if not already counted
-                            unique_reviews.add(review)
-                            if sent == '+':
-                                unique_pos_reviews.add(review)
-            
-            # Store reviews in review matrix
-            review_matrix[i, j] = list(unique_reviews)
-            
+                            review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
+                            if review_text in y_no_match_review_to_highlight_dict[i]:
+                                del y_no_match_review_to_highlight_dict[i][review_text]
+                            if review_text in x_no_match_review_to_highlight_dict[j]:
+                                del x_no_match_review_to_highlight_dict[j][review_text]
+                            review_to_highlight_dict[review_text].append((sent, highlight_detail, highlight_reason))
+            review_with_highlight, pos_count = reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True)
+            review_matrix[i, j] = review_with_highlight
+            sentiment_matrix[i, j] = pos_count
             # Update counts and sentiment
-            num_unique_reviews = len(unique_reviews)
-            matrix[i, j] = num_unique_reviews
-            
-            if num_unique_reviews > 0:
-                sentiment_matrix[i, j] = len(unique_pos_reviews) / num_unique_reviews
-                
+            matrix[i, j] = len(review_with_highlight)
+            if matrix[i, j] > 0:
+                sentiment_matrix[i, j] = pos_count / matrix[i, j]
+    for i in range(len(y_no_match_review_to_highlight_dict)):
+        matrix[i, -1] = len(y_no_match_review_to_highlight_dict[i])
+        review_with_highlight, pos_count = reviews_to_htmls(y_no_match_review_to_highlight_dict[i], detail_axis='y', display_reason=False)
+        review_matrix[i, -1] = review_with_highlight
+        if matrix[i, -1] > 0:
+            sentiment_matrix[i, -1] = pos_count / matrix[i, -1]
+    for j in range(len(x_no_match_review_to_highlight_dict)):
+        matrix[-1, j] = len(x_no_match_review_to_highlight_dict[j])
+        review_with_highlight, pos_count = reviews_to_htmls(x_no_match_review_to_highlight_dict[j], detail_axis='x', display_reason=False)
+        review_matrix[-1, j] = review_with_highlight
+        if matrix[-1, j] > 0:   
+            sentiment_matrix[-1, j] = pos_count / matrix[-1, j]
     return matrix, sentiment_matrix, review_matrix
 
 def ratio_to_rgb(ratio):
@@ -254,29 +302,31 @@ login_layout = html.Div([
     html.H2('Login', style={'textAlign': 'center', 'marginTop': '50px'}),
     html.Div([
         html.Div([
-            html.Label('Username'),
-            dcc.Input(
-                id='username-input',
-                type='text',
-                placeholder='Enter username',
-                style={'width': '100%', 'marginBottom': '10px'}
-            ),
-            html.Label('Password'),
-            dcc.Input(
-                id='password-input',
-                type='password',
-                placeholder='Enter password',
-                style={'width': '100%', 'marginBottom': '10px'}
-            ),
-            html.Button('Login', id='login-button', n_clicks=0),
-            html.Div(id='login-error')
-        ], style={
-            'width': '300px',
-            'margin': '0 auto',
-            'padding': '20px',
-            'border': '1px solid #ddd',
-            'borderRadius': '5px'
-        })
+            html.Div([
+                html.Label('Username'),
+                dcc.Input(
+                    id='username-input',
+                    type='text',
+                    placeholder='Enter username',
+                    style={'width': '100%', 'marginBottom': '10px'}
+                ),
+                html.Label('Password'),
+                dcc.Input(
+                    id='password-input',
+                    type='password',
+                    placeholder='Enter password',
+                    style={'width': '100%', 'marginBottom': '10px'}
+                ),
+                html.Button('Login', id='login-button', n_clicks=0),
+                html.Div(id='login-error')
+            ], style={
+                'width': '300px',
+                'margin': '0 auto',
+                'padding': '20px',
+                'border': '1px solid #ddd',
+                'borderRadius': '5px'
+            })
+        ])
     ])
 ])
 
@@ -388,24 +438,39 @@ main_layout = html.Div([
         dcc.Graph(id='correlation-matrix', style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px'}),
         html.Div([
             html.H3("Reviews"),
+            # Initialize RadioItems with horizontal layout
+            dcc.RadioItems(
+                id='sentiment-filter',
+                options=[
+                    {'label': 'Show All', 'value': 'show_all'},
+                    {'label': 'Show Positive', 'value': 'show_positive'},
+                    {'label': 'Show Negative', 'value': 'show_negative'}
+                ],
+                value='show_all',
+                style={'display': 'none'},  # Initially hidden
+                className='sentiment-filter-horizontal'  # Add class for styling
+            ),
+            html.Div(id='review-counts', style={'margin': '5px', 'fontSize': '1em', 'color': '#444'}),
             html.Div(id='reviews-content', style={'maxHeight': '300px', 'overflowY': 'auto', 'border': '2px solid #ddd', 'borderRadius': '5px', 'padding': '10px'})
-        ])
-    ], style={'borderTop': '3px double #ddd'})
+        ], style={'borderTop': '3px double #ddd'})
+    ])
 ])
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),
     # Move language selector to upper left and adjust styling
     html.Div([
-        dcc.RadioItems(
-            id='language-selector',
-            options=[
-                {'label': 'English', 'value': 'en'},
-                {'label': '中文', 'value': 'zh'}
-            ],
-            value='zh',
-            style={'float': 'left', 'margin': '10px'}  # Changed from 'right' to 'left'
-        ),
+        html.Div([
+            dcc.RadioItems(
+                id='language-selector',
+                options=[
+                    {'label': 'English', 'value': 'en'},
+                    {'label': '中文', 'value': 'zh'}
+                ],
+                value='zh',
+                style={'float': 'left', 'margin': '10px'}  # Changed from 'right' to 'left'
+            ),
+        ], style={'width': '100%', 'clear': 'both'}),  # Added container div with clear
     ], style={'width': '100%', 'clear': 'both'}),  # Added container div with clear
     html.Div(id='page-content')
 ])
@@ -997,10 +1062,13 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
             reviews_content, top_n_x, top_n_y)
 
 @app.callback(
-    Output('reviews-content', 'children', allow_duplicate=True),
-    [Input('correlation-matrix', 'clickData'),
-     Input('language-selector', 'value'),
-     Input('search-button', 'n_clicks')],
+    [Output('reviews-content', 'children', allow_duplicate=True),
+     Output('sentiment-filter', 'value'),
+     Output('sentiment-filter', 'style'),
+     Output('review-counts', 'children')],
+    [Input('sentiment-filter', 'value'),
+     Input('correlation-matrix', 'clickData'),
+     Input('language-selector', 'value')],
     [State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
      State('y-axis-dropdown', 'value'),
@@ -1009,56 +1077,173 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
      State('search-input', 'value')],
     prevent_initial_call=True
 )
-def display_clicked_reviews(click_data, language, n_clicks, plot_type, x_value, y_value, top_n_x, top_n_y, search_query):
+def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, plot_type, x_value, y_value, top_n_x, top_n_y, search_query):
     ctx = dash.callback_context
     trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
     
-    # If search button was clicked, return empty list
     if trigger_id == 'search-button.n_clicks':
-        return []
+        return [], 'show_all', {'display': 'none'}, ''
         
-    # Only process click data if the callback was triggered by matrix click
-    if trigger_id == 'correlation-matrix.clickData' and click_data:
-        # Handle None or empty search query
-        search_query = search_query if search_query else ''
-        
-        # Get the clicked point data
+    if trigger_id == 'correlation-matrix.clickData':
+        sentiment_filter = 'show_all'
+    
+    if click_data:
         point = click_data['points'][0]
-        
-        # Extract the raw text without percentages
         clicked_x = point['x']
         clicked_y = point['y']
         
-        # Get the plot data with the current search query
+        search_query = search_query if search_query else ''
+        
         matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
             plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
         )
         
-        # Find indices by matching the display text
         try:
             i = y_display.index(clicked_y)
             j = x_display.index(clicked_x)
             
             if i != -1 and j != -1:
                 reviews = review_matrix[i][j]
+                
+                # Count positive and negative reviews - moved outside the sentiment filter condition
+                positive_reviews = []
+                negative_reviews = []
+                neutral_reviews = []
+                for review in reviews:
+                    if f'<span style="background-color: {color_mapping["+"]}' in review:
+                        positive_reviews.append(review)
+                    elif f'<span style="background-color: {color_mapping["-"]}' in review:
+                        negative_reviews.append(review)
+                    else:
+                        neutral_reviews.append(review)
+                
+                # Filter reviews based on selection
+                if sentiment_filter == 'show_positive':
+                    filtered_reviews = positive_reviews
+                elif sentiment_filter == 'show_negative':
+                    filtered_reviews = negative_reviews
+                else:  # 'all'
+                    filtered_reviews = reviews
+                
+                x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{clicked_x}</b></span>'
+                y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{clicked_y}</b></span>'
+                
+                # Create header HTML with sentiment filter
+                header_html = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{
+                            margin: 10px;
+                            font-family: sans-serif;
+                            line-height: 1.5;
+                            padding: 2px;
+                            border-bottom: 2px ridge #eee;
+                        }}
+                        span {{
+                            display: inline-block;
+                            margin: 2px;
+                        }}
+                    </style>
+                </head>
+                <body>
+                    <div>{TRANSLATIONS[language]['selected']} {x_clicked}, {y_clicked}</div>
+                    <div style="margin-top: 5px;">
+                        {TRANSLATIONS[language]['review_format']}
+                    </div>
+                </body>
+                </html>
+                """
+
                 content = [
-                    dcc.Markdown(f"{TRANSLATIONS[language]['selected']} X=<b>{clicked_x}</b>, Y=<b>{clicked_y}</b>", dangerously_allow_html=True),
-                    dcc.Markdown(f"{TRANSLATIONS[language]['review_format']}", dangerously_allow_html=True)
+                    html.Iframe(
+                        srcDoc=header_html,
+                        style={
+                            'width': '100%',
+                            'height': '150px',
+                            'border': 'none',
+                            'backgroundColor': 'white'
+                        }
+                    )
                 ]
-                if reviews:
-                    reviews_text = "<br>".join([f"{TRANSLATIONS[language]['review']} {idx + 1}: {review}" for idx, review in enumerate(reviews)])
-                    content.append(dcc.Markdown(reviews_text, dangerously_allow_html=True))
+                
+                if filtered_reviews:
+                    reviews_html = []
+                    for idx, review in enumerate(filtered_reviews):
+                        reviews_html.append(f"""
+                            <div class="review-container">
+                                <span>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
+                                {review}
+                            </div>
+                        """)
+                    
+                    html_content = f"""
+                    <html>
+                    <head>
+                        <style>
+                            body {{
+                                margin: 0;
+                                font-family: sans-serif;
+                                line-height: 1.5;
+                            }}
+                            .review-container {{
+                                margin: 0;
+                                padding: 5px;
+                                border-bottom: 1px solid #eee;
+                            }}
+                            .review-container:last-child {{
+                                border-bottom: none;
+                            }}
+                        </style>
+                    </head>
+                    <body>
+                        {''.join(reviews_html)}
+                    </body>
+                    </html>
+                    """
+                    
+                    content.append(html.Iframe(
+                        srcDoc=html_content,
+                        style={
+                            'width': '100%',
+                            'height': '300px',
+                            'border': 'none',
+                            'borderRadius': '5px',
+                            'backgroundColor': 'white'
+                        }
+                    ))
                 else:
                     content.append(html.P(TRANSLATIONS[language]['no_reviews']))
-                return content
-        except ValueError:
-            print(f"Could not find indices for clicked points: x={clicked_x}, y={clicked_y}")
-            print(f"Available x_display: {x_display}")
-            print(f"Available y_display: {y_display}")
-            raise ValueError(f"Could not find indices for clicked points: x={clicked_x}, y={clicked_y} in x_display={x_display} and y_display={y_display}")
+                
+                # Create count display based on filter selection
+                count_display = []
+                if sentiment_filter == 'show_all':
+                    count_display = [
+                        html.Span(f"{TRANSLATIONS[language]['positive_count'].format(len(positive_reviews))} | "),
+                        html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))
+                    ]
+                elif sentiment_filter == 'show_positive':
+                    count_display = [html.Span(TRANSLATIONS[language]['positive_count'].format(len(positive_reviews)))]
+                else:  # show_negative
+                    count_display = [html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))]
+                
+                # Update filter style to show horizontally
+                filter_style = {
+                    'display': 'block',
+                    'marginBottom': '10px',
+                    'whiteSpace': 'nowrap',  # Prevent wrapping
+                    'display': 'flex',
+                    'flexDirection': 'row',
+                    'gap': '20px',  # Space between options
+                    'alignItems': 'center'
+                }
+                
+                return content, sentiment_filter, filter_style, count_display
+                
+        except ValueError as e:
+            print(f"Error processing click data: {str(e)}")
             
-    return dash.no_update
-
+    return dash.no_update, sentiment_filter, dash.no_update, dash.no_update
 
 def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
     """Filter reviews based on search query using regex patterns"""
@@ -1258,6 +1443,47 @@ def handle_enter_press(n_submit, current_clicks):
     if n_submit:
         return (current_clicks or 0) + 1
     return dash.no_update
+
+@app.callback(
+    Output('sentiment-filter', 'options'),
+    [Input('language-selector', 'value')]
+)
+def update_sentiment_filter_options(language):
+    return [
+        {'label': TRANSLATIONS[language]['show_all'], 'value': 'show_all'},
+        {'label': TRANSLATIONS[language]['show_positive'], 'value': 'show_positive'},
+        {'label': TRANSLATIONS[language]['show_negative'], 'value': 'show_negative'}
+    ]
+
+# Add CSS styles to the app
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>{%title%}</title>
+        {%favicon%}
+        {%css%}
+        <style>
+            .sentiment-filter-horizontal .radio-item {
+                display: inline-block;
+                margin-right: 20px;
+            }
+            .sentiment-filter-horizontal input[type="radio"] {
+                margin-right: 5px;
+            }
+        </style>
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0')
