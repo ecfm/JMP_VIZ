@@ -1245,14 +1245,15 @@ def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language,
             
     return dash.no_update, sentiment_filter, dash.no_update, dash.no_update
 
-def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
-    """Filter reviews based on search query using regex patterns"""
-    if not query or not query.strip():
-        return reviews
+def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
+    """Filter path_to_sents_dict by removing reviews that don't match the query"""
+    if not search_query or not search_query.strip():
+        return path_to_sents_dict
     
+    # Create filter function once to reuse across all reviews
     try:
         # Convert operators and clean up query
-        query = query.lower().strip()
+        query = search_query.lower().strip()
         query = re.sub(r'\s*&\s*', ' and ', query)
         query = re.sub(r'\s*\|\s*', ' or ', query)
         
@@ -1264,30 +1265,59 @@ def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
         
         # Convert terms to regex patterns
         terms = []
+        current_group = []
+        
         for term in re.findall(r'"[^"]+"|\w+|[()&|]', query):
             if term in ('and', 'or', '(', ')'):
+                # If we've collected terms and hit an operator, join them with OR
+                if current_group and term not in ('(', ')'):
+                    if len(current_group) > 1:
+                        terms.append(f"({' or '.join(current_group)})")
+                    else:
+                        terms.append(current_group[0])
+                    current_group = []
+                    
                 terms.append(term)
             else:
                 # Handle quoted terms
                 if term.startswith('"') and term.endswith('"'):
                     clean_term = term[1:-1].replace('_', ' ')  # Convert back underscores to spaces
-                    terms.append(f"('{clean_term}' in review)")
+                    current_group.append(f"'{clean_term}' in review_text")
                 else:
-                    terms.append(f"('{term}' in review)")
+                    current_group.append(f"'{term}' in review_text")
         
-        # Create and evaluate the filter expression
+        # Handle any remaining terms
+        if current_group:
+            if len(current_group) > 1:
+                terms.append(f"({' or '.join(current_group)})")
+            else:
+                terms.append(current_group[0])
+        
+        # Create the filter expression
         filter_expr = ' '.join(terms)
-        return [review for review in reviews if eval(filter_expr, {'re': re, 'review': review.lower()})]
+        
+        # Handle edge cases with parentheses
+        filter_expr = re.sub(r'\(\s+', '(', filter_expr)
+        filter_expr = re.sub(r'\s+\)', ')', filter_expr)
+        
+        # Force spacing around operators for proper evaluation
+        filter_expr = re.sub(r'(\))\s*(\()', r'\1 and \2', filter_expr)
+        
+        # Create a compiled filter function to avoid re-evaluation
+        filter_code = compile(f"lambda review_text: {filter_expr}", "<string>", "eval")
+        filter_function = eval(filter_code, {"__builtins__": {}})
+        
+        # Define an efficient filtering function that uses our compiled filter
+        def filter_reviews(reviews):
+            return [review for review in reviews if filter_function(review.lower())]
+        
     except Exception as e:
         print(f"Search query error: {str(e)}")
-        return reviews
-
-# Add new helper function to filter dictionaries
-def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
-    """Filter path_to_sents_dict by removing reviews that don't match the query"""
-    if not search_query or not search_query.strip():
+        print(f"Filter expression was: {filter_expr if 'filter_expr' in locals() else 'not created'}")
+        # Fall back to returning all reviews if filter creation fails
         return path_to_sents_dict
-        
+    
+    # Now apply the filter to the dictionary structure
     filtered_dict = {}
     for path, sents_dict in path_to_sents_dict.items():
         # Handle case where value is a list (ids_dict case)
@@ -1304,14 +1334,14 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
                 rid_reviews_dict = val
                 filtered_rids = {}
                 for rid, reviews in rid_reviews_dict.items():
-                    matching_reviews = filter_reviews_by_query(reviews, search_query)
+                    matching_reviews = filter_reviews(reviews)
                     if matching_reviews:  # Only keep if there are matching reviews
                         filtered_rids[rid] = matching_reviews
                 if filtered_rids:  # Only keep sentiment if there are matching reviews
                     filtered_sents[sent] = filtered_rids
             elif isinstance(val, list):
                 reviews = val
-                matching_reviews = filter_reviews_by_query(reviews, search_query)
+                matching_reviews = filter_reviews(reviews)
                 if matching_reviews:
                     filtered_sents[sent] = matching_reviews
 
@@ -1522,4 +1552,4 @@ app.index_string = '''
 '''
 
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0')
+    app.run_server(debug=True, host='0.0.0.0', port=8080)
