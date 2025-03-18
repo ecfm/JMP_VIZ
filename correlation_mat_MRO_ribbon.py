@@ -66,7 +66,7 @@ TRANSLATIONS = {
         'percentage_explanation': 'Percentage of total mentions',
         'x_axis_percentage': 'Percentage of total mentions',
         'y_axis_percentage': 'Percentage of total mentions',
-        'search_placeholder': 'e.g. (good|great)&quality or quality&(durable|strong)',
+        'search_placeholder': 'e.g. "memory card" & (good great) or "battery life" & excellent',
         'sentiment_filter': 'Filter Reviews:',
         'show_all': 'Show All',
         'show_positive': 'Show Positive',
@@ -104,7 +104,7 @@ TRANSLATIONS = {
         'percentage_explanation': '占总提及次数的百分比',
         'x_axis_percentage': '(该类别被提及次数%)',
         'y_axis_percentage': '(该类别被提及次数%)',
-        'search_placeholder': '搜索asin或者评论关键词',
+        'search_placeholder': '例如："memory card" & (good great) or "battery life" & excellent',
         'sentiment_filter': '评论筛选：',
         'show_all': '显示全部',
         'show_positive': '显示正面评论',
@@ -1256,13 +1256,24 @@ def filter_reviews_by_query(reviews: List[str], query: str) -> List[str]:
         query = re.sub(r'\s*&\s*', ' and ', query)
         query = re.sub(r'\s*\|\s*', ' or ', query)
         
+        # Parse terms in quotes as single terms
+        quoted_terms = re.findall(r'"([^"]+)"', query)
+        for term in quoted_terms:
+            if ' ' in term:  # Only replace if it has spaces
+                query = query.replace(f'"{term}"', f'"{term.replace(" ", "_")}"')
+        
         # Convert terms to regex patterns
         terms = []
-        for term in re.findall(r'\w+|[()&|]', query):
+        for term in re.findall(r'"[^"]+"|\w+|[()&|]', query):
             if term in ('and', 'or', '(', ')'):
                 terms.append(term)
             else:
-                terms.append(f"('{term}' in review)")
+                # Handle quoted terms
+                if term.startswith('"') and term.endswith('"'):
+                    clean_term = term[1:-1].replace('_', ' ')  # Convert back underscores to spaces
+                    terms.append(f"('{clean_term}' in review)")
+                else:
+                    terms.append(f"('{term}' in review)")
         
         # Create and evaluate the filter expression
         filter_expr = ' '.join(terms)
@@ -1317,15 +1328,24 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str) -> Dict:
 def update_search_examples(language):
     examples = {
         'en': [
-            "Search syntax: Use & (AND), | (OR), () for grouping. Case insensitive.",
+            "Search syntax: Use & (AND), space (OR), () for grouping. Use quotes for multi-word terms. Case insensitive.",
             "Examples:",
-            "- quality & (durable|strong)",
-            "- (good|great|excellent) & (price|cost)",
+            "- quality & (durable strong)",
+            "- (good great excellent) & (price cost)",
+            '- "memory card" & (fast slow)',  # Multi-word term in quotes
+            '- "customer service" & "very helpful"',  # Multiple quoted terms
+            '- ("battery life" "charging time") & excellent',  # Quoted terms in parentheses
+            '- B08XXXXX & "works perfectly"',  # ASIN with quoted phrase
         ],
         'zh': [
-            "搜索语法：使用 & (且)，| (或)，() 用于分组。不区分大小写。示例：",
-            "- B08NJ2SGDW | B08NJ2SGDW: 搜索asin为 B08NJ2SGDW 或 B08NJ2SGDW 的评论",
-            "- (B08NJ2SGDW|B08NJ2SGDW)&(good|great): 搜索asin为 B08NJ2SGDW 或 B08NJ2SGDW 并且评论中包含 good 或 great 的评论",
+            "搜索语法：使用 & (且)，空格 (或)，() 用于分组。多词短语请加引号。不区分大小写。",
+            "示例：",
+            "- B08NJ2SGDW B09NTR4KKL: 搜索asin为 B08NJ2SGDW 或 B09NTR4KKL 的评论",
+            "- (B08NJ2SGDW B09NTR4KKL) & (good great): 搜索asin为 B08NJ2SGDW 或 B09NTR4KKL 并且包含 good 或 great 的评论",
+            '- "内存卡" & (fast good): 搜索包含"内存卡"这个词组并且包含fast或good的评论',
+            '- "客户服务" & "非常满意"',  # Multiple quoted terms in Chinese
+            '- ("电池寿命" "充电时间") & 满意',  # Quoted terms in parentheses in Chinese
+            '- "运行良好" & "使用简单"',  # Multiple Chinese quoted phrases
         ]
     }
     return [
@@ -1333,7 +1353,7 @@ def update_search_examples(language):
             line, 
             style={
                 'marginBottom': '4px',
-                'fontStyle': 'italic' if 'syntax' in line.lower() else 'normal'
+                'fontStyle': 'italic' if 'syntax' in line.lower() or '语法' in line else 'normal'
             }
         ) for line in examples[language]
     ]
@@ -1349,8 +1369,18 @@ def normalize_search_query(query: str) -> str:
     query = re.sub(r'\(\s*', '(', query)
     query = re.sub(r'\s*\)', ')', query)
     
+    # Preserve existing quoted terms
+    quoted_sections = {}
+    quote_pattern = re.compile(r'"([^"]+)"')
+    quoted_matches = quote_pattern.findall(query)
+    
+    for i, match in enumerate(quoted_matches):
+        placeholder = f"QUOTED_{i}"
+        quoted_sections[placeholder] = match
+        query = query.replace(f'"{match}"', placeholder)
+    
     # Split into tokens while preserving operators and parentheses
-    tokens = re.findall(r'\(|\)|\w+|&|\|', query)
+    tokens = re.findall(r'\(|\)|QUOTED_\d+|\w+|&|\|', query)
     
     # Process tokens
     normalized = []
@@ -1361,8 +1391,14 @@ def normalize_search_query(query: str) -> str:
         elif token in ('(', ')'):
             # Keep parentheses as-is
             normalized.append(token)
+        elif token.startswith('QUOTED_'):
+            # Restore quoted term
+            normalized.append(f'"{quoted_sections[token]}"')
+        elif ' ' in token:
+            # Quote multi-word terms
+            normalized.append(f'"{token}"')
         else:
-            # Quote terms
+            # Quote single terms
             normalized.append(f'"{token}"')
     
     # Join with proper spacing
@@ -1375,7 +1411,7 @@ def normalize_search_query(query: str) -> str:
     [State('search-input', 'value'),
      State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
-     State('y-axis-dropdown', 'value')]
+     State('y-axis-dropdown', 'value'))]
 )
 def update_search_results_info(n_clicks, language, search_query, plot_type, x_value, y_value):
     if not search_query or not search_query.strip():
