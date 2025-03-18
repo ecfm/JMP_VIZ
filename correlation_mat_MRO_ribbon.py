@@ -1411,7 +1411,7 @@ def normalize_search_query(query: str) -> str:
     [State('search-input', 'value'),
      State('plot-type', 'value'),
      State('x-axis-dropdown', 'value'),
-     State('y-axis-dropdown', 'value'))]
+     State('y-axis-dropdown', 'value')]
 )
 def update_search_results_info(n_clicks, language, search_query, plot_type, x_value, y_value):
     if not search_query or not search_query.strip():
