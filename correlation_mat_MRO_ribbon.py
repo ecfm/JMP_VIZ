@@ -66,7 +66,7 @@ TRANSLATIONS = {
         'percentage_explanation': 'Percentage of total mentions',
         'x_axis_percentage': 'Percentage of total mentions',
         'y_axis_percentage': 'Percentage of total mentions',
-        'search_placeholder': 'e.g. "memory card" & (good great) or "battery life" & excellent',
+        'search_placeholder': 'e.g. "memory card" & (good great)',
         'sentiment_filter': 'Filter Reviews:',
         'show_all': 'Show All',
         'show_positive': 'Show Positive',
@@ -104,7 +104,7 @@ TRANSLATIONS = {
         'percentage_explanation': '占总提及次数的百分比',
         'x_axis_percentage': '(该类别被提及次数%)',
         'y_axis_percentage': '(该类别被提及次数%)',
-        'search_placeholder': '例如："memory card" & (good great) or "battery life" & excellent',
+        'search_placeholder': '例如："memory card" & (good great)',
         'sentiment_filter': '评论筛选：',
         'show_all': '显示全部',
         'show_positive': '显示正面评论',
@@ -191,32 +191,16 @@ def reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=T
     return review_htmls, pos_count
 
 def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_to_sents_dict):
-    # Add N/A entries
-    
-    matrix = np.zeros((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1)) # +1 for N/A
-    sentiment_matrix = np.zeros((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1)) # +1 for N/A
-    review_matrix = np.empty((len(y_path_to_ids_dict)+1, len(x_path_to_sents_dict)+1), dtype=object) # +1 for N/A
+    matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
+    sentiment_matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
+    review_matrix = np.empty((len(y_path_to_ids_dict), len(x_path_to_sents_dict)), dtype=object)
     
     # Initialize each cell with its own empty list
     for i in range(review_matrix.shape[0]):
         for j in range(review_matrix.shape[1]):
             review_matrix[i, j] = []
     
-    x_no_match_review_to_highlight_dict = [defaultdict(list) for _ in range(len(x_path_to_sents_dict))]
-    for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
-        for sent, reason_rids in x_sents_dict.items():
-            for rid, reviews in reason_rids.items():
-                for review in reviews:
-                    review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
-                    x_no_match_review_to_highlight_dict[j][review_text].append((sent, highlight_detail, highlight_reason))
-    y_no_match_review_to_highlight_dict = [defaultdict(list) for _ in range(len(y_path_to_ids_dict))]
-
-    # Process matrix including N/A
     for i, ((path1, y_ids), y_sents_dict) in enumerate(zip(y_path_to_ids_dict.items(), y_path_to_sents_dict.values())):
-        for sent, reviews in y_sents_dict.items():
-            for review in reviews:
-                review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
-                y_no_match_review_to_highlight_dict[i][review_text].append((sent, highlight_detail, highlight_reason))
         for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
             x_sent_ids = set()
             review_to_highlight_dict = defaultdict(list)
@@ -228,10 +212,6 @@ def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_t
                     if rid in y_ids:  # Co-mention case
                         for review in reviews:
                             review_text, highlight_detail, highlight_reason = extract_review_highlight(review)
-                            if review_text in y_no_match_review_to_highlight_dict[i]:
-                                del y_no_match_review_to_highlight_dict[i][review_text]
-                            if review_text in x_no_match_review_to_highlight_dict[j]:
-                                del x_no_match_review_to_highlight_dict[j][review_text]
                             review_to_highlight_dict[review_text].append((sent, highlight_detail, highlight_reason))
             review_with_highlight, pos_count = reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True)
             review_matrix[i, j] = review_with_highlight
@@ -240,18 +220,7 @@ def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_t
             matrix[i, j] = len(review_with_highlight)
             if matrix[i, j] > 0:
                 sentiment_matrix[i, j] = pos_count / matrix[i, j]
-    for i in range(len(y_no_match_review_to_highlight_dict)):
-        matrix[i, -1] = len(y_no_match_review_to_highlight_dict[i])
-        review_with_highlight, pos_count = reviews_to_htmls(y_no_match_review_to_highlight_dict[i], detail_axis='y', display_reason=False)
-        review_matrix[i, -1] = review_with_highlight
-        if matrix[i, -1] > 0:
-            sentiment_matrix[i, -1] = pos_count / matrix[i, -1]
-    for j in range(len(x_no_match_review_to_highlight_dict)):
-        matrix[-1, j] = len(x_no_match_review_to_highlight_dict[j])
-        review_with_highlight, pos_count = reviews_to_htmls(x_no_match_review_to_highlight_dict[j], detail_axis='x', display_reason=False)
-        review_matrix[-1, j] = review_with_highlight
-        if matrix[-1, j] > 0:   
-            sentiment_matrix[-1, j] = pos_count / matrix[-1, j]
+    
     return matrix, sentiment_matrix, review_matrix
 
 def ratio_to_rgb(ratio):
@@ -574,8 +543,8 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
         return top_indices, top_paths, percentages
     
     # Process x and y axes
-    x_paths = list(x_path_to_sents_dict.keys()) + ['N/A']
-    y_paths = list(y_path_to_ids_dict.keys()) + ['N/A']
+    x_paths = list(x_path_to_sents_dict.keys())
+    y_paths = list(y_path_to_ids_dict.keys())
     top_x_indices, top_x_paths, x_percentages = process_axis(matrix, 1, top_n_x, x_paths)
     top_y_indices, top_y_paths, y_percentages = process_axis(matrix, 0, top_n_y, y_paths)
     
@@ -588,38 +557,11 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     if x_category == 'all':
         x_text = top_x_paths
     else:
-        x_text = [path[len(x_category)+1:] if path != 'N/A' else path for path in top_x_paths]
+        x_text = [path[len(x_category)+1:] for path in top_x_paths]
     if y_category == 'all':
         y_text = top_y_paths
     else:
-        y_text = [path[len(y_category)+1:] if path != 'N/A' else path for path in top_y_paths]
-        
-    # Add N/A translations to x_text and y_text where applicable
-    na_translation = {
-        'en': {
-            'use': 'N/A (Uses with no co-mentions)',
-            'perf': 'N/A (Performance aspects with no co-mentions)',
-            'attr': 'N/A (Attributes with no co-mentions)',
-            'attr_perf': 'N/A (Attributes/Performance with no co-mentions)'
-        },
-        'zh': {
-            'use': 'N/A (无共同提及用途)',
-            'perf': 'N/A (无共同提及性能)',
-            'attr': 'N/A (无共同提及属性)',
-            'attr_perf': 'N/A (无共同提及属性/性能)'
-        }
-    }
-    
-    # Determine which N/A translation to use based on plot type and axis
-    if plot_type == 'use_attr_perf':
-        x_na = na_translation[language]['use']
-        y_na = na_translation[language]['attr_perf']
-    else:  # perf_attr
-        x_na = na_translation[language]['perf']
-        y_na = na_translation[language]['attr']
-    
-    x_text = [x_na if txt == 'N/A' else txt for txt in x_text]
-    y_text = [y_na if txt == 'N/A' else txt for txt in y_text]
+        y_text = [path[len(y_category)+1:] for path in top_y_paths]
     
     x_display = [f"({perc:.1f}%) {txt}" for txt, perc in zip(x_text, x_percentages)]
     y_display = [f"{txt} ({perc:.1f}%)" for txt, perc in zip(y_text, y_percentages)]
@@ -1051,8 +993,8 @@ def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clic
         text=matrix
     )
 
-    x_options = get_options(x_value, x_text[:-1])  # Use clean text for options, excluding N/A
-    y_options = get_options(y_value, y_text[-2::-1])  # Use clean text for options, excluding N/A, reverse order
+    x_options = get_options(x_value, x_text)  # Use clean text for options
+    y_options = get_options(y_value, y_text[::-1])  # Use clean text for options, reverse order
     
     # Return empty list for reviews-content when search button is clicked
     reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
@@ -1550,6 +1492,9 @@ app.index_string = '''
     </body>
 </html>
 '''
+
+# Clear the plot data cache to ensure no cached results with N/A entries remain
+plot_data_cache.clear()
 
 if __name__ == '__main__':
     app.run_server(debug=True, host='0.0.0.0', port=8080)
