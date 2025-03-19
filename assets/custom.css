@@ -1,0 +1,72 @@
+/* Styles for the sentiment filter radio buttons to display horizontally */
+.sentiment-filter-horizontal .radio-item {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.sentiment-filter-horizontal input[type="radio"] {
+    margin-right: 5px;
+}
+
+/* General styling improvements */
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 15px;
+    background-color: #f8f9fa;
+}
+
+.dash-dropdown .Select-control {
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.dash-dropdown .Select-control:hover {
+    border-color: #999;
+}
+
+.dash-graph {
+    background-color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Review containers */
+.review-container {
+    margin: 0;
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.review-container:last-child {
+    border-bottom: none;
+}
+
+/* Button styling */
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+button:hover {
+    background-color: #0069d9;
+}
+
+/* Language selector */
+#language-selector .radio-item {
+    display: inline-block;
+    margin-right: 10px;
+}
+
+/* Slider styling */
+.rc-slider-track {
+    background-color: #007bff;
+}
+
+.rc-slider-handle {
+    border-color: #007bff;
+} 
