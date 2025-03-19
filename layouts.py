@@ -136,9 +136,9 @@ def get_main_layout(language='en'):
                 dcc.RadioItems(
                     id='plot-type',
                     options=[
+                        {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'},
                         {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
-                        {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'},
-                        {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'}
+                        {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
                     ],
                     value='use_attr_perf',
                     labelStyle={'display': 'inline-block', 'margin-right': '10px'}

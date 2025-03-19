@@ -89,7 +89,7 @@ def get_log_width(value, max_val, min_val):
     log_max = np.log(max_val + 1)
     log_min = np.log(min_val + 1)
     # Normalize to 0.8 max width
-    return 0.8 * (log_val - log_min) / (log_max - log_min + 0.000001)
+    return 0.8 * (value) / (max_val  + 0.000001)
 
 def get_search_examples_html(language):
     """Return search examples HTML for the given language."""

@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
 from flask_login import login_user, logout_user, current_user, UserMixin
+import re
 
 from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping
 from data import get_plot_data, get_cached_dict, get_options, normalize_search_query, get_bar_chart_data
@@ -70,9 +71,9 @@ def register_callbacks(app):
     )
     def update_plot_type_labels(language):
         options = [
+            {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'},
             {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
-            {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'},
-            {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'}
+            {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
         ]
         return TRANSLATIONS[language]['plot_type'], options
 
@@ -158,14 +159,17 @@ def register_callbacks(app):
          Output('bar-zoom-dropdown', 'value')],
         [Input('bar-category-checklist', 'value'),
          Input('language-selector', 'value'),
-         Input('search-button', 'n_clicks')],
+         Input('search-button', 'n_clicks'),
+         Input('bar-zoom-dropdown', 'value')],
         [State('search-input', 'value'),
-         State('bar-zoom-dropdown', 'value'),
          State('bar-count-slider', 'value')]
     )
-    def update_bar_zoom_options(selected_categories, language, n_clicks, search_query, current_value, bar_count_value):
+    def update_bar_zoom_options(selected_categories, language, n_clicks, current_zoom, search_query, bar_count_value):
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        
         # Reset zoom when search is performed
-        if dash.callback_context.triggered[0]['prop_id'] == 'search-button.n_clicks':
+        if trigger_id == 'search-button.n_clicks':
             return [], None
             
         search_query = search_query if search_query else ''
@@ -173,47 +177,238 @@ def register_callbacks(app):
         # Default to showing 15 categories if the bar count value isn't set yet
         if bar_count_value is None or bar_count_value <= 0:
             bar_count_value = 15
+            
+        # If a category is already selected, check if we need to show subcategories
+        if current_zoom and current_zoom != '':
+            # Determine if this is a top-level category selection
+            for prefix in ['U: ', 'A: ', 'P: ']:
+                if current_zoom.startswith(prefix):
+                    category_type = 'usage' if prefix == 'U: ' else ('attribute' if prefix == 'A: ' else 'performance')
+                    selected_category = current_zoom[len(prefix):]
+                    
+                    # Get the dictionary mapping for the category type
+                    dict_types = {
+                        'usage': 'use_sents',
+                        'attribute': 'attr_sents',
+                        'performance': 'perf_sents'
+                    }
+                    
+                    dict_type = dict_types[category_type]
+                    
+                    # Get all categories including subcategories
+                    category_dict = get_cached_dict(dict_type, 'all', search_query)
+            
+                    # Check if this is a top-level category (no pipe character) or already a subcategory
+                    is_top_level = '|' not in selected_category
+                    
+                    if is_top_level:
+                        # Find subcategories that match the selected top-level category
+                        subcategories = []
+                        subcategory_counts = {}
+                        total_mentions = 0
+                        
+                        # First pass: count total mentions and subcategory mentions
+                        for path, sents_dict in category_dict.items():
+                            if path.startswith(selected_category + '|'):
+                                # This is a subcategory of the selected category
+                                # Extract only the next level (excluding further nested levels)
+                                parts = path.split('|')
+                                if len(parts) > 1:
+                                    # Use full hierarchy: parent|child
+                                    subcategory = selected_category + '|' + parts[1]
+                                    
+                                    # Count mentions for this subcategory
+                                    mention_count = sum(len(reviews) for sent_dict in sents_dict.values() 
+                                                      for reviews in sent_dict.values())
+                                    
+                                    # Add to total and store count
+                                    total_mentions += mention_count
+                                    subcategory_counts[subcategory] = mention_count
+                        
+                        # Second pass: create options with percentages
+                        for subcategory, count in subcategory_counts.items():
+                            if total_mentions > 0:
+                                percentage = (count / total_mentions) * 100
+                                
+                                # Use the full subcategory path with the prefix
+                                display_name = prefix + subcategory
+                                formatted_name = f"→ {display_name} ({percentage:.1f}%)"
+                                
+                                subcategories.append({
+                                    'label': formatted_name,
+                        'value': display_name
+                    })
         
+                        # If subcategories exist, display them along with the parent category and "back" option
+                        if subcategories:
+                            # Sort subcategories by count (descending)
+                            subcategories.sort(key=lambda x: subcategory_counts[x['value'][len(prefix):]], reverse=True)
+                            
+                            # Add back option to return to top level
+                            options = [{'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''}]
+                            
+                            # Add current selection (parent category) without parentheses
+                            clean_display = re.sub(r'\s*\([^)]*\)', '', current_zoom)
+                            options.append({'label': f"▶ {clean_display}", 'value': current_zoom})
+                            
+                            # Add subcategories - also remove parentheses from display
+                            for subcategory in subcategories:
+                                subcategory_value = subcategory['value']
+                                subcategory_label = subcategory['label']
+                                # Remove any parentheses content, regardless of language or content
+                                clean_subcategory = re.sub(r'\s*\([^)]*\)', '', subcategory_label)
+                                options.append({'label': clean_subcategory, 'value': subcategory_value})
+                            
+                            return options, current_zoom
+                        else:
+                            # No subcategories found, just show the current category and back option
+                            clean_display = re.sub(r'\s*\([^)]*\)', '', current_zoom)
+                            options = [
+                                {'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''},
+                                {'label': clean_display, 'value': current_zoom}
+                            ]
+                                                        
+                            return options, current_zoom
+                            
+                    # If it's already a subcategory, show its parent and siblings
+                    else:
+                        # Extract parent category (first part before pipe)
+                        parent_category = selected_category.split('|')[0]
+                        full_parent = prefix + parent_category
+                        
+                        # Find sibling subcategories that match the parent
+                        siblings = []
+                        sibling_counts = {}
+                        total_mentions = 0
+                        
+                        # First pass: count total mentions and sibling mentions
+                        for path, sents_dict in category_dict.items():
+                            if path.startswith(parent_category + '|'):
+                                # This is a sibling subcategory
+                                parts = path.split('|')
+                                if len(parts) > 1:
+                                    # Use full hierarchy: parent|child
+                                    sibling = parent_category + '|' + parts[1]
+                                    display_name = prefix + sibling
+                                    
+                                    # Skip the current selection
+                                    if display_name == current_zoom:
+                                        continue
+                                    
+                                    # Count mentions for this sibling
+                                    mention_count = sum(len(reviews) for sent_dict in sents_dict.values() 
+                                                      for reviews in sent_dict.values())
+                                    
+                                    # Add to total and store count
+                                    total_mentions += mention_count
+                                    sibling_counts[display_name] = mention_count
+                        
+                        # Also get count for current selection
+                        current_count = 0
+                        for path, sents_dict in category_dict.items():
+                            if path == selected_category or path.startswith(selected_category + '|'):
+                                current_count += sum(len(reviews) for sent_dict in sents_dict.values() 
+                                                  for reviews in sent_dict.values())
+                        total_mentions += current_count
+                        
+                        # Second pass: create options with percentages
+                        for sibling, count in sibling_counts.items():
+                            if total_mentions > 0:
+                                percentage = (count / total_mentions) * 100
+                                formatted_name = f"→ {sibling} ({percentage:.1f}%)"
+                                
+                                siblings.append({
+                                    'label': formatted_name,
+                                    'value': sibling
+                                })
+                        
+                        # Sort siblings by count (descending)
+                        siblings.sort(key=lambda x: sibling_counts[x['value']], reverse=True)
+                        
+                        # Clean parent display (no parentheses)
+                        clean_parent = re.sub(r'\s*\([^)]*\)', '', full_parent)
+                        
+                        # Create options with back, parent (without parentheses), current selection (without parentheses) and siblings (without parentheses)
+                        clean_current = re.sub(r'\s*\([^)]*\)', '', current_zoom)
+                        options = [
+                            {'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''},
+                            {'label': f"▶ {clean_parent}", 'value': full_parent},
+                            {'label': f"▶ {clean_current} ✓", 'value': current_zoom}
+                        ]
+                        
+                        # Add siblings - also remove parentheses from display
+                        for sibling in siblings:
+                            sibling_value = sibling['value']
+                            sibling_label = sibling['label']
+                            # Remove any parentheses content, regardless of language or content
+                            clean_sibling = re.sub(r'\s*\([^)]*\)', '', sibling_label)
+                            options.append({'label': clean_sibling, 'value': sibling_value})
+                        
+                        return options, current_zoom
+                    
+                    break
+        
+        # Default case: show top-level categories
         # Get the full list of categories that would be shown in the chart
-        categories, _, _, _, _, _ = get_bar_chart_data(
+        categories, counts, _, _, _, _ = get_bar_chart_data(
             selected_categories, None, language, search_query
         )
         
         # Apply the same limit as what would be shown in the chart
         if len(categories) > bar_count_value:
             categories = categories[:bar_count_value]
+            counts = counts[:bar_count_value]
             
         # Extract just the unique top-level category names that are currently visible
         # Store them as (index, display_name) to preserve original order
         top_level_categories = []
         seen_categories = set()
         
-        for i, category in enumerate(categories):
+        for i, (category, count) in enumerate(zip(categories, counts)):
             # Find the prefix (U:, A:, P:)
             for prefix in ['U: ', 'A: ', 'P: ']:
                 if category.startswith(prefix):
-                    # Extract just the top-level category name (before any '|' character)
+                    # Extract the category text without the prefix
                     category_text = category[len(prefix):]
-                    top_level = category_text.split('|')[0].strip()
+                    
+                    # Check if it's a subcategory (contains a pipe)
+                    if '|' in category_text:
+                        # For subcategories, we group by the parent (top-level) category
+                        top_level = category_text.split('|')[0].strip()
+                    else:
+                        # For top-level categories, just use the category itself
+                        top_level = category_text
+                        
                     display_name = prefix + top_level
                     
                     # Only add if not already in options
                     if display_name not in seen_categories:
                         seen_categories.add(display_name)
-                        # Store original index to maintain chart order
-                        top_level_categories.append((i, display_name))
+                        
+                        # Calculate count for this top-level category - needs to include all subcategories too
+                        category_count = sum(c for cat, c in zip(categories, counts) 
+                                           if cat.startswith(prefix + top_level))
+                        
+                        # Store original index and count to maintain chart order and for percentage
+                        top_level_categories.append((i, display_name, category_count))
                     break
         
         # Sort by the original index to maintain the same order as in the chart
         top_level_categories.sort(key=lambda x: x[0])
         
-        # Build final options list
-        options = [{'label': category, 'value': category} for _, category in top_level_categories]
+        # Build final options list without parentheses for parent categories
+        options = []
+        for _, category, count in top_level_categories:
+            # Remove any existing parentheses that might be in the display name
+            # This only affects display, not the actual value
+            clean_display = re.sub(r'\s*\([^)]*\)', '', category)
+            options.append({'label': clean_display, 'value': category})
         
         # Add "None" option at the top
         options = [{'label': '-----', 'value': ''}] + options
         
         # Keep current value if it's still valid, otherwise reset
+        current_value = current_zoom
         if current_value and not any(opt['value'] == current_value for opt in options):
             current_value = None
             
@@ -301,7 +496,7 @@ def register_callbacks(app):
             
             # Define category type colors for legend
             type_colors = {
-                'U: ': '#4285F4',  # Blue for Usage
+                'U: ': '#6A0DAD',  # Dark Purple for Usage (changed from Blue #4285F4)
                 'A: ': '#34A853',  # Green for Attribute
                 'P: ': '#FBBC05',  # Yellow for Performance
             }
@@ -345,10 +540,16 @@ def register_callbacks(app):
                     x=1.11,
                     y=0.4
                 )
-            ))
+                    ))
             
             # Create custom x-axis ticktext with colored category labels
             ticktext = []
+            # Create a mapping of original categories to formatted (no parentheses) for click handling
+            formatted_categories = []
+            
+            # Check if we're zoomed into a parent category
+            is_zoomed = bar_zoom and bar_zoom != ''
+            
             for category in categories:
                 # Determine the category type prefix
                 prefix = None
@@ -358,19 +559,44 @@ def register_callbacks(app):
                         break
                 
                 if prefix:
-                    # Create colored label using HTML
+                    category_text = category[len(prefix):]
                     color = type_colors[prefix]
-                    ticktext.append(f'<span style="color:{color}; font-weight:bold">{category}</span>')
+                    
+                    # When zoomed into a parent category, we need to maintain consistent formatting with matrix plot
+                    if is_zoomed and '|' in category_text:
+                        # Extract the path parts
+                        parts = category_text.split('|')
+                        
+                        # Exclude the topmost category for display (to match the example 圣诞节|圣诞树装饰)
+                        if len(parts) > 1:
+                            display_text = '|'.join(parts[1:])
+                        else:
+                            display_text = parts[0]
+                          
+                        # Remove any parentheses content
+                        display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
+                    else:
+                        # Standard display text for non-zoomed or parent categories
+                        # Remove any parentheses content
+                        display_text = prefix + category_text
+                        display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
+                    
+                    # Remember the formatted version for click handling
+                    formatted_categories.append(display_text)
+                    
+                    ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
                 else:
                     # Default case if no prefix matches
-                    ticktext.append(category)
+                    formatted_text = re.sub(r'\s*\([^)]*\)', '', category)
+                    formatted_categories.append(formatted_text)
+                    ticktext.append(formatted_text)
             
             # Update layout for bar chart
             fig.update_layout(
                 title=TRANSLATIONS[language][title_key],
                 xaxis=dict(
                     title=None,
-                    tickangle=45,  # Always set to 45 degrees
+                    tickangle=20,  # Changed from 45 to 20 to match matrix plot
                     tickmode='array',
                     tickvals=list(range(len(categories))),
                     ticktext=ticktext,
@@ -384,10 +610,10 @@ def register_callbacks(app):
                 height=700,
                 width=1200,
                 margin=dict(
-                    l=100,
-                    r=200, # Increased right margin to accommodate the colorbar
-                    t=150,
-                    b=200,  # Increased bottom margin for angled labels
+                    l=80,   # Decreased from 100
+                    r=150,  # Decreased from 200
+                    t=100,  # Decreased from 150
+                    b=180,  # Decreased from 200
                     autoexpand=True
                 ),
             )
@@ -467,21 +693,34 @@ def register_callbacks(app):
                 plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
             )
             
+            # Format display labels - remove all parentheses content for all categories
+            formatted_x_display = []
+            for label in x_display:
+                # Remove any parentheses content, regardless of language or content
+                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                formatted_x_display.append(formatted_label)
+                    
+            formatted_y_display = []
+            for label in y_display:
+                # Remove any parentheses content, regardless of language or content
+                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                formatted_y_display.append(formatted_label)
+            
             # Calculate dynamic dimensions based on number of features
-            # Height calculation
-            base_height = 500  # Increased from 400
-            min_height = 400   # Increased from 300
-            additional_height_per_feature = 50  # Increased from 40
+            # Height calculation with increased base values for larger plot
+            base_height = 700  # Increased from 500
+            min_height = 600   # Increased from 400
+            additional_height_per_feature = 60  # Increased from 50
             dynamic_height = max(
                 min_height,
                 base_height + max(0, len(y_display) - 5) * additional_height_per_feature
             )
             
-            # Width calculation - increase base width to accommodate legends
-            base_width = 800  
-            min_width = 1200 
-            additional_width_per_feature = 60
-            max_width = 2000
+            # Width calculation - increase base width for larger plot
+            base_width = 1000   # Increased from 800
+            min_width = 1400    # Increased from 1200
+            additional_width_per_feature = 80  # Increased from 60
+            max_width = 2400    # Increased from 2000
             
             # Calculate width based on the length of x-axis labels and number of features
             avg_label_length = sum(len(str(label)) for label in x_display) / len(x_display) if x_display else 0
@@ -495,19 +734,49 @@ def register_callbacks(app):
                 )
             )
             
-            # Calculate dynamic margins based on label lengths
+            # Calculate dynamic margins based on label lengths - decrease margins for better space efficiency
             max_y_label_length = max(len(str(label)) for label in y_display) if y_display else 0
-            left_margin = min(300, max(150, max_y_label_length * 8))  # Increased margins
-            right_margin = 450  # Increased from 400
+            left_margin = min(250, max(150, max_y_label_length * 9))  # Decreased from 350/180/10
+            right_margin = 400  # Decreased from 500
+            top_margin = 120    # Decreased from 180
+            bottom_margin = 180 # Decreased from 250
 
             # Create the base heatmap figure
             fig = go.Figure()
 
+            # Reorder x-axis by frequency (sum of mentions for each category)
+            if len(matrix) > 0 and len(matrix[0]) > 0:
+                # Calculate total mentions for each x-axis category
+                x_totals = np.sum(matrix, axis=0)
+                
+                # Get indices sorted by frequency (descending)
+                x_sorted_indices = np.argsort(-x_totals)
+                
+                # Reorder all x-related data
+                matrix = matrix[:, x_sorted_indices]
+                sentiment_matrix = sentiment_matrix[:, x_sorted_indices]
+                review_matrix = review_matrix[:, x_sorted_indices]
+                x_text = [x_text[i] for i in x_sorted_indices]
+                x_display = [x_display[i] for i in x_sorted_indices]
+
+            # Format display labels - remove all parentheses content for all categories
+            formatted_x_display = []
+            for label in x_display:
+                # Remove any parentheses content, regardless of language or content
+                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                formatted_x_display.append(formatted_label)
+                    
+            formatted_y_display = []
+            for label in y_display:
+                # Remove any parentheses content, regardless of language or content
+                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                formatted_y_display.append(formatted_label)
+
             # Add the satisfaction ratio heatmap (color legend)
             fig.add_trace(go.Heatmap(
                 z=sentiment_matrix,
-                x=x_display,
-                y=y_display,
+                x=formatted_x_display,  # Use formatted display labels
+                y=formatted_y_display,  # Use formatted display labels
                 colorscale=px.colors.diverging.RdBu,
                 showscale=True,
                 opacity=0,
@@ -550,7 +819,6 @@ def register_callbacks(app):
                 example_count = int(matrix[example_i, example_j])
             else:
                 example_sentiment = 0.5
-                example_count = 0
             
             # Constants for width example box and explanation positioning
             EXAMPLE_BOX_LEFT = 1.05
@@ -564,16 +832,27 @@ def register_callbacks(app):
             EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5 # Center explanation above bracket
             EXPLANATION_Y = BRACKET_TOP + 0.1  # Position explanation above bracket
 
-            # Add explanation text with translation above the bracket
+            # Add explanation text with translation above the bracket - adjusted position
             fig.add_annotation(
                 xref="paper", yref="paper", 
                 x=EXPLANATION_X,
                 y=EXPLANATION_Y,
                 text=width_legend_text,
                 showarrow=False,
-                font=dict(size=12),
+                font=dict(size=13),
                 align="right",
-                width=200
+                width=220
+            )
+            
+            # Add the color scale legend title with larger font
+            fig.update_coloraxes(
+                colorbar=dict(
+                    title=dict(
+                        text=TRANSLATIONS[language]['satisfaction_level'],
+                        font=dict(size=14)  # Increased font size
+                    ),
+                    tickfont=dict(size=12)  # Increased tick font size
+                )
             )
 
             # Add the example box
@@ -623,31 +902,33 @@ def register_callbacks(app):
                 xaxis=dict(
                     tickangle=20,
                     tickmode='array',
-                    tickvals=list(range(len(x_display))),
-                    ticktext=x_display,
-                    tickfont=dict(size=10),
+                    tickvals=list(range(len(formatted_x_display))),
+                    ticktext=formatted_x_display,
+                    tickfont=dict(size=12),  # Increased from 10
                     title=dict(
                         text=f"{TRANSLATIONS[language]['x_axis_percentage']} {x_category_type}",
-                        font=dict(size=12)
+                        font=dict(size=14)   # Increased from 12
                     )
                 ),
                 yaxis=dict(
                     tickmode='array',
-                    tickvals=list(range(len(y_display))),
-                    ticktext=y_display,
-                    tickfont=dict(size=10),
+                    tickvals=list(range(len(formatted_y_display))),
+                    ticktext=formatted_y_display,
+                    tickfont=dict(size=12),  # Increased from 10
                     title=dict(
                         text=f"{y_category_type} {TRANSLATIONS[language]['y_axis_percentage']}",
-                        font=dict(size=12)
+                        font=dict(size=14)   # Increased from 12
                     )
                 ),
+                font=dict(size=13),  # Global font size increase
+                title_font=dict(size=18),  # Title font size increase
                 width=dynamic_width,
                 height=dynamic_height,
                 margin=dict(
                     l=left_margin,
                     r=right_margin,
-                    t=150,
-                    b=200,  # Increased bottom margin for angled labels
+                    t=top_margin,
+                    b=bottom_margin,
                     autoexpand=True
                 )
             )
@@ -741,9 +1022,73 @@ def register_callbacks(app):
                     review_data = review_data[:bar_count]
                     colors = colors[:bar_count]
                 
+                # Create formatted category names to match what's displayed in the chart
+                formatted_to_original = {}
+                
+                # Check if we're zoomed into a parent category
+                is_zoomed = bar_zoom and bar_zoom != ''
+                
+                # Define category type colors for mapping
+                type_colors = {
+                    'U: ': '#6A0DAD',  # Dark Purple for Usage (changed from Blue #4285F4)
+                    'A: ': '#34A853',  # Green for Attribute
+                    'P: ': '#FBBC05',  # Yellow for Performance
+                }
+                
+                for i, category in enumerate(categories):
+                    # Determine the category type prefix
+                    prefix = None
+                    for p in type_colors.keys():
+                        if category.startswith(p):
+                            prefix = p
+                            break
+                            
+                    if prefix:
+                        category_text = category[len(prefix):]
+                        
+                        # When zoomed into a parent category, format display matches matrix plot
+                        if is_zoomed and '|' in category_text:
+                            # Extract the path parts
+                            parts = category_text.split('|')
+                            
+                            # Exclude the topmost category for display (same format as in the graph)
+                            if len(parts) > 1:
+                                display_text = '|'.join(parts[1:])
+                            else:
+                                display_text = parts[0]
+                            
+                            # Remove any parentheses content
+                            display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
+                            
+                            # Map the formatted display text to its index
+                            formatted_to_original[display_text] = i
+                            
+                            # Also map individual parts for fallback - users might click on subpart
+                            for part in parts[1:]:  # Only map sub-parts, not the topmost category
+                                part = part.strip()
+                                if part:
+                                    formatted_to_original[part] = i
+                                    
+                            # Also map the full format without parentheses as fallback
+                            full_formatted = re.sub(r'\s*\([^)]*\)', '', category)
+                            formatted_to_original[full_formatted] = i
+                        else:
+                            # Standard format without parentheses
+                            display_text = prefix + category_text
+                            formatted = re.sub(r'\s*\([^)]*\)', '', display_text)
+                            formatted_to_original[formatted] = i
+                    else:
+                        # Default case
+                        formatted = re.sub(r'\s*\([^)]*\)', '', category)
+                        formatted_to_original[formatted] = i
+                
                 try:
-                    # Find the index of clicked category in results
-                    idx = categories.index(clicked_category)
+                    # Find the index of clicked category in results using the formatted version
+                    idx = formatted_to_original.get(clicked_category)
+                    if idx is None:
+                        # If not found by formatted name, try direct match (backward compatibility)
+                        idx = categories.index(clicked_category)
+                        
                     reviews = review_data[idx]
                     
                     # Count positive and negative reviews
@@ -769,7 +1114,10 @@ def register_callbacks(app):
                     # Get highlight examples for current language
                     x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
                     
-                    category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{clicked_category}</span>'
+                    # For display in the header, we use the original category (with percentages)
+                    # to provide more information to the user
+                    original_category = categories[idx]
+                    category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{original_category}</span>'
                     
                     # Create header HTML with sentiment filter
                     review_format = TRANSLATIONS[language]['review_format']
@@ -779,11 +1127,11 @@ def register_callbacks(app):
                     <head>
                         <style>
                             body {{
-                                margin: 10px;
+                                margin: 5px;
                                 font-family: sans-serif;
-                                line-height: 1.5;
-                                padding: 2px;
-                                border-bottom: 2px ridge #eee;
+                                line-height: 1.4;
+                                padding: 0px;
+                                border-bottom: 1px ridge #eee;
                             }}
                             span {{
                                 display: inline-block;
@@ -793,7 +1141,7 @@ def register_callbacks(app):
                     </head>
                     <body>
                         <div>{TRANSLATIONS[language]['selected']} {category_clicked}</div>
-                        <div style="margin-top: 5px;">
+                        <div style="margin-top: 3px;">
                             {review_format}
                         </div>
                     </body>
@@ -805,7 +1153,7 @@ def register_callbacks(app):
                             srcDoc=header_html,
                             style={
                                 'width': '100%',
-                                'height': '150px',
+                                'height': '120px',
                                 'border': 'none',
                                 'backgroundColor': 'white'
                             }
@@ -829,11 +1177,11 @@ def register_callbacks(app):
                                 body {{
                                     margin: 0;
                                     font-family: sans-serif;
-                                    line-height: 1.5;
+                                    line-height: 1.4;
                                 }}
                                 .review-container {{
                                     margin: 0;
-                                    padding: 5px;
+                                    padding: 3px;
                                     border-bottom: 1px solid #eee;
                                 }}
                                 .review-container:last-child {{
@@ -851,9 +1199,9 @@ def register_callbacks(app):
                             srcDoc=html_content,
                             style={
                                 'width': '100%',
-                                'height': '600px',
+                                'height': '630px',
                                 'border': 'none',
-                                'borderRadius': '5px',
+                                'borderRadius': '3px',
                                 'backgroundColor': 'white'
                             }
                         ))
@@ -875,11 +1223,11 @@ def register_callbacks(app):
                     # Update filter style to show horizontally
                     filter_style = {
                         'display': 'block',
-                        'marginBottom': '10px',
+                        'marginBottom': '5px',  # Decreased from 10px
                         'whiteSpace': 'nowrap',  # Prevent wrapping
                         'display': 'flex',
                         'flexDirection': 'row',
-                        'gap': '20px',  # Space between options
+                        'gap': '15px',  # Decreased from 20px
                         'alignItems': 'center'
                     }
                     
@@ -898,11 +1246,42 @@ def register_callbacks(app):
                     plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
                 )
                 
-                try:
-                    i = y_display.index(clicked_y)
-                    j = x_display.index(clicked_x)
+                # Format display labels - remove all parentheses content for all categories
+                formatted_x_display = []
+                for label in x_display:
+                    # Remove any parentheses content, regardless of language or content
+                    formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                    formatted_x_display.append(formatted_label)
                     
-                    if i != -1 and j != -1:
+                formatted_y_display = []
+                for label in y_display:
+                    # Remove any parentheses content, regardless of language or content
+                    formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                    formatted_y_display.append(formatted_label)
+                
+                # Create a mapping from formatted labels to original indices
+                x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
+                y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
+                
+                try:
+                    # Find the indices using the mapping with formatted labels
+                    i = y_mapping.get(clicked_y)
+                    j = x_mapping.get(clicked_x)
+                    
+                    # If not found by direct mapping, try a more lenient search
+                    if i is None:
+                        for formatted_y, idx in y_mapping.items():
+                            if clicked_y in formatted_y or formatted_y in clicked_y:
+                                i = idx
+                                break
+                    
+                    if j is None:
+                        for formatted_x, idx in x_mapping.items():
+                            if clicked_x in formatted_x or formatted_x in clicked_x:
+                                j = idx
+                                break
+                    
+                    if i is not None and j is not None:
                         reviews = review_matrix[i][j]
                         
                         # Count positive and negative reviews - moved outside the sentiment filter condition
@@ -928,8 +1307,13 @@ def register_callbacks(app):
                         # Get highlight examples for current language
                         x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
                         
-                        x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{clicked_x}</b></span>'
-                        y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{clicked_y}</b></span>'
+                        # For the header display, use the original values with percentages
+                        # to provide more information to the user
+                        original_x = x_display[j]
+                        original_y = y_display[i]
+                        
+                        x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{original_x}</b></span>'
+                        y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{original_y}</b></span>'
                         
                         # Create header HTML with sentiment filter
                         review_format = TRANSLATIONS[language]['review_format']
@@ -939,11 +1323,11 @@ def register_callbacks(app):
                         <head>
                             <style>
                                 body {{
-                                    margin: 10px;
+                                    margin: 5px;
                                     font-family: sans-serif;
-                                    line-height: 1.5;
-                                    padding: 2px;
-                                    border-bottom: 2px ridge #eee;
+                                    line-height: 1.4;
+                                    padding: 0px;
+                                    border-bottom: 1px ridge #eee;
                                 }}
                                 span {{
                                     display: inline-block;
@@ -953,7 +1337,7 @@ def register_callbacks(app):
                         </head>
                         <body>
                             <div>{TRANSLATIONS[language]['selected']} {x_clicked}, {y_clicked}</div>
-                            <div style="margin-top: 5px;">
+                            <div style="margin-top: 3px;">
                                 {review_format}
                             </div>
                         </body>
@@ -965,7 +1349,7 @@ def register_callbacks(app):
                                 srcDoc=header_html,
                                 style={
                                     'width': '100%',
-                                    'height': '150px',
+                                    'height': '120px',
                                     'border': 'none',
                                     'backgroundColor': 'white'
                                 }
@@ -989,11 +1373,11 @@ def register_callbacks(app):
                                     body {{
                                         margin: 0;
                                         font-family: sans-serif;
-                                        line-height: 1.5;
+                                        line-height: 1.4;
                                     }}
                                     .review-container {{
                                         margin: 0;
-                                        padding: 5px;
+                                        padding: 3px;
                                         border-bottom: 1px solid #eee;
                                     }}
                                     .review-container:last-child {{
@@ -1011,9 +1395,9 @@ def register_callbacks(app):
                                 srcDoc=html_content,
                                 style={
                                     'width': '100%',
-                                    'height': '600px',
+                                    'height': '630px',
                                     'border': 'none',
-                                    'borderRadius': '5px',
+                                    'borderRadius': '3px',
                                     'backgroundColor': 'white'
                                 }
                             ))
@@ -1035,11 +1419,11 @@ def register_callbacks(app):
                         # Update filter style to show horizontally
                         filter_style = {
                             'display': 'block',
-                            'marginBottom': '10px',
+                            'marginBottom': '5px',  # Decreased from 10px
                             'whiteSpace': 'nowrap',  # Prevent wrapping
                             'display': 'flex',
                             'flexDirection': 'row',
-                            'gap': '20px',  # Space between options
+                            'gap': '15px',  # Decreased from 20px
                             'alignItems': 'center'
                         }
                         

@@ -3,7 +3,7 @@ import os
 import re
 import numpy as np
 from collections import defaultdict
-from typing import Dict, List, Tuple, Any
+from typing import Dict
 
 from config import (
     RESULT_DIR, 
@@ -511,8 +511,12 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
         # Get the dictionary for this category type
         if zoom_category:
             # If zooming in on a category, only include subcategories of that category
-            category_path = zoom_category[len(mapping['prefix']):]
-            category_dict = get_cached_dict(dict_type, category_path, search_query)
+            if zoom_category.startswith(mapping['prefix']):
+                category_path = zoom_category[len(mapping['prefix']):]
+                category_dict = get_cached_dict(dict_type, category_path, search_query)
+            else:
+                # Skip if zooming into a different category type
+                continue
         else:
             # Otherwise get all categories
             category_dict = get_cached_dict(dict_type, 'all', search_query)
@@ -521,11 +525,23 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
         for category_path, sents_dict in category_dict.items():
             # Get the display name for the category
             if zoom_category:
-                # When zoomed in, show full subcategory names
-                display_name = prefix + category_path.split('|')[-1]
+                # When zoomed in, preserve the full hierarchy
+                # For example: if category_path is "parent|child", display as "parent|child"
+                if '|' in category_path:
+                    display_name = prefix + category_path
+                else:
+                    # If it's a leaf category with no children, just show the category
+                    display_name = prefix + category_path
             else:
-                # Otherwise show the top-level category
-                display_name = prefix + category_path.split('|')[0]
+                # For top-level view, we want to distinguish subcategories
+                if '|' in category_path:
+                    # Show full hierarchy for subcategories
+                    parts = category_path.split('|')
+                    # Make sure we show the parent|child relationship
+                    display_name = prefix + parts[0] + '|' + parts[1]
+                else:
+                    # Just show the top-level category
+                    display_name = prefix + category_path
                 
             # Count total reviews and positive reviews
             total_reviews = set()
