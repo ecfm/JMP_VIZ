@@ -141,29 +141,6 @@ def extract_review_info(review):
     
     return review_text, highlight_detail, highlight_reason, date
 
-def filter_reviews_by_date_range(reviews, start_date, end_date):
-    """Filter reviews to only include those within the given date range."""
-    if reviews is None:
-        return []
-    
-    if start_date is None and end_date is None:
-        return reviews
-        
-    filtered_reviews = []
-    for review in reviews:
-        # Check if this is a raw review string or a tuple of pre-extracted info
-        if isinstance(review, tuple) and len(review) == 5:  # Pre-extracted (review_text, highlight, reason, date, raw_review)
-            _, _, _, review_date, raw_review = review
-            if (start_date is None or review_date >= start_date) and (end_date is None or review_date <= end_date):
-                filtered_reviews.append(review)
-        else:  # Raw review string
-            _, _, _, review_date = extract_review_info(review)
-            if review_date:
-                if (start_date is None or review_date >= start_date) and (end_date is None or review_date <= end_date):
-                    filtered_reviews.append(review)
-    
-    return filtered_reviews
-
 def reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True):
     """Convert reviews to HTML format with highlighting."""
     review_htmls = []

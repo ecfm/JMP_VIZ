@@ -100,6 +100,9 @@ TRANSLATIONS = {
         'bar_count_label': 'Number of categories to show:',
         'date_filter_label': 'Filter by review date:',
         'date_range_format': '%Y-%m-%d',
+        'total_reviews': 'Total Reviews',
+        'total_reviews_filtered': 'Total Reviews Matching Filter',
+        'selected_range': 'Selected range: {} to {}',
     },
     'zh': {
         'login': '登录',
@@ -156,6 +159,9 @@ TRANSLATIONS = {
         'bar_count_label': '显示类别数量：',
         'date_filter_label': '按评论日期筛选：',
         'date_range_format': '%Y-%m-%d',
+        'total_reviews': '总评论数',
+        'total_reviews_filtered': '符合筛选条件的评论数',
+        'selected_range': '选定范围: {} 至 {}',
     }
 }
 

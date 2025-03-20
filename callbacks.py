@@ -53,19 +53,6 @@ def register_callbacks(app):
             return '/login'
         return pathname
 
-    # Page content callback
-    @app.callback(
-        Output('page-content', 'children'),
-        [Input('url', 'pathname'),
-        Input('language-selector', 'value')]
-    )
-    def display_page(pathname, language='en'):
-        if pathname == '/login' or not current_user.is_authenticated:
-            return get_login_layout(language)
-        if pathname == '/':
-            return get_main_layout(language)
-        return get_login_layout(language)
-
     # Language-dependent callbacks
     @app.callback(
         [Output('plot-type-label', 'children'),
@@ -429,14 +416,14 @@ def register_callbacks(app):
             example_sentiment = 0.5
         
         # Constants for example box and explanation
-        EXAMPLE_BOX_LEFT = 1.05
-        EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.12
-        EXAMPLE_BOX_BOTTOM = 1 
-        EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.11
-        BRACKET_TOP = EXAMPLE_BOX_TOP + 0.06
-        BRACKET_VERTICAL_LENGTH = 0.03
+        EXAMPLE_BOX_LEFT = 1.08
+        EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.1
+        EXAMPLE_BOX_BOTTOM = 0.95 
+        EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.06
+        BRACKET_TOP = EXAMPLE_BOX_TOP + 0.02
+        BRACKET_VERTICAL_LENGTH = 0.015
         EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5
-        EXPLANATION_Y = BRACKET_TOP + 0.1
+        EXPLANATION_Y = BRACKET_TOP + 0.03
         
         # Add explanation text
         fig.add_annotation(
@@ -687,6 +674,95 @@ def register_callbacks(app):
         
         return fig, x_options, y_options, max_x, max_y, top_n_x, top_n_y
 
+    def handle_date_filter(trigger_id, date_slider_value, date_filter_storage):
+        """
+        Handle date filter initialization and updates.
+        
+        Args:
+            trigger_id: ID of the component that triggered the callback
+            date_slider_value: Current value of the date slider
+            date_filter_storage: Current date filter storage JSON
+            
+        Returns:
+            Tuple containing (updated_date_storage, slider_min, slider_max, slider_value, slider_marks)
+        """
+        # Default slider settings for no-update cases
+        slider_min = dash.no_update
+        slider_max = dash.no_update
+        slider_value = dash.no_update
+        slider_marks = dash.no_update
+        
+        # Initialize storage if empty or on first load
+        storage_data = {}
+        if not date_filter_storage:
+            # Get min and max dates from all reviews
+            min_date_str, max_date_str = get_review_date_range()
+            
+            if min_date_str is None or max_date_str is None:
+                # No dates found, use empty values
+                return json.dumps({"start_date": None, "end_date": None}), 0, 1, [0, 1], {}
+            
+            # Convert to datetime objects
+            min_date = datetime.strptime(min_date_str, '%Y-%m-%d')
+            max_date = datetime.strptime(max_date_str, '%Y-%m-%d')
+            
+            # Set up slider values
+            slider_min = 0
+            slider_max = (max_date - min_date).days
+            slider_value = [slider_min, slider_max]
+            
+            # Create slider marks
+            slider_marks = {}
+            mark_freq = 'YS' if slider_max > 365 * 3 else ('QS' if slider_max > 90 else 'MS')
+            date_range = pd.date_range(start=min_date, end=max_date, freq=mark_freq)
+            
+            for date in date_range:
+                mark_value = (date - min_date).days
+                format_str = '%Y' if mark_freq == 'YS' else ('%Y-%m' if mark_freq == 'QS' else '%Y-%m-%d')
+                slider_marks[mark_value] = date.strftime(format_str)
+            
+            # Always include min and max dates
+            slider_marks[slider_min] = min_date.strftime('%Y-%m-%d')
+            slider_marks[slider_max] = max_date.strftime('%Y-%m-%d')
+            
+            # Initialize storage data
+            storage_data = {
+                "min_date": min_date_str,
+                "max_date": max_date_str,
+                "start_date": min_date_str,
+                "end_date": max_date_str
+            }
+        # Update storage based on slider change
+        elif trigger_id == 'date-filter-slider.value':
+            try:
+                storage_data = json.loads(date_filter_storage)
+                
+                # Ensure we have min_date
+                if "min_date" not in storage_data:
+                    min_date_str, max_date_str = get_review_date_range()
+                    if min_date_str is None:
+                        return json.dumps({"start_date": None, "end_date": None}), slider_min, slider_max, slider_value, slider_marks
+                    storage_data["min_date"] = min_date_str
+                    storage_data["max_date"] = max_date_str
+                
+                # Calculate new dates based on slider values
+                min_date = datetime.strptime(storage_data["min_date"], '%Y-%m-%d')
+                start_date = (min_date + timedelta(days=date_slider_value[0])).strftime('%Y-%m-%d')
+                end_date = (min_date + timedelta(days=date_slider_value[1])).strftime('%Y-%m-%d')
+                
+                # Update only what changed
+                storage_data["start_date"] = start_date
+                storage_data["end_date"] = end_date
+            except Exception as e:
+                print(f"Error updating date filter: {str(e)}")
+                return json.dumps({"start_date": None, "end_date": None}), slider_min, slider_max, slider_value, slider_marks
+        else:
+            # For other triggers, just parse existing storage
+            storage_data = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+            
+        # Return the updated storage and slider settings
+        return json.dumps(storage_data), slider_min, slider_max, slider_value, slider_marks
+
     # Callback for combined graph and UI control updates
     @app.callback(
         [Output('correlation-matrix', 'figure'),
@@ -701,7 +777,13 @@ def register_callbacks(app):
          Output('y-features-slider', 'value'),
          Output('bar-count-slider', 'value'),
          Output('bar-zoom-dropdown', 'options'),
-         Output('bar-zoom-dropdown', 'value')],
+         Output('bar-zoom-dropdown', 'value'),
+         Output('date-filter-storage', 'children'),
+         Output('date-filter-slider', 'min'),
+         Output('date-filter-slider', 'max'),
+         Output('date-filter-slider', 'value'),
+         Output('date-filter-slider', 'marks'),
+         Output('total-reviews-count', 'children')],
         [Input('plot-type', 'value'),
          Input('x-axis-dropdown', 'value'),
          Input('y-axis-dropdown', 'value'),
@@ -712,12 +794,13 @@ def register_callbacks(app):
          Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
          Input('bar-count-slider', 'value'),
-         Input('date-filter-slider', 'value')],
+         Input('date-filter-slider', 'value'),
+         Input('url', 'pathname')],
         [State('search-input', 'value'),
          State('date-filter-storage', 'children')]
     )
     def update_visualization_and_controls(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
-                   bar_categories, bar_zoom_value, bar_count, date_slider_value, search_query, date_filter_storage):
+                   bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search_query, date_filter_storage):
         """
         Unified callback to update both the graph visualization and UI controls.
         This eliminates redundant calculations by using helper functions for specific plot types.
@@ -726,8 +809,13 @@ def register_callbacks(app):
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
         
+        # Handle date filter logic
+        updated_date_storage, slider_min, slider_max, slider_value, slider_marks = handle_date_filter(
+            trigger_id, date_slider_value, date_filter_storage
+        )
+        
         # Parse date range from storage (common to both operations)
-        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        date_range = json.loads(updated_date_storage) if updated_date_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
         end_date = date_range.get("end_date")
         
@@ -738,13 +826,75 @@ def register_callbacks(app):
         search_query = search_query if search_query else ''
         x_value = x_value or 'all'
         y_value = y_value or 'all'
-        top_n_x = int(top_n_x)
-        top_n_y = int(top_n_y)
+        top_n_x = int(top_n_x) if top_n_x is not None else 10
+        top_n_y = int(top_n_y) if top_n_y is not None else 10
         
         # Reset selections if search button was clicked
         if trigger_id == 'search-button.n_clicks':
             x_value = 'all'
             y_value = 'all'
+        
+        # Calculate total reviews count if date changes, search changes, or on initial load
+        review_count_text = dash.no_update
+        should_update_count = (
+            trigger_id == 'date-filter-slider.value' or 
+            trigger_id == 'search-button.n_clicks' or 
+            trigger_id == 'url.pathname' or
+            not date_filter_storage  # Initial load
+        )
+        
+        if should_update_count:
+            # Get all categories for counting
+            categories = ['usage', 'attribute', 'performance']
+            total_reviews = 0
+            unique_review_ids = set()
+            
+            # Count unique reviews across all categories
+            for category_type in categories:
+                dict_type = {
+                    'usage': 'use_sents',
+                    'attribute': 'attr_sents',
+                    'performance': 'perf_sents'
+                }[category_type]
+                
+                # Get filtered dictionary
+                filtered_dict = get_cached_dict(dict_type, 'all', search_query, start_date, end_date)
+                
+                # Count unique reviews
+                for path, sents_dict in filtered_dict.items():
+                    for sent, val in sents_dict.items():
+                        if isinstance(val, dict):
+                            for rid, reviews in val.items():
+                                if reviews:
+                                    unique_review_ids.update([rid])
+                        elif isinstance(val, list) and val:
+                            # This is a simplified case, might need adjustment based on actual data structure
+                            total_reviews += len(val)
+            
+            # Add unique reviews to total
+            total_reviews += len(unique_review_ids)
+            
+            # Format the output message based on language
+            if search_query:
+                review_count_text = f"{TRANSLATIONS[language].get('total_reviews_filtered', 'Total reviews matching filter')}: {total_reviews}"
+            else:
+                review_count_text = f"{TRANSLATIONS[language].get('total_reviews', 'Total reviews')}: {total_reviews}"
+        elif trigger_id == 'language-selector.value':
+            # Just update the text without recounting when language changes
+            # Get the current text and extract the number
+            current_text = dash.callback_context.states.get('total-reviews-count.children')
+            
+            # If we have current text with a number, reuse it with the new language
+            if current_text and ':' in current_text:
+                try:
+                    total_reviews = int(current_text.split(':')[1].strip())
+                    if search_query:
+                        review_count_text = f"{TRANSLATIONS[language].get('total_reviews_filtered', 'Total reviews matching filter')}: {total_reviews}"
+                    else:
+                        review_count_text = f"{TRANSLATIONS[language].get('total_reviews', 'Total reviews')}: {total_reviews}"
+                except:
+                    # If parsing fails, leave as no_update
+                    pass
         
         # Process data based on plot type
         if plot_type == 'bar_chart':
@@ -771,7 +921,13 @@ def register_callbacks(app):
                 top_n_y,                # y-features-slider value
                 bar_count,              # bar-count-slider value
                 dropdown_options,       # bar-zoom-dropdown options
-                new_zoom_value          # bar-zoom-dropdown value
+                new_zoom_value,         # bar-zoom-dropdown value
+                updated_date_storage,   # date-filter-storage
+                slider_min,             # date-filter-slider min
+                slider_max,             # date-filter-slider max
+                slider_value,           # date-filter-slider value
+                slider_marks,           # date-filter-slider marks
+                review_count_text       # total-reviews-count
             )
         else:
             # Check if axis dropdowns triggered the callback and reset corresponding top_n values
@@ -799,7 +955,13 @@ def register_callbacks(app):
                 top_n_y,                # y-features-slider value
                 dash.no_update,         # bar-count-slider value
                 dash.no_update,         # bar-zoom-dropdown options
-                dash.no_update          # bar-zoom-dropdown value
+                dash.no_update,         # bar-zoom-dropdown value
+                updated_date_storage,   # date-filter-storage
+                slider_min,             # date-filter-slider min
+                slider_max,             # date-filter-slider max
+                slider_value,           # date-filter-slider value
+                slider_marks,           # date-filter-slider marks
+                review_count_text       # total-reviews-count
             )
 
     # Reviews update callback
@@ -1416,112 +1578,50 @@ def register_callbacks(app):
             {'label': TRANSLATIONS[language]['show_negative'], 'value': 'show_negative'}
         ]
 
+    # Add a callback to display current selected date range
     @app.callback(
-        [Output('date-filter-slider', 'min'),
-         Output('date-filter-slider', 'max'),
-         Output('date-filter-slider', 'value'),
-         Output('date-filter-slider', 'marks'),
-         Output('date-filter-storage', 'children')],
-        Input('url', 'pathname')
+        Output('date-range-display', 'children'),
+        [Input('date-filter-slider', 'value'),
+         Input('date-filter-storage', 'children'),
+         Input('language-selector', 'value')]
     )
-    def initialize_date_slider(pathname):
-        """Initialize the date slider with the min and max dates from all reviews."""
-        # Only initialize on the main page
-        if pathname != '/':
-            return 0, 1, [0, 1], {}, json.dumps({"start_date": None, "end_date": None})
+    def update_date_display(slider_value, date_filter_storage, language):
+        if not slider_value or not date_filter_storage:
+            return ""
             
-        # Get min and max dates from all reviews
-        min_date_str, max_date_str = get_review_date_range()
-        
-        if min_date_str is None or max_date_str is None:
-            # If no dates were found, use default range
-            return 0, 1, [0, 1], {}, json.dumps({"start_date": None, "end_date": None})
-        
-        # Convert string dates to datetime objects
-        min_date = datetime.strptime(min_date_str, '%Y-%m-%d')
-        max_date = datetime.strptime(max_date_str, '%Y-%m-%d')
-        
-        # Convert to timestamp for slider values (days since min_date)
-        min_ts = 0
-        max_ts = (max_date - min_date).days
-        
-        # Create marks for the slider
-        marks = {}
-        
-        # If the date range is too large, show fewer marks
-        if max_ts > 365 * 3:  # More than 3 years
-            # Show yearly marks
-            date_range = pd.date_range(start=min_date, end=max_date, freq='YS')  # Start of each year
-            for date in date_range:
-                mark_value = (date - min_date).days
-                marks[mark_value] = date.strftime('%Y')
-        elif max_ts > 90:  # More than 3 months
-            # Show quarterly marks
-            date_range = pd.date_range(start=min_date, end=max_date, freq='QS')  # Start of each quarter
-            for date in date_range:
-                mark_value = (date - min_date).days
-                marks[mark_value] = date.strftime('%Y-%m')
-        else:
-            # Show monthly marks or more frequent for short time periods
-            date_range = pd.date_range(start=min_date, end=max_date, freq='MS')  # Start of each month
-            for date in date_range:
-                mark_value = (date - min_date).days
-                marks[mark_value] = date.strftime('%Y-%m-%d')
-        
-        # Add min and max dates to the marks if they're not already included
-        marks[min_ts] = min_date.strftime('%Y-%m-%d')
-        marks[max_ts] = max_date.strftime('%Y-%m-%d')
-        
-        # Generate storage value for actual dates
-        storage_value = {
-            "min_date": min_date_str,
-            "max_date": max_date_str,
-            "start_date": min_date_str,
-            "end_date": max_date_str
-        }
-        
-        return min_ts, max_ts, [min_ts, max_ts], marks, json.dumps(storage_value)
-
-    @app.callback(
-        Output('date-filter-storage', 'children', allow_duplicate=True),
-        Input('date-filter-slider', 'value'),
-        State('date-filter-storage', 'children'),
-        prevent_initial_call=True
-    )
-    def update_date_filter_storage(slider_values, storage_json):
-        """Update the stored date values when the slider is moved."""
-        from datetime import datetime, timedelta
-        
-        # Parse storage JSON
         try:
-            storage_data = json.loads(storage_json) if storage_json else {}
+            # Parse the date storage
+            storage = json.loads(date_filter_storage)
+            min_date = storage.get("min_date")
             
-            # Handle case when min_date is missing (fallback to getting date range again)
-            if "min_date" not in storage_data:
-                min_date_str, max_date_str = get_review_date_range()
+            if not min_date:
+                return ""
                 
-                # If we can't get date range, use default empty values
-                if min_date_str is None:
-                    return json.dumps({"start_date": None, "end_date": None})
-                    
-                storage_data["min_date"] = min_date_str
-                storage_data["max_date"] = max_date_str
+            # Convert slider values to dates
+            min_date_obj = datetime.strptime(min_date, '%Y-%m-%d')
+            start_date = (min_date_obj + timedelta(days=slider_value[0])).strftime('%Y-%m-%d')
+            end_date = (min_date_obj + timedelta(days=slider_value[1])).strftime('%Y-%m-%d')
             
-            min_date = datetime.strptime(storage_data["min_date"], '%Y-%m-%d')
-            
-            # Calculate new dates based on slider values
-            start_offset = timedelta(days=slider_values[0])
-            end_offset = timedelta(days=slider_values[1])
-            
-            start_date = (min_date + start_offset).strftime('%Y-%m-%d')
-            end_date = (min_date + end_offset).strftime('%Y-%m-%d')
-            
-            # Update storage with new values
-            storage_data["start_date"] = start_date
-            storage_data["end_date"] = end_date
-            
-            return json.dumps(storage_data)
+            # Return formatted date range using translations
+            return TRANSLATIONS[language].get('selected_range', 'Selected range: {} to {}').format(start_date, end_date)
         except Exception as e:
-            print(f"Error updating date filter: {str(e)}")
-            # Return a safe fallback if anything goes wrong
-            return json.dumps({"start_date": None, "end_date": None}) 
+            print(f"Error updating date display: {str(e)}")
+            return ""
+
+    # Add clientside callback to handle pathname changes
+    app.clientside_callback(
+        """
+        function(pathname) {
+            if (pathname === "/login") {
+                return [{'display': 'none'}, {'display': 'block'}];
+            } else if (pathname === "/") {
+                return [{'display': 'block'}, {'display': 'none'}];
+            } else {
+                return [{'display': 'none'}, {'display': 'block'}];
+            }
+        }
+        """,
+        [Output('main-content', 'style'),
+         Output('login-content', 'style')],
+        [Input('url', 'pathname')],
+    ) 

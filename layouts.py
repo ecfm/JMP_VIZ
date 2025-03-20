@@ -36,7 +36,7 @@ def get_login_layout(language='en'):
     ])
 
 
-def get_main_layout(language='en'):
+def get_main_layout(language='zh'):
     """Create the main application layout."""
     
     # Create bar chart controls that will only be shown for bar chart view
@@ -125,7 +125,16 @@ def get_main_layout(language='en'):
     date_filter_controls = html.Div(
         id='date-filter-controls',
         children=[
-            html.Label(TRANSLATIONS[language]['date_filter_label']),
+            html.Div([
+                html.Label(TRANSLATIONS[language]['date_filter_label'], style={'marginBottom': '5px'}),
+                # Add visible display for selected date range
+                html.Div(id='date-range-display', style={
+                    'marginBottom': '10px',
+                    'fontSize': '0.9em',
+                    'color': '#555',
+                    'fontStyle': 'italic'
+                })
+            ]),
             dcc.RangeSlider(
                 id='date-filter-slider',
                 min=0,
@@ -142,16 +151,47 @@ def get_main_layout(language='en'):
     
     return html.Div([
         html.Div([
+            # Create a header area with logout and language selector
             html.Div([
-                html.Button(
-                    TRANSLATIONS[language]['logout'], 
-                    id='logout-button', 
-                    style={'float': 'right', 'margin': '20px'}
-                ),
-            ]),
-            create_search_box(language),
-            # Add date filter controls just below the search box
+                html.Div([
+                    # Single visible language selector
+                    dcc.RadioItems(
+                        id='language-selector',
+                        options=[
+                            {'label': 'English', 'value': 'en'},
+                            {'label': '中文', 'value': 'zh'}
+                        ],
+                        value=language,  # Use the current language value
+                        style={'float': 'left', 'margin': '20px'}
+                    ),
+                    # Logout button
+                    html.Button(
+                        TRANSLATIONS[language]['logout'], 
+                        id='logout-button', 
+                        style={'float': 'right', 'margin': '20px'}
+                    ),
+                ], style={'display': 'flex', 'justifyContent': 'space-between', 'width': '100%'})
+            ], style={'marginBottom': '10px', 'borderBottom': '1px solid #ddd', 'paddingBottom': '5px'}),
+            
+            # Add a div to display total reviews count in a box with border
+            html.Div([
+                html.H4(id='total-reviews-count', children='', style={
+                    'margin': '5px 0',
+                    'padding': '10px',
+                    'textAlign': 'center',
+                    'fontWeight': 'bold'
+                })
+            ], style={
+                'margin': '10px 0',
+                'border': '2px solid #ddd',
+                'borderRadius': '5px',
+                'backgroundColor': '#f9f9f9',
+                'boxShadow': '0 1px 3px rgba(0,0,0,0.1)'
+            }),
+            # Add date filter controls before the search box
             date_filter_controls,
+            # Move the search box below the date filter
+            create_search_box(language),
             html.Div([
                 html.Label(id='plot-type-label'),
                 dcc.RadioItems(
@@ -215,19 +255,16 @@ def get_app_layout():
     """Create the overall application layout."""
     return html.Div([
         dcc.Location(id='url', refresh=False),
-        # Move language selector to upper left and adjust styling
-        html.Div([
-            html.Div([
-                dcc.RadioItems(
-                    id='language-selector',
-                    options=[
-                        {'label': 'English', 'value': 'en'},
-                        {'label': '中文', 'value': 'zh'}
-                    ],
-                    value='zh',
-                    style={'float': 'right', 'margin': '10px'}
-                ),
-            ], style={'width': '100%', 'clear': 'both'}),
-        ], style={'width': '100%', 'clear': 'both'}),
-        html.Div(id='page-content')
+        # Login content - initially hidden
+        html.Div(
+            get_login_layout('zh'),  # Default to English
+            id='login-content',
+            style={'display': 'none'}
+        ),
+        # Main content - initially hidden
+        html.Div(
+            get_main_layout('zh'),  # Default to English
+            id='main-content',
+            style={'display': 'none'}
+        )
     ]) 
