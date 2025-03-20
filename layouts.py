@@ -93,8 +93,8 @@ def get_main_layout(language='en'):
             dcc.Slider(
                 id='y-features-slider',
                 min=1,
-                max=10,
-                value=7,
+                max=20,
+                value=10,
                 step=1,
                 marks=None,
                 tooltip={"placement": "bottom", "always_visible": True}
@@ -112,14 +112,33 @@ def get_main_layout(language='en'):
             dcc.Slider(
                 id='x-features-slider',
                 min=1,
-                max=10,
-                value=7,
+                max=20,
+                value=10,
                 step=1,
                 marks=None,
                 tooltip={"placement": "bottom", "always_visible": True}
             ),
         ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
     ], id='matrix-view-controls', style={'display': 'block'})  # Initially visible
+    
+    # Create date range slider
+    date_filter_controls = html.Div(
+        id='date-filter-controls',
+        children=[
+            html.Label(TRANSLATIONS[language]['date_filter_label']),
+            dcc.RangeSlider(
+                id='date-filter-slider',
+                min=0,
+                max=1,  # This will be updated in a callback
+                value=[0, 1],  # Initial values will be replaced in a callback
+                marks={},  # This will be updated in a callback 
+                tooltip={"placement": "bottom", "always_visible": True}
+            ),
+            # Hidden div to store actual date values as strings
+            html.Div(id='date-filter-storage', style={'display': 'none'})
+        ],
+        style={'marginTop': '10px', 'marginBottom': '15px'}
+    )
     
     return html.Div([
         html.Div([
@@ -131,6 +150,8 @@ def get_main_layout(language='en'):
                 ),
             ]),
             create_search_box(language),
+            # Add date filter controls just below the search box
+            date_filter_controls,
             html.Div([
                 html.Label(id='plot-type-label'),
                 dcc.RadioItems(
@@ -140,7 +161,7 @@ def get_main_layout(language='en'):
                         {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
                         {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
                     ],
-                    value='use_attr_perf',
+                    value='bar_chart',
                     labelStyle={'display': 'inline-block', 'margin-right': '10px'}
                 ),
             ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),

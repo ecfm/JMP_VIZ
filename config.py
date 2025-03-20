@@ -22,6 +22,12 @@ color_mapping = {
     'y': '#38A169',  # Green border for Y-axis
 }
 
+# Define category type colors for mapping
+type_colors = {
+    'U: ': '#6A0DAD',  # Dark Purple for Usage (changed from Blue #4285F4)
+    'A: ': '#34A853',  # Green for Attribute
+    'P: ': '#FBBC05',  # Yellow for Performance
+}
 # Highlight examples
 def get_highlight_examples(language='en'):
     if language == 'en':
@@ -92,6 +98,8 @@ TRANSLATIONS = {
         'bar_chart_title': 'Category Mentions',
         'category_types': 'Category Types',
         'bar_count_label': 'Number of categories to show:',
+        'date_filter_label': 'Filter by review date:',
+        'date_range_format': '%Y-%m-%d',
     },
     'zh': {
         'login': '登录',
@@ -108,7 +116,7 @@ TRANSLATIONS = {
         'x_axis_category': 'X轴类别：',
         'num_y_features': 'Y特征数量：',
         'num_x_features': 'X特征数量：',
-        'all_level_0': '全部 [层级 0]',
+        'all_level_0': '全部 [L0]',
         'reviews': '评论',
         'no_reviews': '该选择没有可用的评论。',
         'selected': '已选择：',
@@ -146,6 +154,8 @@ TRANSLATIONS = {
         'bar_chart_title': '类别提及',
         'category_types': '类别类型',
         'bar_count_label': '显示类别数量：',
+        'date_filter_label': '按评论日期筛选：',
+        'date_range_format': '%Y-%m-%d',
     }
 }
 

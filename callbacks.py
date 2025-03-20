@@ -5,9 +5,12 @@ import plotly.express as px
 import numpy as np
 from flask_login import login_user, logout_user, current_user, UserMixin
 import re
+import json
+from datetime import datetime, timedelta
+import pandas as pd
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping
-from data import get_plot_data, get_cached_dict, get_options, normalize_search_query, get_bar_chart_data
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors
+from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range
 from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
 from layouts import get_login_layout, get_main_layout
 
@@ -119,25 +122,28 @@ def register_callbacks(app):
         [Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
          Input('language-selector', 'value'),
-         Input('search-button', 'n_clicks')],
-        [State('search-input', 'value')]
+         Input('search-button', 'n_clicks'),
+         Input('date-filter-slider', 'value')],
+        [State('search-input', 'value'),
+         State('date-filter-storage', 'children')]
     )
-    def update_bar_slider_max(bar_categories, bar_zoom, language, n_clicks, search_query):
+    def update_bar_slider_max(bar_categories, bar_zoom, language, n_clicks, date_slider_value, search_query, date_filter_storage):
         # Ensure bar_categories has valid values or use defaults
         if not bar_categories:
             bar_categories = ['usage', 'attribute', 'performance']
             
-        # Handle empty string as None
-        if bar_zoom == '':
-            bar_zoom = None
+        # Parse date range from storage
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
             
-        # Get data to count categories
-        categories, _, _, _, _, _ = get_bar_chart_data(
-            bar_categories, bar_zoom, language, search_query if search_query else ''
+        # Get the categories and counts for the selected bar categories
+        display_categories, original_categories, bar_counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+            bar_categories, bar_zoom, language, search_query, start_date, end_date
         )
-        
-        # Set max to number of categories (minimum 10)
-        return max(10, len(categories))
+            
+        # Return the count of categories or a minimum value if there are fewer categories
+        return max(len(display_categories), 1)
 
     @app.callback(
         [Output('y-axis-label', 'children'),
@@ -154,811 +160,647 @@ def register_callbacks(app):
             TRANSLATIONS[language]['num_x_features']
         )
 
-    @app.callback(
-        [Output('bar-zoom-dropdown', 'options'),
-         Output('bar-zoom-dropdown', 'value')],
-        [Input('bar-category-checklist', 'value'),
-         Input('language-selector', 'value'),
-         Input('search-button', 'n_clicks'),
-         Input('bar-zoom-dropdown', 'value')],
-        [State('search-input', 'value'),
-         State('bar-count-slider', 'value')]
-    )
-    def update_bar_zoom_options(selected_categories, language, n_clicks, current_zoom, search_query, bar_count_value):
-        ctx = dash.callback_context
-        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+    # Helper functions for modular callbacks
+    def create_bar_chart(categories, counts, sentiment_ratios, colors, bar_zoom, language):
+        """Create a bar chart figure based on the provided data."""
+        # Create the bar chart figure
+        fig = go.Figure()
         
-        # Reset zoom when search is performed
-        if trigger_id == 'search-button.n_clicks':
-            return [], None
-            
-        search_query = search_query if search_query else ''
+        # Add bars
+        for i, (category, count, sentiment, color) in enumerate(zip(categories, counts, sentiment_ratios, colors)):
+            # Use the sentiment color for the bar fill
+            fig.add_trace(go.Bar(
+                x=[category],
+                y=[count],
+                name=category,
+                marker=dict(
+                    color=ratio_to_rgb(sentiment),  # Use sentiment color for bar
+                    line=dict(
+                        color='rgba(0,0,0,0.2)',  # Light gray border
+                        width=1
+                    )
+                ),
+                hovertemplate=(
+                    f"{TRANSLATIONS[language]['hover_count']}: %{{y}}<br>" +
+                    f"{TRANSLATIONS[language]['hover_satisfaction']}: {sentiment:.2f}"
+                ),
+                showlegend=False  # Hide individual bars from legend
+            ))
         
-        # Default to showing 15 categories if the bar count value isn't set yet
-        if bar_count_value is None or bar_count_value <= 0:
-            bar_count_value = 15
-            
-        # If a category is already selected, check if we need to show subcategories
-        if current_zoom and current_zoom != '':
-            # Determine if this is a top-level category selection
-            for prefix in ['U: ', 'A: ', 'P: ']:
-                if current_zoom.startswith(prefix):
-                    category_type = 'usage' if prefix == 'U: ' else ('attribute' if prefix == 'A: ' else 'performance')
-                    selected_category = current_zoom[len(prefix):]
-                    
-                    # Get the dictionary mapping for the category type
-                    dict_types = {
-                        'usage': 'use_sents',
-                        'attribute': 'attr_sents',
-                        'performance': 'perf_sents'
-                    }
-                    
-                    dict_type = dict_types[category_type]
-                    
-                    # Get all categories including subcategories
-                    category_dict = get_cached_dict(dict_type, 'all', search_query)
-            
-                    # Check if this is a top-level category (no pipe character) or already a subcategory
-                    is_top_level = '|' not in selected_category
-                    
-                    if is_top_level:
-                        # Find subcategories that match the selected top-level category
-                        subcategories = []
-                        subcategory_counts = {}
-                        total_mentions = 0
-                        
-                        # First pass: count total mentions and subcategory mentions
-                        for path, sents_dict in category_dict.items():
-                            if path.startswith(selected_category + '|'):
-                                # This is a subcategory of the selected category
-                                # Extract only the next level (excluding further nested levels)
-                                parts = path.split('|')
-                                if len(parts) > 1:
-                                    # Use full hierarchy: parent|child
-                                    subcategory = selected_category + '|' + parts[1]
-                                    
-                                    # Count mentions for this subcategory
-                                    mention_count = sum(len(reviews) for sent_dict in sents_dict.values() 
-                                                      for reviews in sent_dict.values())
-                                    
-                                    # Add to total and store count
-                                    total_mentions += mention_count
-                                    subcategory_counts[subcategory] = mention_count
-                        
-                        # Second pass: create options with percentages
-                        for subcategory, count in subcategory_counts.items():
-                            if total_mentions > 0:
-                                percentage = (count / total_mentions) * 100
-                                
-                                # Use the full subcategory path with the prefix
-                                display_name = prefix + subcategory
-                                formatted_name = f"→ {display_name} ({percentage:.1f}%)"
-                                
-                                subcategories.append({
-                                    'label': formatted_name,
-                        'value': display_name
-                    })
+        # Add an invisible satisfaction heatmap for color legend
+        all_sentiments = np.array(sentiment_ratios).reshape(-1, 1)
+        fig.add_trace(go.Heatmap(
+            z=all_sentiments,
+            colorscale=px.colors.diverging.RdBu,
+            showscale=True,
+            opacity=0,
+            colorbar=dict(
+                title=TRANSLATIONS[language]['satisfaction_level'],
+                tickvals=[0, 0.5, 1],
+                ticktext=[
+                    TRANSLATIONS[language]['unsatisfied'],
+                    TRANSLATIONS[language]['neutral'],
+                    TRANSLATIONS[language]['satisfied']
+                ],
+                x=1.11,
+                y=0.4
+            )
+        ))
         
-                        # If subcategories exist, display them along with the parent category and "back" option
-                        if subcategories:
-                            # Sort subcategories by count (descending)
-                            subcategories.sort(key=lambda x: subcategory_counts[x['value'][len(prefix):]], reverse=True)
-                            
-                            # Add back option to return to top level
-                            options = [{'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''}]
-                            
-                            # Add current selection (parent category) without parentheses
-                            clean_display = re.sub(r'\s*\([^)]*\)', '', current_zoom)
-                            options.append({'label': f"▶ {clean_display}", 'value': current_zoom})
-                            
-                            # Add subcategories - also remove parentheses from display
-                            for subcategory in subcategories:
-                                subcategory_value = subcategory['value']
-                                subcategory_label = subcategory['label']
-                                # Remove any parentheses content, regardless of language or content
-                                clean_subcategory = re.sub(r'\s*\([^)]*\)', '', subcategory_label)
-                                options.append({'label': clean_subcategory, 'value': subcategory_value})
-                            
-                            return options, current_zoom
-                        else:
-                            # No subcategories found, just show the current category and back option
-                            clean_display = re.sub(r'\s*\([^)]*\)', '', current_zoom)
-                            options = [
-                                {'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''},
-                                {'label': clean_display, 'value': current_zoom}
-                            ]
-                                                        
-                            return options, current_zoom
-                            
-                    # If it's already a subcategory, show its parent and siblings
-                    else:
-                        # Extract parent category (first part before pipe)
-                        parent_category = selected_category.split('|')[0]
-                        full_parent = prefix + parent_category
-                        
-                        # Find sibling subcategories that match the parent
-                        siblings = []
-                        sibling_counts = {}
-                        total_mentions = 0
-                        
-                        # First pass: count total mentions and sibling mentions
-                        for path, sents_dict in category_dict.items():
-                            if path.startswith(parent_category + '|'):
-                                # This is a sibling subcategory
-                                parts = path.split('|')
-                                if len(parts) > 1:
-                                    # Use full hierarchy: parent|child
-                                    sibling = parent_category + '|' + parts[1]
-                                    display_name = prefix + sibling
-                                    
-                                    # Skip the current selection
-                                    if display_name == current_zoom:
-                                        continue
-                                    
-                                    # Count mentions for this sibling
-                                    mention_count = sum(len(reviews) for sent_dict in sents_dict.values() 
-                                                      for reviews in sent_dict.values())
-                                    
-                                    # Add to total and store count
-                                    total_mentions += mention_count
-                                    sibling_counts[display_name] = mention_count
-                        
-                        # Also get count for current selection
-                        current_count = 0
-                        for path, sents_dict in category_dict.items():
-                            if path == selected_category or path.startswith(selected_category + '|'):
-                                current_count += sum(len(reviews) for sent_dict in sents_dict.values() 
-                                                  for reviews in sent_dict.values())
-                        total_mentions += current_count
-                        
-                        # Second pass: create options with percentages
-                        for sibling, count in sibling_counts.items():
-                            if total_mentions > 0:
-                                percentage = (count / total_mentions) * 100
-                                formatted_name = f"→ {sibling} ({percentage:.1f}%)"
-                                
-                                siblings.append({
-                                    'label': formatted_name,
-                                    'value': sibling
-                                })
-                        
-                        # Sort siblings by count (descending)
-                        siblings.sort(key=lambda x: sibling_counts[x['value']], reverse=True)
-                        
-                        # Clean parent display (no parentheses)
-                        clean_parent = re.sub(r'\s*\([^)]*\)', '', full_parent)
-                        
-                        # Create options with back, parent (without parentheses), current selection (without parentheses) and siblings (without parentheses)
-                        clean_current = re.sub(r'\s*\([^)]*\)', '', current_zoom)
-                        options = [
-                            {'label': '⬅️ ' + TRANSLATIONS[language].get('back', 'Back'), 'value': ''},
-                            {'label': f"▶ {clean_parent}", 'value': full_parent},
-                            {'label': f"▶ {clean_current} ✓", 'value': current_zoom}
-                        ]
-                        
-                        # Add siblings - also remove parentheses from display
-                        for sibling in siblings:
-                            sibling_value = sibling['value']
-                            sibling_label = sibling['label']
-                            # Remove any parentheses content, regardless of language or content
-                            clean_sibling = re.sub(r'\s*\([^)]*\)', '', sibling_label)
-                            options.append({'label': clean_sibling, 'value': sibling_value})
-                        
-                        return options, current_zoom
-                    
+        # Create custom x-axis ticktext with colored category labels
+        ticktext = []
+        formatted_categories = []
+        
+        # Check if we're zoomed into a parent category
+        is_zoomed = bar_zoom and bar_zoom != ''
+        
+        for category in categories:
+            # Determine the category type prefix
+            prefix = None
+            for p in type_colors.keys():
+                if category.startswith(p):
+                    prefix = p
                     break
+            
+            if prefix:
+                category_text = category[len(prefix):]
+                color = type_colors[prefix]
+                
+                # Format display text based on zoom state
+                if is_zoomed and '|' in category_text:
+                    parts = category_text.split('|')
+                    if len(parts) > 1:
+                        display_text = '|'.join(parts[1:])
+                    else:
+                        display_text = parts[0]
+                else:
+                    display_text = prefix + category_text
+                
+                formatted_categories.append(display_text)
+                ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
+            else:
+                formatted_text = re.sub(r'\s*\([^)]*\)', '', category)
+                formatted_categories.append(formatted_text)
+                ticktext.append(formatted_text)
         
-        # Default case: show top-level categories
-        # Get the full list of categories that would be shown in the chart
-        categories, counts, _, _, _, _ = get_bar_chart_data(
-            selected_categories, None, language, search_query
+        # Update layout for bar chart
+        title_key = 'bar_chart_title'
+        fig.update_layout(
+            title=TRANSLATIONS[language][title_key],
+            xaxis=dict(
+                title=None,
+                tickangle=20,
+                tickmode='array',
+                tickvals=list(range(len(categories))),
+                ticktext=ticktext,
+                domain=[0, 0.85]
+            ),
+            yaxis=dict(
+                title=TRANSLATIONS[language]['hover_count'],
+            ),
+            showlegend=False,
+            height=700,
+            width=1200,
+            margin=dict(
+                l=80,
+                r=150,
+                t=100,
+                b=180,
+                autoexpand=True
+            ),
         )
         
-        # Apply the same limit as what would be shown in the chart
-        if len(categories) > bar_count_value:
-            categories = categories[:bar_count_value]
-            counts = counts[:bar_count_value]
+        # Adjust the chart height based on number of categories
+        if len(categories) > 15:
+            fig.update_layout(height=750)
+        elif len(categories) > 10:
+            fig.update_layout(height=720)
+        
+        # Update bar width based on number of categories
+        if len(categories) <= 5:
+            fig.update_layout(bargap=0.5)
+        elif len(categories) <= 10:
+            fig.update_layout(bargap=0.3)
+        else:
+            fig.update_layout(bargap=0.1)
+        
+        # Create a custom legend as an annotation
+        legend_items = []
+        for prefix, color in type_colors.items():
+            if any(cat.startswith(prefix) for cat in categories):
+                translated_label = TRANSLATIONS[language]['usage_category'] if prefix == 'U: ' else (
+                    TRANSLATIONS[language]['attribute_category'] if prefix == 'A: ' else TRANSLATIONS[language]['performance_category']
+                )
+                legend_items.append(f'<span style="color:{color}; font-weight:bold; margin-right:15px;">▣ {prefix[0]} - {translated_label}</span>')
+        
+        if legend_items:
+            legend_title = TRANSLATIONS[language].get('category_types', 'Category Types')
+            legend_text = f'<b>{legend_title}:</b> ' + ' '.join(legend_items)
             
-        # Extract just the unique top-level category names that are currently visible
-        # Store them as (index, display_name) to preserve original order
-        top_level_categories = []
-        seen_categories = set()
+            fig.add_annotation(
+                xref="paper",
+                yref="paper",
+                x=1.2,
+                y=-0.22,
+                text=legend_text,
+                showarrow=False,
+                font=dict(size=12),
+                bgcolor="rgba(255, 255, 255, 0.8)",
+                bordercolor="rgba(0, 0, 0, 0.5)",
+                borderwidth=1,
+                borderpad=6,
+                align="center"
+            )
         
-        for i, (category, count) in enumerate(zip(categories, counts)):
-            # Find the prefix (U:, A:, P:)
-            for prefix in ['U: ', 'A: ', 'P: ']:
-                if category.startswith(prefix):
-                    # Extract the category text without the prefix
-                    category_text = category[len(prefix):]
-                    
-                    # Check if it's a subcategory (contains a pipe)
-                    if '|' in category_text:
-                        # For subcategories, we group by the parent (top-level) category
-                        top_level = category_text.split('|')[0].strip()
-                    else:
-                        # For top-level categories, just use the category itself
-                        top_level = category_text
-                        
-                    display_name = prefix + top_level
-                    
-                    # Only add if not already in options
-                    if display_name not in seen_categories:
-                        seen_categories.add(display_name)
-                        
-                        # Calculate count for this top-level category - needs to include all subcategories too
-                        category_count = sum(c for cat, c in zip(categories, counts) 
-                                           if cat.startswith(prefix + top_level))
-                        
-                        # Store original index and count to maintain chart order and for percentage
-                        top_level_categories.append((i, display_name, category_count))
-                    break
-        
-        # Sort by the original index to maintain the same order as in the chart
-        top_level_categories.sort(key=lambda x: x[0])
-        
-        # Build final options list without parentheses for parent categories
-        options = []
-        for _, category, count in top_level_categories:
-            # Remove any existing parentheses that might be in the display name
-            # This only affects display, not the actual value
-            clean_display = re.sub(r'\s*\([^)]*\)', '', category)
-            options.append({'label': clean_display, 'value': category})
-        
-        # Add "None" option at the top
-        options = [{'label': '-----', 'value': ''}] + options
-        
-        # Keep current value if it's still valid, otherwise reset
-        current_value = current_zoom
-        if current_value and not any(opt['value'] == current_value for opt in options):
-            current_value = None
-            
-        return options, current_value
+        return fig
 
-    # Graph and data update callback
-    @app.callback(
-        [Output('x-axis-dropdown', 'options'),
-        Output('y-axis-dropdown', 'options'),
-        Output('x-axis-dropdown', 'value'),
-        Output('y-axis-dropdown', 'value'),
-        Output('correlation-matrix', 'figure'),
-        Output('x-features-slider', 'max'),
-        Output('y-features-slider', 'max'),
-        Output('reviews-content', 'children'),
-        Output('x-features-slider', 'value'),
-        Output('y-features-slider', 'value'),
-        Output('bar-count-slider', 'value')],
-        [Input('plot-type', 'value'),
-        Input('x-axis-dropdown', 'value'),
-        Input('y-axis-dropdown', 'value'),
-        Input('x-features-slider', 'value'),
-        Input('y-features-slider', 'value'),
-        Input('language-selector', 'value'),
-        Input('search-button', 'n_clicks'),
-        Input('bar-category-checklist', 'value'),
-        Input('bar-zoom-dropdown', 'value'),
-        Input('bar-count-slider', 'value')],
-        [State('search-input', 'value')]
-    )
-    def update_graph(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
-                   bar_categories, bar_zoom, bar_count, search_query):
+
+    def get_options(language, value, top_paths, top_display_paths):
+        """Generate dropdown options for category selection."""
+        levels = [{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}]
+        if value != 'all':
+            display_parts = re.sub(r'\s*\([^)]*\)', '', value).split('|')
+            parts = value.split('|')
+            for i, part in enumerate(parts):
+                current_val = '|'.join(parts[:i+1])
+                display_current_val = '|'.join(display_parts[:i+1])
+                prefix = '--' * (i+1)
+                levels.append({'label': f'{prefix} {display_current_val} [L{i+1}] ', 'value': current_val})
+            remained_paths = [{'label': f'{"--" * (len(parts)+1)} {display_path} [L{len(parts)+1}]', 'value': path} for path, display_path in zip(top_paths, top_display_paths)]
+            return levels + remained_paths
+        else:
+            return levels + [{'label': f'-- {display_path} [L1]', 'value': path} for path, display_path in zip(top_paths, top_display_paths)]
+
+    def create_heatmap(matrix, sentiment_matrix, review_matrix, x_text, y_text, language, plot_type):
+        """Create a heatmap figure based on the provided data."""
         
+        # Calculate dynamic dimensions
+        # Height calculation
+        base_height = 700
+        min_height = 600
+        additional_height_per_feature = 60
+        dynamic_height = max(
+            min_height,
+            base_height + max(0, len(y_text) - 5) * additional_height_per_feature
+        )
+        
+        # Width calculation
+        base_width = 1000
+        min_width = 1400
+        additional_width_per_feature = 80
+        max_width = 2400
+        
+        avg_label_length = sum(len(str(label)) for label in x_text) / len(x_text) if x_text else 0
+        width_factor = max(1, avg_label_length / 15)
+        
+        dynamic_width = min(
+            max_width,
+            max(
+                min_width,
+                base_width + max(0, len(x_text) - 5) * additional_width_per_feature * width_factor
+            )
+        )
+        
+        # Calculate margins
+        max_y_label_length = max(len(str(label)) for label in y_text) if y_text else 0
+        left_margin = min(250, max(150, max_y_label_length * 9))
+        right_margin = 400
+        top_margin = 120
+        bottom_margin = 180
+
+        # Create the figure
+        fig = go.Figure()
+        
+        # Handle empty matrix case
+        if matrix.size == 0 or not np.any(matrix > 0):
+            fig.add_annotation(
+                x=0.5, y=0.5,
+                text=TRANSLATIONS[language]['no_data_available'],
+                font=dict(size=16),
+                showarrow=False,
+                xref="paper", yref="paper"
+            )
+            return fig
+        
+        # Add the satisfaction heatmap legend
+        fig.add_trace(go.Heatmap(
+            z=sentiment_matrix,
+            x=x_text,
+            y=y_text,
+            colorscale=px.colors.diverging.RdBu,
+            showscale=True,
+            opacity=0,
+            colorbar=dict(
+                title=TRANSLATIONS[language]['satisfaction_level'],
+                tickvals=[0, 0.5, 1],
+                ticktext=[
+                    TRANSLATIONS[language]['unsatisfied'],
+                    TRANSLATIONS[language]['neutral'],
+                    TRANSLATIONS[language]['satisfied']
+                ],
+                x=1.11,
+                y=0.4
+            )
+        ))
+        
+        # Add the custom shapes
+        max_mentions = np.max(matrix)
+        min_mentions = np.min(matrix[matrix > 0])
+        
+        for i in range(len(y_text)):
+            for j in range(len(x_text)):
+                if matrix[i, j] > 0:
+                    box_width = get_log_width(matrix[i, j], max_mentions, min_mentions)
+                    fig.add_shape(
+                        type="rect",
+                        x0=j-box_width/2, y0=i-0.4, x1=j+box_width/2, y1=i+0.4,
+                        fillcolor=ratio_to_rgb(sentiment_matrix[i, j]),
+                        line_color="rgba(0,0,0,0)",
+                    )
+        
+        # Add legend and examples
+        width_legend_text = get_width_legend_translations(language)['explanation']
+        
+        # Find a good example box
+        if np.any(matrix > 0):
+            example_i, example_j = np.unravel_index(np.argmax(matrix), matrix.shape)
+            example_sentiment = sentiment_matrix[example_i, example_j]
+        else:
+            example_sentiment = 0.5
+        
+        # Constants for example box and explanation
+        EXAMPLE_BOX_LEFT = 1.05
+        EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.12
+        EXAMPLE_BOX_BOTTOM = 1 
+        EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.11
+        BRACKET_TOP = EXAMPLE_BOX_TOP + 0.06
+        BRACKET_VERTICAL_LENGTH = 0.03
+        EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5
+        EXPLANATION_Y = BRACKET_TOP + 0.1
+        
+        # Add explanation text
+        fig.add_annotation(
+            xref="paper", yref="paper", 
+            x=EXPLANATION_X,
+            y=EXPLANATION_Y,
+            text=width_legend_text,
+            showarrow=False,
+            font=dict(size=13),
+            align="right",
+            width=220
+        )
+        
+        # Add the example box
+        fig.add_shape(
+            type="rect",
+            xref="paper", yref="paper",
+            x0=EXAMPLE_BOX_LEFT, 
+            x1=EXAMPLE_BOX_RIGHT,
+            y0=EXAMPLE_BOX_BOTTOM, 
+            y1=EXAMPLE_BOX_TOP,
+            fillcolor=ratio_to_rgb(example_sentiment),
+            line_color="rgba(0,0,0,0)",
+        )
+        
+        # Add bracket at the top of the box
+        fig.add_shape(
+            type="line",
+            xref="paper", yref="paper",
+            x0=EXAMPLE_BOX_LEFT, 
+            x1=EXAMPLE_BOX_RIGHT,
+            y0=BRACKET_TOP, 
+            y1=BRACKET_TOP,
+            line=dict(color="black", width=1)
+        )
+        
+        # Add vertical lines for bracket
+        for x in [EXAMPLE_BOX_LEFT, EXAMPLE_BOX_RIGHT]:
+            fig.add_shape(
+                type="line",
+                xref="paper", yref="paper",
+                x0=x, x1=x,
+                y0=BRACKET_TOP, 
+                y1=BRACKET_TOP - BRACKET_VERTICAL_LENGTH,
+                line=dict(color="black", width=1)
+            )
+        
+        # Update axis titles with category types
+        if plot_type == 'use_attr_perf':
+            x_category_type = AXIS_CATEGORY_NAMES[language]['use']
+            y_category_type = AXIS_CATEGORY_NAMES[language]['attr_perf']
+            title_key = 'use_attr_perf_title'
+        else:  # perf_attr
+            x_category_type = AXIS_CATEGORY_NAMES[language]['perf']
+            y_category_type = AXIS_CATEGORY_NAMES[language]['attr']
+            title_key = 'perf_attr_title'
+        
+        fig.update_layout(
+            title=TRANSLATIONS[language][title_key],
+            xaxis=dict(
+                tickangle=20,
+                tickmode='array',
+                tickvals=list(range(len(x_text))),
+                ticktext=x_text,
+                tickfont=dict(size=12),
+                title=dict(
+                    text=f"{TRANSLATIONS[language]['x_axis_percentage']} {x_category_type}",
+                    font=dict(size=14)
+                )
+            ),
+            yaxis=dict(
+                tickmode='array',
+                tickvals=list(range(len(y_text))),
+                ticktext=y_text,
+                tickfont=dict(size=12),
+                title=dict(
+                    text=f"{y_category_type} {TRANSLATIONS[language]['y_axis_percentage']}",
+                    font=dict(size=14)
+                )
+            ),
+            font=dict(size=13),
+            title_font=dict(size=18),
+            width=dynamic_width,
+            height=dynamic_height,
+            margin=dict(
+                l=left_margin,
+                r=right_margin,
+                t=top_margin,
+                b=bottom_margin,
+                autoexpand=True
+            )
+        )
+        
+        # Configure hover info - this is the important part that was missing
+        hover_translations = get_hover_translations(language)
+        hover_template = (
+            f"{hover_translations['hover_x']}: %{{x}}<br>" +
+            f"{hover_translations['hover_y']}: %{{y}}<br>" +
+            f"{hover_translations['hover_count']}: %{{text}}<br>" +
+            f"{hover_translations['hover_satisfaction']}: %{{customdata:.2f}}"
+        )
+        
+        fig.update_traces(
+            hovertemplate=hover_template,
+            customdata=sentiment_matrix,
+            text=matrix
+        )
+        
+        return fig
+        
+    def process_bar_chart_data(bar_categories, bar_zoom_value, bar_count, language, search_query, start_date, end_date):
+        """
+        Process data for bar chart visualization and controls.
+        
+        Args:
+            bar_categories: List of category types to include
+            bar_zoom_value: Value of the selected zoom category
+            bar_count: Maximum number of bars to display
+            language: Current language setting
+            search_query: Search query for filtering
+            start_date: Start date for filtering
+            end_date: End date for filtering
+            
+        Returns:
+            Tuple containing (figure, zoom_dropdown_options, new_zoom_value, updated_bar_count)
+        """
+        # Handle empty values
+        if not bar_categories:
+            bar_categories = ['usage', 'attribute', 'performance']
+        if bar_zoom_value is None:
+            bar_zoom_value = 'all'
+        # Get bar chart data
+        display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+            bar_categories, bar_zoom_value, language, search_query, start_date, end_date
+        )
+        
+        # Update bar count based on available categories
+        bar_count = min(bar_count or 10, len(display_categories))
+        
+        # Apply bar count limit from bar_count slider for visualization
+        if bar_count > 0 and bar_count < len(display_categories):
+            display_categories = display_categories[:bar_count]
+            original_categories = original_categories[:bar_count]
+            display_counts = counts[:bar_count]
+            display_sentiment_ratios = sentiment_ratios[:bar_count]
+            display_colors = colors[:bar_count]
+        else:
+            display_counts = counts
+            display_sentiment_ratios = sentiment_ratios
+            display_colors = colors
+
+        formatted_categories = [re.sub(r'\s*\([^)]*\)', '', category) for category in display_categories]
+        dropdown_options = get_options(language, bar_zoom_value, original_categories, formatted_categories)
+        # Create the bar chart figure
+        fig = create_bar_chart(formatted_categories, display_counts, display_sentiment_ratios, display_colors, bar_zoom_value, language)
+        return fig, dropdown_options, bar_zoom_value, bar_count
+
+
+
+    def process_matrix_data(plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date):
+        """
+        Process data for matrix visualization and controls.
+        
+        Args:
+            plot_type: Type of matrix plot ('use_attr_perf' or 'perf_attr')
+            x_value: X-axis category selection
+            y_value: Y-axis category selection
+            top_n_x: Number of x-axis features to display
+            top_n_y: Number of y-axis features to display
+            language: Current language setting
+            search_query: Search query for filtering
+            start_date: Start date for filtering
+            end_date: End date for filtering
+            
+        Returns:
+            Tuple containing (figure, x_options, y_options, max_x, max_y, updated_top_n_x, updated_top_n_y)
+        """
+        # Handle None values
+        x_value = x_value or 'all'
+        y_value = y_value or 'all'
+        
+        # Get data for the axes
+        if plot_type == 'use_attr_perf':
+            x_dict = get_cached_dict('use_sents', x_value, search_query, start_date, end_date)
+            y_dict = get_cached_dict('attr_perf_ids', y_value, search_query, start_date, end_date)
+        else:  # perf_attr
+            x_dict = get_cached_dict('perf_sents', x_value, search_query, start_date, end_date)
+            y_dict = get_cached_dict('attr_ids', y_value, search_query, start_date, end_date)
+        
+        # Update slider maximums based on available features
+        max_x = max(1, len(x_dict))
+        max_y = max(1, len(y_dict))
+        
+        # Ensure top_n values don't exceed available features
+        top_n_x = min(top_n_x, max_x)
+        top_n_y = min(top_n_y, max_y)
+        
+        # Get plot data for both visualization and dropdown options
+        matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
+            plot_type, x_value, y_value, max_x, max_y, language, search_query, start_date, end_date
+        )
+        
+        # Reorder x-axis by frequency for visualization
+        if len(matrix) > 0 and len(matrix[0]) > 0:
+            x_sorted_indices = np.argsort(-x_percentages)[:top_n_x]
+            
+            # Create sorted versions of data for visualization
+            viz_matrix = matrix[:, x_sorted_indices]
+            viz_sentiment_matrix = sentiment_matrix[:, x_sorted_indices]
+            viz_review_matrix = review_matrix[:, x_sorted_indices]
+            viz_x_text = [x_text[i] for i in x_sorted_indices]
+
+            y_sorted_indices = np.argsort(-y_percentages)[:top_n_y]
+            viz_matrix = viz_matrix[y_sorted_indices, :]
+            viz_sentiment_matrix = viz_sentiment_matrix[y_sorted_indices, :]
+            viz_review_matrix = viz_review_matrix[y_sorted_indices, :]
+            viz_y_text = [y_text[i] for i in y_sorted_indices]
+        else:
+            # Handle empty matrix case
+            viz_matrix = matrix
+            viz_sentiment_matrix = sentiment_matrix
+            viz_review_matrix = review_matrix
+            viz_x_text = x_text
+            viz_y_text = y_text
+
+        # Format display labels - remove all parentheses content for all categories
+        formatted_x_labels = [re.sub(r'\s*\([^)]*\)', '', label) for label in viz_x_text]
+        formatted_y_labels = [re.sub(r'\s*\([^)]*\)', '', label) for label in viz_y_text]
+        x_options = get_options(language, x_value, viz_x_text, formatted_x_labels)
+        y_options = get_options(language, y_value, viz_y_text, formatted_y_labels)
+        # Create clean text without percentages for lookups
+        if x_value == 'all':
+            x_axis_text = formatted_x_labels
+        else:
+            formatted_x_value = re.sub(r'\s*\([^)]*\)', '', x_value)
+            x_axis_text = [path[len(formatted_x_value)+1:] for path in formatted_x_labels]
+        if y_value == 'all':
+            y_axis_text = formatted_y_labels
+        else:
+            formatted_y_value = re.sub(r'\s*\([^)]*\)', '', y_value)
+            y_axis_text = [path[len(formatted_y_value)+1:] for path in formatted_y_labels]
+        # Create the heatmap figure
+        fig = create_heatmap(
+            viz_matrix, viz_sentiment_matrix, viz_review_matrix,
+            x_axis_text, y_axis_text,
+            language, plot_type
+        )
+        
+        return fig, x_options, y_options, max_x, max_y, top_n_x, top_n_y
+
+    # Callback for combined graph and UI control updates
+    @app.callback(
+        [Output('correlation-matrix', 'figure'),
+         Output('reviews-content', 'children'),
+         Output('x-axis-dropdown', 'options'),
+         Output('y-axis-dropdown', 'options'),
+         Output('x-axis-dropdown', 'value'),
+         Output('y-axis-dropdown', 'value'),
+         Output('x-features-slider', 'max'),
+         Output('y-features-slider', 'max'),
+         Output('x-features-slider', 'value'),
+         Output('y-features-slider', 'value'),
+         Output('bar-count-slider', 'value'),
+         Output('bar-zoom-dropdown', 'options'),
+         Output('bar-zoom-dropdown', 'value')],
+        [Input('plot-type', 'value'),
+         Input('x-axis-dropdown', 'value'),
+         Input('y-axis-dropdown', 'value'),
+         Input('x-features-slider', 'value'),
+         Input('y-features-slider', 'value'),
+         Input('language-selector', 'value'),
+         Input('search-button', 'n_clicks'),
+         Input('bar-category-checklist', 'value'),
+         Input('bar-zoom-dropdown', 'value'),
+         Input('bar-count-slider', 'value'),
+         Input('date-filter-slider', 'value')],
+        [State('search-input', 'value'),
+         State('date-filter-storage', 'children')]
+    )
+    def update_visualization_and_controls(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
+                   bar_categories, bar_zoom_value, bar_count, date_slider_value, search_query, date_filter_storage):
+        """
+        Unified callback to update both the graph visualization and UI controls.
+        This eliminates redundant calculations by using helper functions for specific plot types.
+        """
+        # Check which input triggered the callback
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-
+        
+        # Parse date range from storage (common to both operations)
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
+        
+        # Initialize reviews content
+        reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
+        
+        # Handle None values with defaults
+        search_query = search_query if search_query else ''
+        x_value = x_value or 'all'
+        y_value = y_value or 'all'
+        top_n_x = int(top_n_x)
+        top_n_y = int(top_n_y)
+        
         # Reset selections if search button was clicked
         if trigger_id == 'search-button.n_clicks':
             x_value = 'all'
             y_value = 'all'
         
-        if x_value is None:
-            x_value = 'all'
-        if y_value is None:
-            y_value = 'all'
-
-        # Handle None or empty search query
-        search_query = search_query if search_query else ''
-        
-        # Convert slider values to integers
-        top_n_x = int(top_n_x)
-        top_n_y = int(top_n_y)
-        
-        # For bar chart, we use different data and controls
+        # Process data based on plot type
         if plot_type == 'bar_chart':
-            # Default values for outputs we don't use with bar chart
-            x_options = []
-            y_options = []
-            max_x = 10
-            max_y = 10
-            
-            # Ensure bar_categories has valid values or use defaults
-            if not bar_categories:
-                bar_categories = ['usage', 'attribute', 'performance']
+            # Check if bar_zoom triggered the callback and reset bar_count if it did
+            if trigger_id == 'bar-zoom-dropdown.value':
+                bar_count = 10  # Reset to default value
                 
-            # Handle empty string as None
-            if bar_zoom == '':
-                bar_zoom = None
-                
-            # Get bar chart data
-            categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
-                bar_categories, bar_zoom, language, search_query
+            # Process bar chart data using helper function
+            fig, dropdown_options, new_zoom_value, bar_count = process_bar_chart_data(
+                bar_categories, bar_zoom_value, bar_count, language, search_query, start_date, end_date
             )
             
-            # Apply bar count limit from bar_count slider
-            if bar_count > 0 and bar_count < len(categories):
-                categories = categories[:bar_count]
-                counts = counts[:bar_count]
-                sentiment_ratios = sentiment_ratios[:bar_count]
-                review_data = review_data[:bar_count]
-                colors = colors[:bar_count]
-            
-            # Create the bar chart figure
-            fig = go.Figure()
-            
-            # Define category type colors for legend
-            type_colors = {
-                'U: ': '#6A0DAD',  # Dark Purple for Usage (changed from Blue #4285F4)
-                'A: ': '#34A853',  # Green for Attribute
-                'P: ': '#FBBC05',  # Yellow for Performance
-            }
-            
-            # Add bars
-            for i, (category, count, sentiment, color) in enumerate(zip(categories, counts, sentiment_ratios, colors)):
-                # Use the sentiment color for the bar fill
-                fig.add_trace(go.Bar(
-                    x=[category],
-                    y=[count],
-                    name=category,
-                    marker=dict(
-                        color=ratio_to_rgb(sentiment),  # Use sentiment color for bar
-                        line=dict(
-                            color='rgba(0,0,0,0.2)',  # Light gray border
-                            width=1
-                        )
-                    ),
-                    hovertemplate=(
-                        f"{TRANSLATIONS[language]['hover_count']}: %{{y}}<br>" +
-                        f"{TRANSLATIONS[language]['hover_satisfaction']}: {sentiment:.2f}"
-                    ),
-                    showlegend=False  # Hide individual bars from legend
-                ))
-            
-            # Add an invisible satisfaction heatmap just to get the satisfaction color legend (same as matrix view)
-            all_sentiments = np.array(sentiment_ratios).reshape(-1, 1)
-            fig.add_trace(go.Heatmap(
-                z=all_sentiments,
-                colorscale=px.colors.diverging.RdBu,
-                showscale=True,
-                opacity=0,
-                colorbar=dict(
-                    title=TRANSLATIONS[language]['satisfaction_level'],
-                    tickvals=[0, 0.5, 1],
-                    ticktext=[
-                        TRANSLATIONS[language]['unsatisfied'],
-                        TRANSLATIONS[language]['neutral'],
-                        TRANSLATIONS[language]['satisfied']
-                    ],
-                    x=1.11,
-                    y=0.4
-                )
-                    ))
-            
-            # Create custom x-axis ticktext with colored category labels
-            ticktext = []
-            # Create a mapping of original categories to formatted (no parentheses) for click handling
-            formatted_categories = []
-            
-            # Check if we're zoomed into a parent category
-            is_zoomed = bar_zoom and bar_zoom != ''
-            
-            for category in categories:
-                # Determine the category type prefix
-                prefix = None
-                for p in type_colors.keys():
-                    if category.startswith(p):
-                        prefix = p
-                        break
-                
-                if prefix:
-                    category_text = category[len(prefix):]
-                    color = type_colors[prefix]
-                    
-                    # When zoomed into a parent category, we need to maintain consistent formatting with matrix plot
-                    if is_zoomed and '|' in category_text:
-                        # Extract the path parts
-                        parts = category_text.split('|')
-                        
-                        # Exclude the topmost category for display (to match the example 圣诞节|圣诞树装饰)
-                        if len(parts) > 1:
-                            display_text = '|'.join(parts[1:])
-                        else:
-                            display_text = parts[0]
-                          
-                        # Remove any parentheses content
-                        display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
-                    else:
-                        # Standard display text for non-zoomed or parent categories
-                        # Remove any parentheses content
-                        display_text = prefix + category_text
-                        display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
-                    
-                    # Remember the formatted version for click handling
-                    formatted_categories.append(display_text)
-                    
-                    ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
-                else:
-                    # Default case if no prefix matches
-                    formatted_text = re.sub(r'\s*\([^)]*\)', '', category)
-                    formatted_categories.append(formatted_text)
-                    ticktext.append(formatted_text)
-            
-            # Update layout for bar chart
-            fig.update_layout(
-                title=TRANSLATIONS[language][title_key],
-                xaxis=dict(
-                    title=None,
-                    tickangle=20,  # Changed from 45 to 20 to match matrix plot
-                    tickmode='array',
-                    tickvals=list(range(len(categories))),
-                    ticktext=ticktext,
-                    domain=[0, 0.85]  # Make space on the right for colorbar
-                ),
-                yaxis=dict(
-                    title=TRANSLATIONS[language]['hover_count'],
-                ),
-                # Move legend to a annotations instead for better control
-                showlegend=False,
-                height=700,
-                width=1200,
-                margin=dict(
-                    l=80,   # Decreased from 100
-                    r=150,  # Decreased from 200
-                    t=100,  # Decreased from 150
-                    b=180,  # Decreased from 200
-                    autoexpand=True
-                ),
+            # Return with default values for matrix-specific outputs
+            return (
+                fig,                    # figure
+                reviews_content,        # reviews-content
+                [],                     # x-axis-dropdown options
+                [],                     # y-axis-dropdown options
+                x_value,                # x-axis-dropdown value
+                y_value,                # y-axis-dropdown value
+                10,                     # x-features-slider max
+                10,                     # y-features-slider max
+                top_n_x,                # x-features-slider value
+                top_n_y,                # y-features-slider value
+                bar_count,              # bar-count-slider value
+                dropdown_options,       # bar-zoom-dropdown options
+                new_zoom_value          # bar-zoom-dropdown value
             )
-            
-            # Adjust the chart height based on number of categories
-            # More categories need more height for x-axis labels
-            if len(categories) > 15:
-                fig.update_layout(height=750)
-            elif len(categories) > 10:
-                fig.update_layout(height=720)
-            
-            # Update bar width based on number of categories
-            if len(categories) <= 5:
-                fig.update_layout(bargap=0.5)
-            elif len(categories) <= 10:
-                fig.update_layout(bargap=0.3)
-            else:
-                fig.update_layout(bargap=0.1)
-            
-            # Create a custom legend as an annotation below the x-axis
-            legend_items = []
-            for prefix, color in type_colors.items():
-                if any(cat.startswith(prefix) for cat in categories):
-                    translated_label = TRANSLATIONS[language]['usage_category'] if prefix == 'U: ' else (
-                        TRANSLATIONS[language]['attribute_category'] if prefix == 'A: ' else TRANSLATIONS[language]['performance_category']
-                    )
-                    legend_items.append(f'<span style="color:{color}; font-weight:bold; margin-right:15px;">▣ {prefix[0]} - {translated_label}</span>')
-            
-            if legend_items:
-                legend_title = TRANSLATIONS[language].get('category_types', 'Category Types')
-                legend_text = f'<b>{legend_title}:</b> ' + ' '.join(legend_items)
-                
-                fig.add_annotation(
-                    xref="paper",
-                    yref="paper",
-                    x=1.2,
-                    y=-0.22,  # Move further down to avoid overlap with angled labels
-                    text=legend_text,
-                    showarrow=False,
-                    font=dict(size=12),
-                    bgcolor="rgba(255, 255, 255, 0.8)",
-                    bordercolor="rgba(0, 0, 0, 0.5)",
-                    borderwidth=1,
-                    borderpad=6,
-                    align="center"
-                )
-            
-            # Return empty list for reviews-content when search button is clicked
-            reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
-            
-            return (x_options, y_options, x_value, y_value, fig, max_x, max_y,
-                   reviews_content, top_n_x, top_n_y, bar_count)
         else:
-            # Original heatmap logic for use_attr_perf and perf_attr
-            # Get data for the graph
-            if plot_type == 'use_attr_perf':
-                x_dict = get_cached_dict('use_sents', x_value, search_query)
-                y_dict = get_cached_dict('attr_perf_ids', y_value, search_query)
-            else:
-                x_dict = get_cached_dict('perf_sents', x_value, search_query)
-                y_dict = get_cached_dict('attr_ids', y_value, search_query)
-            
-            # Update slider maximums based on available features
-            max_x = len(x_dict)
-            max_y = len(y_dict)
-            
-            # For search reset, set slider values to min(7, max available)
-            if trigger_id == 'search-button.n_clicks':
-                top_n_x = min(7, max_x)  # Reset to default of 7 or max available
-                top_n_y = min(7, max_y)  # Reset to default of 7 or max available
-            else:
-                # Ensure top_n values don't exceed available features
-                top_n_x = min(top_n_x, max_x)
-                top_n_y = min(top_n_y, max_y)
-            
-            matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
-                plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
-            )
-            
-            # Format display labels - remove all parentheses content for all categories
-            formatted_x_display = []
-            for label in x_display:
-                # Remove any parentheses content, regardless of language or content
-                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
-                formatted_x_display.append(formatted_label)
-                    
-            formatted_y_display = []
-            for label in y_display:
-                # Remove any parentheses content, regardless of language or content
-                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
-                formatted_y_display.append(formatted_label)
-            
-            # Calculate dynamic dimensions based on number of features
-            # Height calculation with increased base values for larger plot
-            base_height = 700  # Increased from 500
-            min_height = 600   # Increased from 400
-            additional_height_per_feature = 60  # Increased from 50
-            dynamic_height = max(
-                min_height,
-                base_height + max(0, len(y_display) - 5) * additional_height_per_feature
-            )
-            
-            # Width calculation - increase base width for larger plot
-            base_width = 1000   # Increased from 800
-            min_width = 1400    # Increased from 1200
-            additional_width_per_feature = 80  # Increased from 60
-            max_width = 2400    # Increased from 2000
-            
-            # Calculate width based on the length of x-axis labels and number of features
-            avg_label_length = sum(len(str(label)) for label in x_display) / len(x_display) if x_display else 0
-            width_factor = max(1, avg_label_length / 15)  # Adjust width more for longer labels
-            
-            dynamic_width = min(
-                max_width,
-                max(
-                    min_width,
-                    base_width + max(0, len(x_display) - 5) * additional_width_per_feature * width_factor
-                )
-            )
-            
-            # Calculate dynamic margins based on label lengths - decrease margins for better space efficiency
-            max_y_label_length = max(len(str(label)) for label in y_display) if y_display else 0
-            left_margin = min(250, max(150, max_y_label_length * 9))  # Decreased from 350/180/10
-            right_margin = 400  # Decreased from 500
-            top_margin = 120    # Decreased from 180
-            bottom_margin = 180 # Decreased from 250
-
-            # Create the base heatmap figure
-            fig = go.Figure()
-
-            # Reorder x-axis by frequency (sum of mentions for each category)
-            if len(matrix) > 0 and len(matrix[0]) > 0:
-                # Calculate total mentions for each x-axis category
-                x_totals = np.sum(matrix, axis=0)
+            # Check if axis dropdowns triggered the callback and reset corresponding top_n values
+            if trigger_id == 'x-axis-dropdown.value':
+                top_n_x = 10  # Reset to default value
+            if trigger_id == 'y-axis-dropdown.value':
+                top_n_y = 10  # Reset to default value
                 
-                # Get indices sorted by frequency (descending)
-                x_sorted_indices = np.argsort(-x_totals)
-                
-                # Reorder all x-related data
-                matrix = matrix[:, x_sorted_indices]
-                sentiment_matrix = sentiment_matrix[:, x_sorted_indices]
-                review_matrix = review_matrix[:, x_sorted_indices]
-                x_text = [x_text[i] for i in x_sorted_indices]
-                x_display = [x_display[i] for i in x_sorted_indices]
-
-            # Format display labels - remove all parentheses content for all categories
-            formatted_x_display = []
-            for label in x_display:
-                # Remove any parentheses content, regardless of language or content
-                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
-                formatted_x_display.append(formatted_label)
-                    
-            formatted_y_display = []
-            for label in y_display:
-                # Remove any parentheses content, regardless of language or content
-                formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
-                formatted_y_display.append(formatted_label)
-
-            # Add the satisfaction ratio heatmap (color legend)
-            fig.add_trace(go.Heatmap(
-                z=sentiment_matrix,
-                x=formatted_x_display,  # Use formatted display labels
-                y=formatted_y_display,  # Use formatted display labels
-                colorscale=px.colors.diverging.RdBu,
-                showscale=True,
-                opacity=0,
-                colorbar=dict(
-                    title=TRANSLATIONS[language]['satisfaction_level'],
-                    tickvals=[0, 0.5, 1],
-                    ticktext=[
-                        TRANSLATIONS[language]['unsatisfied'],
-                        TRANSLATIONS[language]['neutral'],
-                        TRANSLATIONS[language]['satisfied']
-                    ],
-                    x=1.11,
-                    y=0.4
-                )
-            ))
-
-            # Get width legend translations
-            width_legend_text = get_width_legend_translations(language)['explanation']
-
-            # Add the custom shapes for the actual visualization
-            max_mentions = np.max(matrix)
-            min_mentions = np.min(matrix[matrix > 0]) if np.any(matrix > 0) else 0  # Get minimum non-zero value
-            
-            # Add the shapes using log width
-            for i in range(len(y_display)):
-                for j in range(len(x_display)):
-                    if matrix[i, j] > 0:
-                        box_width = get_log_width(matrix[i, j], max_mentions, min_mentions)
-                        fig.add_shape(
-                            type="rect",
-                            x0=j-box_width/2, y0=i-0.4, x1=j+box_width/2, y1=i+0.4,
-                            fillcolor=ratio_to_rgb(sentiment_matrix[i, j]),
-                            line_color="rgba(0,0,0,0)",
-                        )
-
-            # Find a good example box from the actual data
-            if np.any(matrix > 0):
-                example_i, example_j = np.unravel_index(np.argmax(matrix), matrix.shape)
-                example_sentiment = sentiment_matrix[example_i, example_j]
-                example_count = int(matrix[example_i, example_j])
-            else:
-                example_sentiment = 0.5
-            
-            # Constants for width example box and explanation positioning
-            EXAMPLE_BOX_LEFT = 1.05
-            EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.12
-            EXAMPLE_BOX_BOTTOM = 1 
-            EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.11
-
-            BRACKET_TOP = EXAMPLE_BOX_TOP + 0.06
-            BRACKET_VERTICAL_LENGTH = 0.03  # Length of vertical bracket lines
-
-            EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5 # Center explanation above bracket
-            EXPLANATION_Y = BRACKET_TOP + 0.1  # Position explanation above bracket
-
-            # Add explanation text with translation above the bracket - adjusted position
-            fig.add_annotation(
-                xref="paper", yref="paper", 
-                x=EXPLANATION_X,
-                y=EXPLANATION_Y,
-                text=width_legend_text,
-                showarrow=False,
-                font=dict(size=13),
-                align="right",
-                width=220
+            # Process matrix data using helper function
+            fig, x_options, y_options, max_x, max_y, top_n_x, top_n_y = process_matrix_data(
+                plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
             )
             
-            # Add the color scale legend title with larger font
-            fig.update_coloraxes(
-                colorbar=dict(
-                    title=dict(
-                        text=TRANSLATIONS[language]['satisfaction_level'],
-                        font=dict(size=14)  # Increased font size
-                    ),
-                    tickfont=dict(size=12)  # Increased tick font size
-                )
+            # Return values for matrix view (with no change to bar chart controls)
+            return (
+                fig,                    # figure
+                reviews_content,        # reviews-content
+                x_options,              # x-axis-dropdown options
+                y_options,              # y-axis-dropdown options
+                x_value,                # x-axis-dropdown value
+                y_value,                # y-axis-dropdown value
+                max_x,                  # x-features-slider max
+                max_y,                  # y-features-slider max
+                top_n_x,                # x-features-slider value
+                top_n_y,                # y-features-slider value
+                dash.no_update,         # bar-count-slider value
+                dash.no_update,         # bar-zoom-dropdown options
+                dash.no_update          # bar-zoom-dropdown value
             )
-
-            # Add the example box
-            fig.add_shape(
-                type="rect",
-                xref="paper", yref="paper",
-                x0=EXAMPLE_BOX_LEFT, 
-                x1=EXAMPLE_BOX_RIGHT,
-                y0=EXAMPLE_BOX_BOTTOM, 
-                y1=EXAMPLE_BOX_TOP,
-                fillcolor=ratio_to_rgb(example_sentiment),
-                line_color="rgba(0,0,0,0)",
-            )
-
-            # Add bracket at the top of the box
-            fig.add_shape(
-                type="line",
-                xref="paper", yref="paper",
-                x0=EXAMPLE_BOX_LEFT, 
-                x1=EXAMPLE_BOX_RIGHT,
-                y0=BRACKET_TOP, 
-                y1=BRACKET_TOP,
-                line=dict(color="black", width=1)
-            )
-
-            # Add vertical lines for bracket
-            for x in [EXAMPLE_BOX_LEFT, EXAMPLE_BOX_RIGHT]:
-                fig.add_shape(
-                    type="line",
-                    xref="paper", yref="paper",
-                    x0=x, x1=x,
-                    y0=BRACKET_TOP, 
-                    y1=BRACKET_TOP - BRACKET_VERTICAL_LENGTH,
-                    line=dict(color="black", width=1)
-                )
-
-            # Update axis titles with category types
-            if plot_type == 'use_attr_perf':
-                x_category_type = AXIS_CATEGORY_NAMES[language]['use']
-                y_category_type = AXIS_CATEGORY_NAMES[language]['attr_perf']
-            else:  # perf_attr
-                x_category_type = AXIS_CATEGORY_NAMES[language]['perf']
-                y_category_type = AXIS_CATEGORY_NAMES[language]['attr']
-
-            fig.update_layout(
-                title=TRANSLATIONS[language][title_key],
-                xaxis=dict(
-                    tickangle=20,
-                    tickmode='array',
-                    tickvals=list(range(len(formatted_x_display))),
-                    ticktext=formatted_x_display,
-                    tickfont=dict(size=12),  # Increased from 10
-                    title=dict(
-                        text=f"{TRANSLATIONS[language]['x_axis_percentage']} {x_category_type}",
-                        font=dict(size=14)   # Increased from 12
-                    )
-                ),
-                yaxis=dict(
-                    tickmode='array',
-                    tickvals=list(range(len(formatted_y_display))),
-                    ticktext=formatted_y_display,
-                    tickfont=dict(size=12),  # Increased from 10
-                    title=dict(
-                        text=f"{y_category_type} {TRANSLATIONS[language]['y_axis_percentage']}",
-                        font=dict(size=14)   # Increased from 12
-                    )
-                ),
-                font=dict(size=13),  # Global font size increase
-                title_font=dict(size=18),  # Title font size increase
-                width=dynamic_width,
-                height=dynamic_height,
-                margin=dict(
-                    l=left_margin,
-                    r=right_margin,
-                    t=top_margin,
-                    b=bottom_margin,
-                    autoexpand=True
-                )
-            )
-
-            # Get hover translations
-            hover_translations = get_hover_translations(language)
-
-            # Update hover template with translations
-            hover_template = (
-                f"{hover_translations['hover_x']}: %{{x}}<br>" +
-                f"{hover_translations['hover_y']}: %{{y}}<br>" +
-                f"{hover_translations['hover_count']}: %{{text}}<br>" +
-                f"{hover_translations['hover_satisfaction']}: %{{customdata:.2f}}"
-            )
-
-            fig.update_traces(
-                hovertemplate=hover_template,
-                customdata=sentiment_matrix,
-                text=matrix
-            )
-
-            x_options = get_options(x_value, x_text)  # Use clean text for options
-            y_options = get_options(y_value, y_text[::-1])  # Use clean text for options, reverse order
-            
-            # Return empty list for reviews-content when search button is clicked
-            reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
-            
-            # Return both the new slider values and the rest of the outputs
-            return (x_options, y_options, x_value, y_value, fig, max_x, max_y, 
-                    reviews_content, top_n_x, top_n_y, dash.no_update)
 
     # Reviews update callback
     @app.callback(
@@ -977,19 +819,32 @@ def register_callbacks(app):
         State('search-input', 'value'),
         State('bar-category-checklist', 'value'),
         State('bar-zoom-dropdown', 'value'),
-        State('bar-count-slider', 'value')],
+        State('bar-count-slider', 'value'),
+        State('date-filter-storage', 'children')],
         prevent_initial_call=True
     )
     def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, 
                                             plot_type, x_value, y_value, top_n_x, top_n_y, 
-                                            search_query, bar_categories, bar_zoom, bar_count):
+                                            search_query, bar_categories, bar_zoom, bar_count, date_filter_storage):
         from dash import html
         
+        # Parse date range from storage
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
+        
+        # Default responses
+        hide_style = {'display': 'none'}
+        show_style = {'display': 'block'}
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
         
+        # Initialize review styles
+        if click_data is None:
+            return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, ''
+        
         if trigger_id == 'search-button.n_clicks':
-            return [], 'show_all', {'display': 'none'}, ''
+            return [], 'show_all', hide_style, ''
             
         if trigger_id == 'correlation-matrix.clickData':
             sentiment_filter = 'show_all'
@@ -1010,13 +865,14 @@ def register_callbacks(app):
                 if bar_zoom == '':
                     bar_zoom = None
                     
-                categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
-                    bar_categories, bar_zoom, language, search_query
+                display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+                    bar_categories, bar_zoom, language, search_query, start_date, end_date
                 )
                 
                 # Apply bar count limit from bar_count slider
-                if bar_count > 0 and bar_count < len(categories):
-                    categories = categories[:bar_count]
+                if bar_count > 0 and bar_count < len(display_categories):
+                    display_categories = display_categories[:bar_count]
+                    original_categories = original_categories[:bar_count]
                     counts = counts[:bar_count]
                     sentiment_ratios = sentiment_ratios[:bar_count]
                     review_data = review_data[:bar_count]
@@ -1028,14 +884,7 @@ def register_callbacks(app):
                 # Check if we're zoomed into a parent category
                 is_zoomed = bar_zoom and bar_zoom != ''
                 
-                # Define category type colors for mapping
-                type_colors = {
-                    'U: ': '#6A0DAD',  # Dark Purple for Usage (changed from Blue #4285F4)
-                    'A: ': '#34A853',  # Green for Attribute
-                    'P: ': '#FBBC05',  # Yellow for Performance
-                }
-                
-                for i, category in enumerate(categories):
+                for i, category in enumerate(display_categories):
                     # Determine the category type prefix
                     prefix = None
                     for p in type_colors.keys():
@@ -1087,7 +936,14 @@ def register_callbacks(app):
                     idx = formatted_to_original.get(clicked_category)
                     if idx is None:
                         # If not found by formatted name, try direct match (backward compatibility)
-                        idx = categories.index(clicked_category)
+                        try:
+                            idx = display_categories.index(clicked_category)
+                        except ValueError:
+                            # Try matching against original category
+                            for i, orig_cat in enumerate(original_categories):
+                                if orig_cat == clicked_category:
+                                    idx = i
+                                    break
                         
                     reviews = review_data[idx]
                     
@@ -1116,7 +972,7 @@ def register_callbacks(app):
                     
                     # For display in the header, we use the original category (with percentages)
                     # to provide more information to the user
-                    original_category = categories[idx]
+                    original_category = display_categories[idx]
                     category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{original_category}</span>'
                     
                     # Create header HTML with sentiment filter
@@ -1242,19 +1098,19 @@ def register_callbacks(app):
                 clicked_x = point['x']
                 clicked_y = point['y']
                 
-                matrix, sentiment_matrix, review_matrix, x_text, x_display, y_text, y_display, title_key = get_plot_data(
-                    plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query
+                matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
+                    plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
                 )
                 
                 # Format display labels - remove all parentheses content for all categories
                 formatted_x_display = []
-                for label in x_display:
+                for label in x_text:
                     # Remove any parentheses content, regardless of language or content
                     formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
                     formatted_x_display.append(formatted_label)
                     
                 formatted_y_display = []
-                for label in y_display:
+                for label in y_text:
                     # Remove any parentheses content, regardless of language or content
                     formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
                     formatted_y_display.append(formatted_label)
@@ -1309,8 +1165,8 @@ def register_callbacks(app):
                         
                         # For the header display, use the original values with percentages
                         # to provide more information to the user
-                        original_x = x_display[j]
-                        original_y = y_display[i]
+                        original_x = x_text[j]
+                        original_y = y_text[i]
                         
                         x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{original_x}</b></span>'
                         y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{original_y}</b></span>'
@@ -1445,50 +1301,92 @@ def register_callbacks(app):
     @app.callback(
         Output('search-results-info', 'children'),
         [Input('search-button', 'n_clicks'),
-        Input('language-selector', 'value')],
+        Input('language-selector', 'value'),
+        Input('date-filter-slider', 'value')],
         [State('search-input', 'value'),
         State('plot-type', 'value'),
         State('x-axis-dropdown', 'value'),
-        State('y-axis-dropdown', 'value')]
+        State('y-axis-dropdown', 'value'),
+        State('date-filter-storage', 'children')]
     )
-    def update_search_results_info(n_clicks, language, search_query, plot_type, x_value, y_value):
-        if not search_query or not search_query.strip():
-            return ''
+    def update_search_results_info(n_clicks, language, date_slider_value, search_query, plot_type, x_value, y_value, date_filter_storage):
+        """Display information about search results."""
+        if n_clicks == 0 or not search_query or not search_query.strip():
+            return ""
             
-        # Get the dictionaries based on plot type
-        if plot_type == 'use_attr_perf':
-            x_dict = get_cached_dict('use_sents', x_value, search_query)
-            y_dict = get_cached_dict('attr_perf_sents', y_value, search_query)
-        else:
-            x_dict = get_cached_dict('perf_sents', x_value, search_query)
-            y_dict = get_cached_dict('attr_sents', y_value, search_query)
+        # Parse date range from storage
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
         
-        # Count total unique reviews
-        total_reviews = set()
-        
-        # Count reviews in x_dict
-        for sents_dict in x_dict.values():
-            for sent_dict in sents_dict.values():
-                if isinstance(sent_dict, dict):
-                    for reviews in sent_dict.values():
-                        total_reviews.update(reviews)
-                elif isinstance(sent_dict, list):
-                    total_reviews.update(sent_dict)
+        # Count reviews that match the search query
+        try:
+            # Handle different plot types
+            if plot_type == 'bar_chart':
+                # For bar chart, count reviews across all categories
+                categories = ['usage', 'attribute', 'performance']
+                total_reviews = 0
+                for category_type in categories:
+                    dict_type = {
+                        'usage': 'use_sents',
+                        'attribute': 'attr_sents',
+                        'performance': 'perf_sents'
+                    }[category_type]
                     
-        # Count reviews in y_dict
-        for sents_dict in y_dict.values():
-            for sent_dict in sents_dict.values():
-                if isinstance(sent_dict, dict):
-                    for reviews in sent_dict.values():
-                        total_reviews.update(reviews)
-                elif isinstance(sent_dict, list):
-                    total_reviews.update(sent_dict)
-        
-        # Normalize search query
-        normalized_query = normalize_search_query(search_query)
-        
-        # Return translated message with results
-        return TRANSLATIONS[language]['search_results'].format(len(total_reviews), normalized_query)
+                    # Get filtered dictionary
+                    filtered_dict = get_cached_dict(dict_type, 'all', search_query, start_date, end_date)
+                    
+                    # Count reviews
+                    for path, sents_dict in filtered_dict.items():
+                        for sent, val in sents_dict.items():
+                            if isinstance(val, dict):
+                                for rid, reviews in val.items():
+                                    if reviews:
+                                        total_reviews += len(reviews)
+                            elif isinstance(val, list) and val:
+                                total_reviews += len(val)
+            else:
+                # For matrix views, count reviews matching the plot type
+                if plot_type == 'use_attr_perf':
+                    x_dict_type = 'use_sents'
+                    y_dict_type = 'attr_perf_sents'
+                else:  # perf_attr
+                    x_dict_type = 'perf_sents'
+                    y_dict_type = 'attr_sents'
+                    
+                # Get filtered dictionaries
+                x_dict = get_cached_dict(x_dict_type, x_value or 'all', search_query, start_date, end_date)
+                y_dict = get_cached_dict(y_dict_type, y_value or 'all', search_query, start_date, end_date)
+                
+                # Count reviews
+                total_reviews = 0
+                for path, sents_dict in x_dict.items():
+                    for sent, val in sents_dict.items():
+                        if isinstance(val, dict):
+                            for rid, reviews in val.items():
+                                if reviews:
+                                    total_reviews += len(reviews)
+                        elif isinstance(val, list) and val:
+                            total_reviews += len(val)
+                            
+                for path, sents_dict in y_dict.items():
+                    for sent, val in sents_dict.items():
+                        if isinstance(val, dict):
+                            for rid, reviews in val.items():
+                                if reviews:
+                                    total_reviews += len(reviews)
+                        elif isinstance(val, list) and val:
+                            total_reviews += len(val)
+            
+            # Format message
+            if total_reviews > 0:
+                normalized_query = normalize_search_query(search_query)
+                return TRANSLATIONS[language]['search_results'].format(total_reviews, normalized_query)
+            else:
+                return "No reviews found matching your search criteria."
+        except Exception as e:
+            print(f"Error counting search results: {str(e)}")
+            return "Error processing search query."
 
     @app.callback(
         Output('search-input', 'placeholder'),
@@ -1516,4 +1414,114 @@ def register_callbacks(app):
             {'label': TRANSLATIONS[language]['show_all'], 'value': 'show_all'},
             {'label': TRANSLATIONS[language]['show_positive'], 'value': 'show_positive'},
             {'label': TRANSLATIONS[language]['show_negative'], 'value': 'show_negative'}
-        ] 
+        ]
+
+    @app.callback(
+        [Output('date-filter-slider', 'min'),
+         Output('date-filter-slider', 'max'),
+         Output('date-filter-slider', 'value'),
+         Output('date-filter-slider', 'marks'),
+         Output('date-filter-storage', 'children')],
+        Input('url', 'pathname')
+    )
+    def initialize_date_slider(pathname):
+        """Initialize the date slider with the min and max dates from all reviews."""
+        # Only initialize on the main page
+        if pathname != '/':
+            return 0, 1, [0, 1], {}, json.dumps({"start_date": None, "end_date": None})
+            
+        # Get min and max dates from all reviews
+        min_date_str, max_date_str = get_review_date_range()
+        
+        if min_date_str is None or max_date_str is None:
+            # If no dates were found, use default range
+            return 0, 1, [0, 1], {}, json.dumps({"start_date": None, "end_date": None})
+        
+        # Convert string dates to datetime objects
+        min_date = datetime.strptime(min_date_str, '%Y-%m-%d')
+        max_date = datetime.strptime(max_date_str, '%Y-%m-%d')
+        
+        # Convert to timestamp for slider values (days since min_date)
+        min_ts = 0
+        max_ts = (max_date - min_date).days
+        
+        # Create marks for the slider
+        marks = {}
+        
+        # If the date range is too large, show fewer marks
+        if max_ts > 365 * 3:  # More than 3 years
+            # Show yearly marks
+            date_range = pd.date_range(start=min_date, end=max_date, freq='YS')  # Start of each year
+            for date in date_range:
+                mark_value = (date - min_date).days
+                marks[mark_value] = date.strftime('%Y')
+        elif max_ts > 90:  # More than 3 months
+            # Show quarterly marks
+            date_range = pd.date_range(start=min_date, end=max_date, freq='QS')  # Start of each quarter
+            for date in date_range:
+                mark_value = (date - min_date).days
+                marks[mark_value] = date.strftime('%Y-%m')
+        else:
+            # Show monthly marks or more frequent for short time periods
+            date_range = pd.date_range(start=min_date, end=max_date, freq='MS')  # Start of each month
+            for date in date_range:
+                mark_value = (date - min_date).days
+                marks[mark_value] = date.strftime('%Y-%m-%d')
+        
+        # Add min and max dates to the marks if they're not already included
+        marks[min_ts] = min_date.strftime('%Y-%m-%d')
+        marks[max_ts] = max_date.strftime('%Y-%m-%d')
+        
+        # Generate storage value for actual dates
+        storage_value = {
+            "min_date": min_date_str,
+            "max_date": max_date_str,
+            "start_date": min_date_str,
+            "end_date": max_date_str
+        }
+        
+        return min_ts, max_ts, [min_ts, max_ts], marks, json.dumps(storage_value)
+
+    @app.callback(
+        Output('date-filter-storage', 'children', allow_duplicate=True),
+        Input('date-filter-slider', 'value'),
+        State('date-filter-storage', 'children'),
+        prevent_initial_call=True
+    )
+    def update_date_filter_storage(slider_values, storage_json):
+        """Update the stored date values when the slider is moved."""
+        from datetime import datetime, timedelta
+        
+        # Parse storage JSON
+        try:
+            storage_data = json.loads(storage_json) if storage_json else {}
+            
+            # Handle case when min_date is missing (fallback to getting date range again)
+            if "min_date" not in storage_data:
+                min_date_str, max_date_str = get_review_date_range()
+                
+                # If we can't get date range, use default empty values
+                if min_date_str is None:
+                    return json.dumps({"start_date": None, "end_date": None})
+                    
+                storage_data["min_date"] = min_date_str
+                storage_data["max_date"] = max_date_str
+            
+            min_date = datetime.strptime(storage_data["min_date"], '%Y-%m-%d')
+            
+            # Calculate new dates based on slider values
+            start_offset = timedelta(days=slider_values[0])
+            end_offset = timedelta(days=slider_values[1])
+            
+            start_date = (min_date + start_offset).strftime('%Y-%m-%d')
+            end_date = (min_date + end_offset).strftime('%Y-%m-%d')
+            
+            # Update storage with new values
+            storage_data["start_date"] = start_date
+            storage_data["end_date"] = end_date
+            
+            return json.dumps(storage_data)
+        except Exception as e:
+            print(f"Error updating date filter: {str(e)}")
+            # Return a safe fallback if anything goes wrong
+            return json.dumps({"start_date": None, "end_date": None}) 
