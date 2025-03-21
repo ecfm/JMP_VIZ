@@ -1690,9 +1690,7 @@ def register_callbacks(app):
         # Check which input triggered the callback
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-        
-        print(f"Trend chart update triggered by: {trigger_id}")
-        print(f"Selected time_bucket: {time_bucket}")
+    
         
         # Only create trend chart for bar chart view
         if plot_type != 'bar_chart':
