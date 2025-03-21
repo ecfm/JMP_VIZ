@@ -46,8 +46,15 @@ def custom_cached(cache):
             # Create a cache key from the hashable args and kwargs
             key = (func.__name__, hashable_args, hashable_kwargs_tuple)
             
+            # Debug logging for time_bucket
+            if func.__name__ == 'get_category_time_series' and 'time_bucket' in kwargs:
+                print(f"Cache key includes time_bucket: {kwargs['time_bucket']}")
+                print(f"Using cache key: {key}")
+            
             # Check if result is in cache
             if key in cache:
+                if func.__name__ == 'get_category_time_series':
+                    print(f"Cache hit for {func.__name__} with time_bucket={kwargs.get('time_bucket', 'default')}")
                 return cache[key]
             
             # Call the function with original arguments
@@ -55,6 +62,9 @@ def custom_cached(cache):
             
             # Store result in cache
             cache[key] = result
+            
+            if func.__name__ == 'get_category_time_series':
+                print(f"Cache miss for {func.__name__}, stored result with time_bucket={kwargs.get('time_bucket', 'default')}")
             
             return result
         return wrapper
@@ -573,7 +583,7 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
         # Add sentiment value to positive_reviews if positive (for proper sentiment calculation)
         if sent == '+':
             positive_reviews.add(review_text)
-    
+    # TODO: fix the review_highlights by merging the same reviews from different categories
     # Process each selected category type
     for category_type in categories:
         if category_type not in category_mapping:
@@ -728,4 +738,251 @@ def get_review_date_range():
                             if max_date is None or date > max_date:
                                 max_date = date
     
-    return min_date, max_date 
+    return min_date, max_date
+
+@custom_cached(cache=plot_data_cache)
+def get_category_time_series(categories, display_categories, original_categories, zoom_category=None, 
+                             language='en', search_query='', start_date=None, end_date=None, 
+                             time_bucket='month'):
+    """
+    Get time series data for categories to display trend line chart.
+    
+    Args:
+        categories: List of category types to include (usage, attribute, performance)
+        display_categories: List of category names displayed in the bar chart
+        original_categories: List of original category values (with prefixes)
+        zoom_category: Optional category to zoom in on
+        language: Language for translations
+        search_query: Optional search query to filter results
+        start_date: Optional start date to filter reviews
+        end_date: Optional end date to filter reviews
+        time_bucket: How to group time data ('day', 'week', 'month', 'year', '3month', '6month')
+    
+    Returns:
+        Dictionary with dates and count/sentiment data for each category
+    """
+    from datetime import datetime
+    import pandas as pd
+    
+    print(f"get_category_time_series called with time_bucket={time_bucket}")
+    
+    # Default to month if invalid bucket size provided
+    valid_buckets = ['day', 'week', 'month', '3month', '6month', 'year']
+    if time_bucket not in valid_buckets:
+        print(f"Invalid time_bucket '{time_bucket}', defaulting to 'month'")
+        time_bucket = 'month'
+    else:
+        # Force the time_bucket to be a string to avoid any potential typing issues with cache keys
+        time_bucket = str(time_bucket)
+    
+    # Clear the cache when time_bucket changes to force a refresh
+    # This is a workaround for any potential caching issues
+    if time_bucket != 'month':  # Only clear for non-default values to avoid clearing on initial load
+        plot_data_cache.clear()
+    
+    # Treat empty string as None
+    if zoom_category == '' or zoom_category == 'all':
+        zoom_category = None
+    
+    # Create mapping of display categories to find their data
+    display_to_original = {display: original for display, original in zip(display_categories, original_categories)}
+    
+    # Map category types to their dictionaries
+    category_mapping = {
+        'usage': {'dict_type': 'use_sents', 'prefix': 'U: '},
+        'attribute': {'dict_type': 'attr_sents', 'prefix': 'A: '},
+        'performance': {'dict_type': 'perf_sents', 'prefix': 'P: '}
+    }
+    
+    # Initialize time series data
+    time_series_data = {
+        'dates': [],
+        'category_data': {cat: {'counts': [], 'sentiment': []} for cat in display_categories}
+    }
+    
+    # Track all reviews by date and category
+    date_category_reviews = {}
+    date_format = '%Y-%m-%d'
+    
+    # Process each selected category type
+    for category_type in categories:
+        if category_type not in category_mapping:
+            continue
+            
+        mapping = category_mapping[category_type]
+        dict_type = mapping['dict_type']
+        prefix = mapping['prefix']
+        
+        # Get the dictionary for this category type
+        if zoom_category:
+            # If zooming in on a category, only include subcategories of that category
+            if zoom_category.startswith(mapping['prefix']):
+                category_path = zoom_category[len(mapping['prefix']):]
+                category_dict = get_cached_dict(dict_type, category_path, search_query, start_date, end_date)
+            else:
+                # Skip if zooming into a different category type
+                continue
+        else:
+            # Otherwise get all categories
+            category_dict = get_cached_dict(dict_type, 'all', search_query, start_date, end_date)
+        
+        # Process each category path
+        for category_path, sents_dict in category_dict.items():
+            # Get display name similar to bar chart logic
+            if zoom_category:
+                if '|' in category_path:
+                    display_name = prefix + category_path
+                else:
+                    display_name = prefix + category_path
+            else:
+                if '|' in category_path:
+                    parts = category_path.split('|')
+                    display_name = prefix + parts[0] + '|' + parts[1]
+                else:
+                    display_name = prefix + category_path
+                    
+            # Skip if this category is not in our display categories list
+            if display_name not in display_categories:
+                continue
+                
+            # Process reviews for this category to collect date information
+            for sent, reason_rids in sents_dict.items():
+                if isinstance(reason_rids, dict):
+                    # Dictionary with rid -> reviews mapping
+                    for rid, reviews in reason_rids.items():
+                        if reviews is None:
+                            continue
+                        for review in reviews:
+                            # Check if this is a pre-processed review or raw string
+                            if isinstance(review, tuple) and len(review) == 5:
+                                # Already processed: (review_text, highlight, reason, date, raw_review)
+                                _, highlight, _, date, _ = review
+                            else:
+                                # Raw string, extract info
+                                _, highlight, _, date = extract_review_info(review)
+                                
+                            if date:
+                                # Initialize date entry if needed
+                                if date not in date_category_reviews:
+                                    date_category_reviews[date] = {}
+                                    
+                                # Initialize category for this date if needed
+                                if display_name not in date_category_reviews[date]:
+                                    date_category_reviews[date][display_name] = {
+                                        'count': 0,
+                                        'positive': 0
+                                    }
+                                    
+                                # Count review and track sentiment
+                                date_category_reviews[date][display_name]['count'] += 1
+                                if '+' == sent:
+                                    date_category_reviews[date][display_name]['positive'] += 1
+                elif isinstance(reason_rids, list):
+                    # List of reviews directly
+                    if reason_rids is None:
+                        continue
+                    for review in reason_rids:
+                            # Check if this is a pre-processed review or raw string
+                            if isinstance(review, tuple) and len(review) == 5:
+                                # Already processed: (review_text, highlight, reason, date, raw_review)
+                                _, highlight, _, date, _ = review
+                            else:
+                                # Raw string, extract info
+                                _, highlight, _, date = extract_review_info(review)
+                                
+                            if date:
+                                # Initialize date entry if needed
+                                if date not in date_category_reviews:
+                                    date_category_reviews[date] = {}
+                                    
+                                # Initialize category for this date if needed
+                                if display_name not in date_category_reviews[date]:
+                                    date_category_reviews[date][display_name] = {
+                                        'count': 0,
+                                        'positive': 0
+                                    }
+                                    
+                                # Count review and track sentiment
+                                date_category_reviews[date][display_name]['count'] += 1
+                                if '+' == sent:
+                                    date_category_reviews[date][display_name]['positive'] += 1
+    
+    # Convert the collected data to pandas DataFrame for easier manipulation
+    date_entries = []
+    
+    for date_str, categories in date_category_reviews.items():
+        date_obj = datetime.strptime(date_str, date_format)
+        
+        for category, data in categories.items():
+            # Set a default sentiment value of 0.5 (neutral) since we don't have reliable 
+            date_entries.append({
+                'date': date_obj,
+                'category': category,
+                'count': data['count'],
+                'sentiment': data['positive'] / data['count']
+            })
+    
+    if not date_entries:
+        # No data to process
+        return time_series_data
+        
+    # Create DataFrame
+    df = pd.DataFrame(date_entries)
+    
+    # Determine frequency for grouping based on time_bucket
+    # Standard Pandas frequencies
+    if time_bucket in ['day', 'week', 'month', 'year']:
+        freq_map = {
+            'day': 'D',
+            'week': 'W',
+            'month': 'M',
+            'year': 'Y'
+        }
+        df['date_group'] = df['date'].dt.to_period(freq_map[time_bucket])
+    else:
+        # Handle custom time buckets
+        if time_bucket == '3month':
+            # Group by 3-month periods
+            df['date_group'] = df['date'].dt.to_period('M')
+            df['date_group'] = df['date_group'].apply(lambda x: pd.Period(f"{x.year}-{((x.month-1)//3)*3+1}", freq='3M'))
+        elif time_bucket == '6month':
+            # Group by half-year periods
+            df['date_group'] = df['date'].dt.to_period('M')
+            df['date_group'] = df['date_group'].apply(lambda x: pd.Period(f"{x.year}-{((x.month-1)//6)*6+1}", freq='6M'))
+        else:
+            # Default to month
+            df['date_group'] = df['date'].dt.to_period('M')
+    
+    df['date_str'] = df['date_group'].dt.start_time.dt.strftime(date_format)
+    
+    # For sentiment, we need to calculate the weighted average based on count
+    # to ensure that times with more reviews have more influence on the sentiment
+    grouped = df.groupby(['date_str', 'category']).agg({
+        'count': 'sum',
+        'sentiment': lambda x: sum(a * b for a, b in zip(x, df.loc[x.index, 'count'])) / sum(df.loc[x.index, 'count']) if sum(df.loc[x.index, 'count']) > 0 else 0.5
+    }).reset_index()
+    
+    # Sort by date
+    grouped = grouped.sort_values('date_str')
+    
+    # Prepare return structure
+    all_dates = sorted(grouped['date_str'].unique())
+    time_series_data['dates'] = all_dates
+    
+    for category in display_categories:
+        category_df = grouped[grouped['category'] == category]
+        
+        # Initialize with zeros for all dates
+        counts = [0] * len(all_dates)
+        sentiments = [0.5] * len(all_dates)  # Default neutral sentiment
+        
+        # Fill in data where available
+        for _, row in category_df.iterrows():
+            date_idx = all_dates.index(row['date_str'])
+            counts[date_idx] = row['count']
+            sentiments[date_idx] = row['sentiment']
+            
+        time_series_data['category_data'][category]['counts'] = counts
+        time_series_data['category_data'][category]['sentiment'] = sentiments
+    
+    return time_series_data 

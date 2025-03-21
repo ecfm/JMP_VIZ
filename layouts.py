@@ -55,6 +55,20 @@ def get_main_layout(language='zh'):
                     value=['usage', 'attribute', 'performance'],
                     inline=True
                 ),
+                html.Div([
+                    html.Button(
+                        TRANSLATIONS[language]['select_all'],
+                        id='select-all-button',
+                        n_clicks=0,
+                        style={'marginRight': '10px', 'fontSize': '0.8em'}
+                    ),
+                    html.Button(
+                        TRANSLATIONS[language]['unselect_all'],
+                        id='unselect-all-button',
+                        n_clicks=0,
+                        style={'fontSize': '0.8em'}
+                    )
+                ], style={'display': 'inline-block', 'marginLeft': '20px'})
             ], style={'marginBottom': '10px'}),
             html.Label(id='bar-zoom-label'),
             dcc.Dropdown(
@@ -214,6 +228,31 @@ def get_main_layout(language='zh'):
             
         ]),
         html.Div([
+            # Add trend chart for bar chart view
+            html.Div([
+                html.Div([
+                    html.Label(id='time-bucket-label', children='Time interval:'),
+                    dcc.Dropdown(
+                        id='time-bucket-dropdown',
+                        options=[
+                            {'label': 'Month', 'value': 'month'},
+                            {'label': '3 Months', 'value': '3month'},
+                            {'label': '6 Months', 'value': '6month'},
+                            {'label': 'Year', 'value': 'year'}
+                        ],
+                        value='3month',
+                        style={'width': '200px', 'display': 'inline-block'},
+                        clearable=False
+                    )
+                ], style={'marginBottom': '10px'}),
+                dcc.Graph(
+                    id='trend-chart', 
+                    style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px', 'marginBottom': '20px'}
+                )
+            ],
+            id='trend-chart-container',
+            style={'display': 'none'}  # Initially hidden, shown only for bar chart
+            ),
             dcc.Graph(
                 id='correlation-matrix', 
                 style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px'}

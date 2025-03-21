@@ -8,11 +8,36 @@ import re
 import json
 from datetime import datetime, timedelta
 import pandas as pd
+from dateutil.relativedelta import relativedelta
 
 from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors
-from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range
+from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series
 from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
 from layouts import get_login_layout, get_main_layout
+
+def format_category_display(category, language):
+    """
+    Format category display text based on language.
+    For Chinese (zh): Remove content within parentheses
+    For English (en): Extract and keep only content within parentheses
+    For other languages: Remove content within parentheses
+    
+    Args:
+        category: The category string to format
+        language: The current language setting
+        
+    Returns:
+        Formatted category string
+    """
+    if language == 'en':
+        # For English, extract content within parentheses if present
+        parentheses_match = re.search(r'\s*\(([^)]*)\)', category)
+        if parentheses_match:
+            return parentheses_match.group(1)
+        return category
+    else:
+        # For Chinese and other languages, remove content within parentheses
+        return re.sub(r'\s*\([^)]*\)', '', category)
 
 # User class for authentication
 class User(UserMixin):
@@ -226,9 +251,8 @@ def register_callbacks(app):
                 formatted_categories.append(display_text)
                 ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
             else:
-                formatted_text = re.sub(r'\s*\([^)]*\)', '', category)
-                formatted_categories.append(formatted_text)
-                ticktext.append(formatted_text)
+                formatted_categories.append(category)
+                ticktext.append(category)
         
         # Update layout for bar chart
         title_key = 'bar_chart_title'
@@ -306,11 +330,11 @@ def register_callbacks(app):
         """Generate dropdown options for category selection."""
         levels = [{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}]
         if value != 'all':
-            display_parts = re.sub(r'\s*\([^)]*\)', '', value).split('|')
+            display_parts = [format_category_display(value, language)]
             parts = value.split('|')
             for i, part in enumerate(parts):
                 current_val = '|'.join(parts[:i+1])
-                display_current_val = '|'.join(display_parts[:i+1])
+                display_current_val = format_category_display(current_val, language)
                 prefix = '--' * (i+1)
                 levels.append({'label': f'{prefix} {display_current_val} [L{i+1}] ', 'value': current_val})
             remained_paths = [{'label': f'{"--" * (len(parts)+1)} {display_path} [L{len(parts)+1}]', 'value': path} for path, display_path in zip(top_paths, top_display_paths)]
@@ -575,7 +599,7 @@ def register_callbacks(app):
             display_sentiment_ratios = sentiment_ratios
             display_colors = colors
 
-        formatted_categories = [re.sub(r'\s*\([^)]*\)', '', category) for category in display_categories]
+        formatted_categories = [format_category_display(category, language) for category in display_categories]
         dropdown_options = get_options(language, bar_zoom_value, original_categories, formatted_categories)
         # Create the bar chart figure
         fig = create_bar_chart(formatted_categories, display_counts, display_sentiment_ratios, display_colors, bar_zoom_value, language)
@@ -650,20 +674,20 @@ def register_callbacks(app):
             viz_y_text = y_text
 
         # Format display labels - remove all parentheses content for all categories
-        formatted_x_labels = [re.sub(r'\s*\([^)]*\)', '', label) for label in viz_x_text]
-        formatted_y_labels = [re.sub(r'\s*\([^)]*\)', '', label) for label in viz_y_text]
+        formatted_x_labels = [format_category_display(label, language) for label in viz_x_text]
+        formatted_y_labels = [format_category_display(label, language) for label in viz_y_text]
         x_options = get_options(language, x_value, viz_x_text, formatted_x_labels)
         y_options = get_options(language, y_value, viz_y_text, formatted_y_labels)
         # Create clean text without percentages for lookups
         if x_value == 'all':
             x_axis_text = formatted_x_labels
         else:
-            formatted_x_value = re.sub(r'\s*\([^)]*\)', '', x_value)
+            formatted_x_value = format_category_display(x_value, language)
             x_axis_text = [path[len(formatted_x_value)+1:] for path in formatted_x_labels]
         if y_value == 'all':
             y_axis_text = formatted_y_labels
         else:
-            formatted_y_value = re.sub(r'\s*\([^)]*\)', '', y_value)
+            formatted_y_value = format_category_display(y_value, language)
             y_axis_text = [path[len(formatted_y_value)+1:] for path in formatted_y_labels]
         # Create the heatmap figure
         fig = create_heatmap(
@@ -1000,7 +1024,7 @@ def register_callbacks(app):
         show_style = {'display': 'block'}
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-        
+        # TODO: fix the click_data matching to match with the original category, so that switch language doesn't break the matching
         # Initialize review styles
         if click_data is None:
             return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, ''
@@ -1068,8 +1092,8 @@ def register_callbacks(app):
                             else:
                                 display_text = parts[0]
                             
-                            # Remove any parentheses content
-                            display_text = re.sub(r'\s*\([^)]*\)', '', display_text)
+                            # Format the display text based on language
+                            display_text = format_category_display(display_text, language)
                             
                             # Map the formatted display text to its index
                             formatted_to_original[display_text] = i
@@ -1078,19 +1102,20 @@ def register_callbacks(app):
                             for part in parts[1:]:  # Only map sub-parts, not the topmost category
                                 part = part.strip()
                                 if part:
-                                    formatted_to_original[part] = i
+                                    formatted_part = format_category_display(part, language)
+                                    formatted_to_original[formatted_part] = i
                                     
                             # Also map the full format without parentheses as fallback
-                            full_formatted = re.sub(r'\s*\([^)]*\)', '', category)
+                            full_formatted = format_category_display(category, language)
                             formatted_to_original[full_formatted] = i
                         else:
                             # Standard format without parentheses
                             display_text = prefix + category_text
-                            formatted = re.sub(r'\s*\([^)]*\)', '', display_text)
+                            formatted = format_category_display(display_text, language)
                             formatted_to_original[formatted] = i
                     else:
                         # Default case
-                        formatted = re.sub(r'\s*\([^)]*\)', '', category)
+                        formatted = format_category_display(category, language)
                         formatted_to_original[formatted] = i
                 
                 try:
@@ -1106,6 +1131,11 @@ def register_callbacks(app):
                                 if orig_cat == clicked_category:
                                     idx = i
                                     break
+                    
+                    # If we still couldn't find a match, show a message and return
+                    if idx is None:
+                        print(f"Could not find a match for clicked category: {clicked_category}")
+                        return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), sentiment_filter, dash.no_update, dash.no_update
                         
                     reviews = review_data[idx]
                     
@@ -1268,13 +1298,13 @@ def register_callbacks(app):
                 formatted_x_display = []
                 for label in x_text:
                     # Remove any parentheses content, regardless of language or content
-                    formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                    formatted_label = format_category_display(label, language)
                     formatted_x_display.append(formatted_label)
                     
                 formatted_y_display = []
                 for label in y_text:
                     # Remove any parentheses content, regardless of language or content
-                    formatted_label = re.sub(r'\s*\([^)]*\)', '', label)
+                    formatted_label = format_category_display(label, language)
                     formatted_y_display.append(formatted_label)
                 
                 # Create a mapping from formatted labels to original indices
@@ -1507,6 +1537,7 @@ def register_callbacks(app):
                                         total_reviews += len(reviews)
                             elif isinstance(val, list) and val:
                                 total_reviews += len(val)
+            
             else:
                 # For matrix views, count reviews matching the plot type
                 if plot_type == 'use_attr_perf':
@@ -1624,4 +1655,411 @@ def register_callbacks(app):
         [Output('main-content', 'style'),
          Output('login-content', 'style')],
         [Input('url', 'pathname')],
-    ) 
+    )
+
+    @app.callback(
+        Output('trend-chart-container', 'style'),
+        [Input('plot-type', 'value')]
+    )
+    def toggle_trend_chart_visibility(plot_type):
+        """Show trend chart only for bar chart visualization"""
+        if plot_type == 'bar_chart':
+            return {'display': 'block'}
+        else:
+            return {'display': 'none'}
+
+    # Update the trend chart callback
+    @app.callback(
+        Output('trend-chart', 'figure'),
+        [Input('plot-type', 'value'),
+         Input('bar-category-checklist', 'value'),
+         Input('bar-zoom-dropdown', 'value'),
+         Input('bar-count-slider', 'value'),
+         Input('language-selector', 'value'),
+         Input('search-button', 'n_clicks'),
+         Input('date-filter-slider', 'value'),
+         Input('time-bucket-dropdown', 'value')],
+        [State('search-input', 'value'),
+         State('date-filter-storage', 'children')]
+    )
+    def update_trend_chart(plot_type, bar_categories, bar_zoom_value, bar_count, language, n_clicks, 
+                          date_slider_value, time_bucket, search_query, date_filter_storage):
+        """
+        Update the trend chart showing category mentions over time.
+        """
+        # Check which input triggered the callback
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        
+        print(f"Trend chart update triggered by: {trigger_id}")
+        print(f"Selected time_bucket: {time_bucket}")
+        
+        # Only create trend chart for bar chart view
+        if plot_type != 'bar_chart':
+            # Return an empty figure
+            return go.Figure()
+
+        # Handle empty values with defaults
+        if not bar_categories:
+            bar_categories = ['usage', 'attribute', 'performance']
+        if bar_zoom_value is None:
+            bar_zoom_value = 'all'
+        if time_bucket is None:
+            time_bucket = '3month'
+        
+        # Parse date range from storage
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
+        
+        # Get bar chart data for categories
+        display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+            bar_categories, bar_zoom_value, language, search_query, start_date, end_date
+        )
+        
+        # Apply bar count limit from bar_count slider for visualization
+        if bar_count > 0 and bar_count < len(display_categories):
+            display_categories = display_categories[:bar_count]
+            original_categories = original_categories[:bar_count]
+            
+        # Get time series data for the trend chart
+        time_series_data = get_category_time_series(
+            bar_categories, display_categories, original_categories, 
+            bar_zoom_value, language, search_query, start_date, end_date, 
+            time_bucket=time_bucket  # Use the selected time bucket
+        )
+        
+        # Create the trend chart - initially show all lines
+        selected_trend_lines = [cat for cat in display_categories 
+                              if cat in time_series_data['category_data'] and 
+                                 any(count > 0 for count in time_series_data['category_data'][cat]['counts'])]
+        
+        fig = create_trend_chart(display_categories, original_categories, time_series_data, language, selected_trend_lines)
+        
+        return fig
+
+    @app.callback(
+        Output('time-bucket-label', 'children'),
+        [Input('language-selector', 'value')]
+    )
+    def update_time_bucket_label(language):
+        return TRANSLATIONS[language].get('time_bucket_label', 'Time interval:')
+
+    @app.callback(
+        Output('trend-line-selector-label', 'children'),
+        [Input('language-selector', 'value')]
+    )
+    def update_trend_line_selector_label(language):
+        return TRANSLATIONS[language].get('trend_line_selector_label', 'Select trend lines to display:')
+
+    # Callback to update trend line selector options based on available categories
+    @app.callback(
+        [Output('trend-line-selector', 'options'),
+         Output('trend-line-selector', 'value')],
+        [Input('plot-type', 'value'),
+         Input('bar-category-checklist', 'value'),
+         Input('bar-zoom-dropdown', 'value'),
+         Input('bar-count-slider', 'value'),
+         Input('language-selector', 'value'),
+         Input('date-filter-slider', 'value')],
+        [State('search-input', 'value'),
+         State('date-filter-storage', 'children'),
+         State('time-bucket-dropdown', 'value')]
+    )
+    def update_trend_line_selector(plot_type, bar_categories, bar_zoom_value, bar_count, language, 
+                                  date_slider_value, search_query, date_filter_storage, time_bucket):
+        # Only update for bar chart view
+        if plot_type != 'bar_chart':
+            return [], []
+
+        # Handle empty values with defaults
+        if not bar_categories:
+            bar_categories = ['usage', 'attribute', 'performance']
+        if bar_zoom_value is None:
+            bar_zoom_value = 'all'
+        if time_bucket is None:
+            time_bucket = '3month'
+        
+        # Parse date range from storage
+        date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
+        start_date = date_range.get("start_date")
+        end_date = date_range.get("end_date")
+        
+        # Get bar chart data for categories
+        display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+            bar_categories, bar_zoom_value, language, search_query, start_date, end_date
+        )
+        
+        # Apply bar count limit from bar_count slider
+        if bar_count > 0 and bar_count < len(display_categories):
+            display_categories = display_categories[:bar_count]
+            original_categories = original_categories[:bar_count]
+        
+        # Get time series data to check which categories actually have data
+        time_series_data = get_category_time_series(
+            bar_categories, display_categories, original_categories, bar_zoom_value,
+            language, search_query, start_date, end_date, time_bucket=time_bucket
+        )
+        
+        # Create options and set all as initially selected
+        valid_options = []
+        initial_values = []
+        
+        for category in display_categories:
+            # Check if category has data in the time series
+            if (category in time_series_data['category_data'] and 
+                any(count > 0 for count in time_series_data['category_data'][category]['counts'])):
+                # Determine color for colored label (similar to trend chart)
+                prefix = None
+                for p in type_colors.keys():
+                    if category.startswith(p):
+                        prefix = p
+                        break
+                
+                # Format the label similar to other parts of the app
+                formatted_category = format_category_display(category, language)
+                
+                valid_options.append({
+                    'label': formatted_category,
+                    'value': category
+                })
+                initial_values.append(category)
+        
+        return valid_options, initial_values
+
+    @app.callback(
+        Output('time-bucket-dropdown', 'options'),
+        [Input('language-selector', 'value')]
+    )
+    def update_time_bucket_options(language):
+        return [
+            {'label': TRANSLATIONS[language].get('month', 'Month'), 'value': 'month'},
+            {'label': TRANSLATIONS[language].get('three_month', '3 Months'), 'value': '3month'},
+            {'label': TRANSLATIONS[language].get('six_month', '6 Months'), 'value': '6month'},
+            {'label': TRANSLATIONS[language].get('year', 'Year'), 'value': 'year'}
+        ]
+
+    @app.callback(
+        Output('bar-category-checklist', 'value'),
+        [Input('select-all-button', 'n_clicks'),
+         Input('unselect-all-button', 'n_clicks')],
+        [State('bar-category-checklist', 'options')]
+    )
+    def update_category_selection(select_all_clicks, unselect_all_clicks, available_options):
+        """Handle Select All and Unselect All button clicks"""
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        
+        # Don't update on initial load
+        if not trigger_id:
+            raise dash.exceptions.PreventUpdate
+        
+        # Get all possible category values
+        all_categories = [option['value'] for option in available_options]
+        
+        # Return the appropriate selection based on which button was clicked
+        if 'select-all-button' in trigger_id:
+            return all_categories
+        elif 'unselect-all-button' in trigger_id:
+            return []
+        
+        # Default case - should not reach here
+        raise dash.exceptions.PreventUpdate
+
+def create_trend_chart(display_categories, original_categories, time_series_data, language, selected_trend_lines=None):
+    """Create a trend line chart figure based on the time series data."""
+    fig = go.Figure()
+    
+    # Check if we have any dates
+    if not time_series_data['dates']:
+        # Create an empty figure with a message
+        fig.add_annotation(
+            x=0.5, y=0.5,
+            text=TRANSLATIONS[language].get('no_data_available', 'No time series data available'),
+            font=dict(size=16),
+            showarrow=False,
+            xref="paper", yref="paper"
+        )
+        return fig
+    
+    # If selected_trend_lines is None, select all lines by default
+    if selected_trend_lines is None:
+        selected_trend_lines = [cat for cat in display_categories 
+                              if cat in time_series_data['category_data'] and 
+                                 any(count > 0 for count in time_series_data['category_data'][cat]['counts'])]
+    
+    # Generate end dates for each time bucket
+    start_dates = time_series_data['dates']
+    end_dates = []
+    
+    # Calculate end dates based on the time bucket
+    for i, start_date_str in enumerate(start_dates):
+        from datetime import datetime, timedelta
+        from dateutil.relativedelta import relativedelta
+        
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        
+        # Determine the end date based on time bucket pattern
+        if '-01-01' in start_date_str:  # Year 
+            end_date = start_date + relativedelta(years=1, days=-1)
+        elif start_date.month in [1, 4, 7, 10] and start_date.day == 1:  # 3-month pattern
+            end_date = start_date + relativedelta(months=3, days=-1)
+        elif start_date.month in [1, 7] and start_date.day == 1:  # 6-month pattern
+            end_date = start_date + relativedelta(months=6, days=-1)
+        else:  # Month or other patterns
+            if start_date.month == 12:
+                end_date = datetime(start_date.year + 1, 1, 1) - timedelta(days=1)
+            else:
+                end_date = datetime(start_date.year, start_date.month + 1, 1) - timedelta(days=1)
+                
+        end_dates.append(end_date.strftime('%Y-%m-%d'))
+    
+    # Track the maximum y-value for setting the y-axis range
+    max_y_value = 0
+    
+    # Track categories with data for legend buttons
+    valid_categories = []
+    
+    # Create the trend lines with markers for each selected category
+    for i, category in enumerate(display_categories):
+        # Skip if no data for this category
+        if category not in time_series_data['category_data']:
+            continue
+            
+        category_data = time_series_data['category_data'][category]
+        dates = time_series_data['dates']
+        counts = category_data['counts']
+        sentiments = category_data['sentiment']
+        
+        # Skip if all counts are zero
+        if all(count == 0 for count in counts):
+            continue
+            
+        # Add to valid categories list
+        valid_categories.append(category)
+        
+        # Track maximum count for y-axis scaling (only for visible series)   
+        if category in selected_trend_lines:
+            category_max = max(counts)
+            if category_max > max_y_value:
+                max_y_value = category_max
+            
+        # Determine color for this category (use same logic as bar chart)
+        prefix = None
+        for p in type_colors.keys():
+            if category.startswith(p):
+                prefix = p
+                break
+        
+        line_color = type_colors.get(prefix, '#888888')  # Default gray if prefix not found
+        
+        # Create marker colors list for sentiment visualization
+        marker_colors = []
+        for idx, (count, sentiment) in enumerate(zip(counts, sentiments)):
+            if count > 0:
+                # Use the sentiment color palette - same as bar chart
+                marker_colors.append(ratio_to_rgb(sentiment))
+            else:
+                # For zero-count points, use transparent
+                marker_colors.append('rgba(0,0,0,0)')  # Transparent
+        
+        # Prepare date range texts for hover information
+        date_ranges = [f"{start} to {end}" for start, end in zip(dates, end_dates)]
+        
+        # Create custom data array with both date ranges and sentiments
+        custom_data = np.array(list(zip(date_ranges, sentiments)))
+        
+        # Format the display name for the legend
+        formatted_category = format_category_display(category, language)
+        
+        # Add line trace with visibility based on selection
+        fig.add_trace(go.Scatter(
+            x=dates,
+            y=counts,
+            mode='lines+markers',
+            name=formatted_category,
+            line=dict(color=line_color, width=2),
+            marker=dict(
+                size=10,
+                color=marker_colors,
+                line=dict(color=line_color, width=1)
+            ),
+            hovertemplate=(
+                f"{TRANSLATIONS[language]['hover_date']}: %{{x}}<br>" +
+                f"{TRANSLATIONS[language]['period']}: %{{customdata[0]}}<br>" +
+                f"{TRANSLATIONS[language]['hover_count']}: %{{y}}<br>" +
+                f"{TRANSLATIONS[language]['hover_satisfaction']}: %{{customdata[1]:.2f}}"
+            ),
+            customdata=custom_data,
+            visible=True if category in selected_trend_lines else 'legendonly'
+        ))
+    
+    # Add Select All / Unselect All buttons for the legend
+    # Add custom buttons for selecting/unselecting all traces
+    select_all_button = dict(
+        args=[{'visible': [True] * len(valid_categories)}],
+        label=TRANSLATIONS[language].get('select_all', "Select All"),
+        method="update"
+    )
+    
+    unselect_all_button = dict(
+        args=[{'visible': ['legendonly'] * len(valid_categories)}],
+        label=TRANSLATIONS[language].get('unselect_all', "Unselect All"),
+        method="update"
+    )
+    
+    # Update layout for trend chart
+    fig.update_layout(
+        title=TRANSLATIONS[language]['trend_chart_title'],
+        xaxis=dict(
+            title=TRANSLATIONS[language]['trend_x_axis'],
+            tickangle=45,
+            tickmode='array',
+            tickvals=time_series_data['dates']
+        ),
+        yaxis=dict(
+            title=TRANSLATIONS[language]['trend_y_axis'],
+            rangemode='tozero',  # Start y-axis at 0
+            # Remove fixed range to allow automatic scaling when toggling lines
+            autorange=True
+        ),
+        legend=dict(
+            orientation='h',  # Horizontal legend
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1,
+            title='',  # No legend title
+            font=dict(size=12),
+            itemsizing='constant',  # Make legend markers the same size
+            itemclick='toggle',     # Toggle trace visibility on click
+            itemdoubleclick='toggleothers',  # Double-click to show only this trace
+            bgcolor='rgba(255, 255, 255, 0.8)',  # Semi-transparent background
+            bordercolor='rgba(0, 0, 0, 0.1)',
+            borderwidth=1
+        ),
+        updatemenus=[
+            dict(
+                type="buttons",
+                direction="right",
+                x=0.05,
+                y=1.11,
+                buttons=[select_all_button, unselect_all_button],
+                pad={"r": 10, "t": 10},
+                showactive=False,
+                bgcolor='rgba(255, 255, 255, 0.8)',
+                bordercolor='rgba(0, 0, 0, 0.1)',
+                font=dict(size=12)
+            )
+        ],
+        height=400,
+        margin=dict(
+            l=60,
+            r=30,
+            t=80,
+            b=80
+        ),
+        hovermode='closest'
+    )
+    
+    return fig
