@@ -143,10 +143,14 @@ def get_main_layout(language='zh'):
                 html.Label(TRANSLATIONS[language]['date_filter_label'], style={'marginBottom': '5px'}),
                 # Add visible display for selected date range
                 html.Div(id='date-range-display', style={
-                    'marginBottom': '10px',
-                    'fontSize': '0.9em',
-                    'color': '#555',
-                    'fontStyle': 'italic'
+                    'marginTop': '10px',
+                    'fontSize': '1.1em',
+                    'color': '#333',
+                    'fontWeight': 'bold',
+                    'textAlign': 'center',
+                    'backgroundColor': '#f0f0f0',
+                    'padding': '8px',
+                    'borderRadius': '4px'
                 })
             ]),
             dcc.RangeSlider(
@@ -155,7 +159,7 @@ def get_main_layout(language='zh'):
                 max=1,  # This will be updated in a callback
                 value=[0, 1],  # Initial values will be replaced in a callback
                 marks={},  # This will be updated in a callback 
-                tooltip={"placement": "bottom", "always_visible": True}
+                updatemode='mouseup'  # Only trigger updates on mouseup for better performance
             ),
             # Hidden div to store actual date values as strings
             html.Div(id='date-filter-storage', style={'display': 'none'})

@@ -46,15 +46,8 @@ def custom_cached(cache):
             # Create a cache key from the hashable args and kwargs
             key = (func.__name__, hashable_args, hashable_kwargs_tuple)
             
-            # Debug logging for time_bucket
-            if func.__name__ == 'get_category_time_series' and 'time_bucket' in kwargs:
-                print(f"Cache key includes time_bucket: {kwargs['time_bucket']}")
-                print(f"Using cache key: {key}")
-            
             # Check if result is in cache
             if key in cache:
-                if func.__name__ == 'get_category_time_series':
-                    print(f"Cache hit for {func.__name__} with time_bucket={kwargs.get('time_bucket', 'default')}")
                 return cache[key]
             
             # Call the function with original arguments
@@ -62,9 +55,6 @@ def custom_cached(cache):
             
             # Store result in cache
             cache[key] = result
-            
-            if func.__name__ == 'get_category_time_series':
-                print(f"Cache miss for {func.__name__}, stored result with time_bucket={kwargs.get('time_bucket', 'default')}")
             
             return result
         return wrapper

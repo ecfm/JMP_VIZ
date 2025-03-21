@@ -28,7 +28,7 @@ def create_search_box(language='en'):
                     }
                 ),
                 html.Button(
-                    'Search', 
+                    TRANSLATIONS[language].get('search', 'Search'), 
                     id='search-button', 
                     n_clicks=0,
                     style={

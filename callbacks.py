@@ -9,6 +9,7 @@ import json
 from datetime import datetime, timedelta
 import pandas as pd
 from dateutil.relativedelta import relativedelta
+from dash import dcc
 
 from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series
@@ -47,7 +48,6 @@ class User(UserMixin):
 def register_callbacks(app):
     """Register all callbacks with the app."""
     
-    # Authentication callbacks
     @app.callback(
         [Output('url', 'pathname'),
         Output('login-error', 'children')],
@@ -737,17 +737,49 @@ def register_callbacks(app):
             
             # Create slider marks
             slider_marks = {}
-            mark_freq = 'YS' if slider_max > 365 * 3 else ('QS' if slider_max > 90 else 'MS')
-            date_range = pd.date_range(start=min_date, end=max_date, freq=mark_freq)
             
-            for date in date_range:
+            # Determine appropriate frequency based on date range
+            date_range_days = (max_date - min_date).days
+            
+            # Use quarterly marks for ranges under 3 years, 6-monthly for 3-10 years, yearly for longer
+            if date_range_days <= 365 * 3:
+                # Quarterly marks
+                mark_dates = pd.date_range(start=min_date, end=max_date, freq='QS')
+            elif date_range_days <= 365 * 10:
+                # 6-monthly marks
+                # Create a custom range starting from min_date and adding 6 months each time
+                mark_dates = []
+                current_date = min_date
+                while current_date <= max_date:
+                    mark_dates.append(current_date)
+                    current_date = current_date + relativedelta(months=6)
+                mark_dates = pd.DatetimeIndex(mark_dates)
+            else:
+                # Yearly marks
+                mark_dates = pd.date_range(start=min_date, end=max_date, freq='YS')
+            
+            # Add marks for each date in the range
+            for date in mark_dates:
                 mark_value = (date - min_date).days
-                format_str = '%Y' if mark_freq == 'YS' else ('%Y-%m' if mark_freq == 'QS' else '%Y-%m-%d')
-                slider_marks[mark_value] = date.strftime(format_str)
+                
+                # Format date as YYYY-MM
+                date_label = date.strftime('%Y-%m')
+                
+                # Style the marks
+                slider_marks[mark_value] = {
+                    'label': date_label,
+                    'style': {'transform': 'rotate(45deg)', 'white-space': 'nowrap'}
+                }
             
-            # Always include min and max dates
-            slider_marks[slider_min] = min_date.strftime('%Y-%m-%d')
-            slider_marks[slider_max] = max_date.strftime('%Y-%m-%d')
+            # Always include min and max dates with special styling
+            slider_marks[slider_min] = {
+                'label': min_date.strftime('%Y-%m'),
+                'style': {'color': '#2196F3', 'font-weight': 'bold', 'transform': 'rotate(45deg)'}
+            }
+            slider_marks[slider_max] = {
+                'label': max_date.strftime('%Y-%m'),
+                'style': {'color': '#2196F3', 'font-weight': 'bold', 'transform': 'rotate(45deg)'}
+            }
             
             # Initialize storage data
             storage_data = {
@@ -1630,14 +1662,127 @@ def register_callbacks(app):
                 
             # Convert slider values to dates
             min_date_obj = datetime.strptime(min_date, '%Y-%m-%d')
-            start_date = (min_date_obj + timedelta(days=slider_value[0])).strftime('%Y-%m-%d')
-            end_date = (min_date_obj + timedelta(days=slider_value[1])).strftime('%Y-%m-%d')
+            start_date_obj = min_date_obj + timedelta(days=slider_value[0])
+            end_date_obj = min_date_obj + timedelta(days=slider_value[1])
             
-            # Return formatted date range using translations
-            return TRANSLATIONS[language].get('selected_range', 'Selected range: {} to {}').format(start_date, end_date)
+            # Format as YYYY-MM for display
+            start_date_display = start_date_obj.strftime('%Y-%m')
+            end_date_display = end_date_obj.strftime('%Y-%m')
+            
+            # For actual filtering, we still need the full date
+            start_date = start_date_obj.strftime('%Y-%m-%d')
+            end_date = end_date_obj.strftime('%Y-%m-%d')
+            
+            # Calculate the span in months for additional info
+            month_diff = (end_date_obj.year - start_date_obj.year) * 12 + (end_date_obj.month - start_date_obj.month)
+            
+            if month_diff > 0:
+                month_label = TRANSLATIONS[language].get('months', 'months')
+                
+            return html.Div([
+                
+                html.Div([
+                    html.Button(
+                        TRANSLATIONS[language].get('selected_date_range'),
+                        id='apply-date-btn',
+                        style={'fontSize': '14px', 'padding': '2px 8px', 'marginRight': '10px'}
+                    ),
+                    dcc.Input(
+                        id='start-date-input',
+                        type='text',
+                        value=start_date_display,
+                        style={'width': '80px', 'textAlign': 'center', 'color': '#2196F3', 'fontWeight': 'bold'}
+                    ),
+                    html.Span(" → ", style={'margin': '0 10px'}),
+                    dcc.Input(
+                        id='end-date-input',
+                        type='text',
+                        value=end_date_display,
+                        style={'width': '80px', 'textAlign': 'center', 'color': '#2196F3', 'fontWeight': 'bold'}
+                    ),
+                    html.Span(f" ({month_diff+1} {month_label})"),
+                    
+                ], style={'marginTop': '5px'})
+            ])
         except Exception as e:
             print(f"Error updating date display: {str(e)}")
             return ""
+            
+    @app.callback(
+        [Output('date-filter-slider', 'value', allow_duplicate=True),
+         Output('date-filter-storage', 'children', allow_duplicate=True)],
+        [Input('apply-date-btn', 'n_clicks')],
+        [State('start-date-input', 'value'),
+         State('end-date-input', 'value'),
+         State('date-filter-storage', 'children')],
+        prevent_initial_call=True
+    )
+    def update_date_from_input(n_clicks, start_date_input, end_date_input, date_filter_storage):
+        if not n_clicks or not date_filter_storage:
+            raise dash.exceptions.PreventUpdate
+            
+        try:
+            # Parse current date storage
+            storage_data = json.loads(date_filter_storage)
+            min_date_str = storage_data.get("min_date")
+            max_date_str = storage_data.get("max_date")
+            
+            if not min_date_str or not max_date_str:
+                raise dash.exceptions.PreventUpdate
+                
+            # Parse base min date
+            min_date = datetime.strptime(min_date_str, '%Y-%m-%d')
+            
+            # Parse user input dates
+            # Add day component if missing
+            if len(start_date_input) <= 7:  # Format is YYYY-MM
+                start_date_input = f"{start_date_input}-01"
+            if len(end_date_input) <= 7:  # Format is YYYY-MM
+                # Set to last day of the month
+                year, month = end_date_input.split('-')
+                last_day = pd.Period(f"{year}-{month}").days_in_month
+                end_date_input = f"{end_date_input}-{last_day}"
+                
+            try:
+                # Try to parse with different formats
+                try:
+                    start_date = datetime.strptime(start_date_input, '%Y-%m-%d')
+                except ValueError:
+                    start_date = datetime.strptime(start_date_input, '%Y-%m')
+                    start_date = datetime(start_date.year, start_date.month, 1)
+                    
+                try:
+                    end_date = datetime.strptime(end_date_input, '%Y-%m-%d')
+                except ValueError:
+                    end_date = datetime.strptime(end_date_input, '%Y-%m')
+                    # Set to last day of month
+                    if end_date.month == 12:
+                        end_date = datetime(end_date.year + 1, 1, 1) - timedelta(days=1)
+                    else:
+                        end_date = datetime(end_date.year, end_date.month + 1, 1) - timedelta(days=1)
+            except ValueError:
+                # If parsing fails, show an alert and don't update
+                print(f"Invalid date format: {start_date_input} or {end_date_input}")
+                raise dash.exceptions.PreventUpdate
+                
+            # Calculate slider values
+            start_slider_value = (start_date - min_date).days
+            end_slider_value = (end_date - min_date).days
+            
+            # Ensure dates are within valid range
+            max_date = datetime.strptime(max_date_str, '%Y-%m-%d')
+            start_slider_value = max(0, min(start_slider_value, (max_date - min_date).days))
+            end_slider_value = max(start_slider_value, min(end_slider_value, (max_date - min_date).days))
+            
+            # Update storage
+            storage_data["start_date"] = start_date.strftime('%Y-%m-%d')
+            storage_data["end_date"] = end_date.strftime('%Y-%m-%d')
+            
+            return [start_slider_value, end_slider_value], json.dumps(storage_data)
+            
+        except Exception as e:
+            print(f"Error updating dates from input: {str(e)}")
+            raise dash.exceptions.PreventUpdate
 
     # Add clientside callback to handle pathname changes
     app.clientside_callback(
