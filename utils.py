@@ -34,10 +34,44 @@ def create_search_box(language='en'):
                     style={
                         'padding': '8px 16px',
                         'fontSize': '14px',
-                        'cursor': 'pointer'
+                        'cursor': 'pointer',
+                        'marginRight': '10px'
                     }
                 ),
-            ]),
+                html.Div([
+                    html.Button(
+                        "?",
+                        id='search-help-button',
+                        style={
+                            'padding': '8px 12px',
+                            'fontSize': '14px',
+                            'cursor': 'pointer',
+                            'borderRadius': '50%',
+                            'fontWeight': 'bold',
+                            'backgroundColor': '#c5c5c5',
+                            'border': '1px solid #ccc'
+                        }
+                    ),
+                    html.Div(
+                        id='search-help-tooltip',
+                        style={
+                            'display': 'none',
+                            'position': 'absolute',
+                            'backgroundColor': 'white',
+                            'border': '1px solid #ccc',
+                            'padding': '15px',
+                            'borderRadius': '5px',
+                            'zIndex': '1000',
+                            'boxShadow': '0px 2px 10px rgba(0,0,0,0.2)',
+                            'maxWidth': '400px',
+                            'width': '400px',
+                            'fontSize': '12px',
+                            'right': '0',
+                            'marginTop': '5px'
+                        }
+                    )
+                ], style={'display': 'inline-block', 'position': 'relative'})
+            ], style={'display': 'flex', 'alignItems': 'center'}),
             html.Div(id='search-results-info', style={
                 'marginTop': '10px',
                 'fontSize': '14px',
@@ -45,14 +79,7 @@ def create_search_box(language='en'):
                 'display': 'inline-block',  # Make div only as wide as content
                 'backgroundColor': '#FFEB3B',  # Bright yellow background
                 'padding': '0 4px',  # Add small horizontal padding
-            }),
-            html.Div([
-                html.Div(id='search-examples', style={
-                    'marginTop': '8px', 
-                    'fontSize': '12px',
-                    'color': '#666'
-                })
-            ])
+            })
         ], style={'marginBottom': '20px'})
     ])
     

@@ -943,7 +943,7 @@ def get_category_time_series(categories, display_categories, original_categories
             # Default to month
             df['date_group'] = df['date'].dt.to_period('M')
     
-    df['date_str'] = df['date_group'].dt.start_time.dt.strftime(date_format)
+    df['date_str'] = df['date_group'].dt.start_time.dt.strftime('%Y-%m')
     
     # For sentiment, we need to calculate the weighted average based on count
     # to ensure that times with more reviews have more influence on the sentiment

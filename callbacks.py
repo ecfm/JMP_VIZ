@@ -1516,11 +1516,70 @@ def register_callbacks(app):
 
     # Search-related callbacks
     @app.callback(
-        Output('search-examples', 'children'),
+        Output('search-help-tooltip', 'children'),
         [Input('language-selector', 'value')]
     )
-    def update_search_examples(language):
+    def update_search_help_tooltip(language):
         return get_search_examples_html(language)
+    
+    @app.callback(
+        Output('search-help-tooltip', 'style'),
+        [Input('search-help-button', 'n_clicks')],
+        [State('search-help-tooltip', 'style')]
+    )
+    def toggle_search_help(n_clicks, current_style):
+        if not n_clicks:
+            raise dash.exceptions.PreventUpdate
+            
+        # Create a copy of the current style
+        new_style = dict(current_style)
+        
+        # Toggle the display property
+        if new_style.get('display') == 'none':
+            new_style['display'] = 'block'
+        else:
+            new_style['display'] = 'none'
+            
+        return new_style
+    
+    # Add a clientside callback to hide tooltip when clicking elsewhere
+    app.clientside_callback(
+        """
+        function(n_clicks) {
+            var tooltipElement = document.getElementById('search-help-tooltip');
+            
+            document.addEventListener('click', function(event) {
+                var isClickInside = document.getElementById('search-help-button').contains(event.target);
+                
+                if (!isClickInside && tooltipElement.style.display !== 'none') {
+                    tooltipElement.style.display = 'none';
+                }
+            });
+            
+            return window.dash_clientside.no_update;
+        }
+        """,
+        Output('search-help-button', 'n_clicks', allow_duplicate=True),
+        [Input('search-help-button', 'id')],
+        prevent_initial_call=True
+    )
+
+    @app.callback(
+        Output('search-input', 'placeholder'),
+        [Input('language-selector', 'value')]
+    )
+    def update_search_placeholder(language):
+        return TRANSLATIONS[language]['search_placeholder']
+
+    @app.callback(
+        Output('search-button', 'n_clicks'),
+        [Input('search-input', 'n_submit')],
+        [State('search-button', 'n_clicks')]
+    )
+    def handle_enter_press(n_submit, current_clicks):
+        if n_submit:
+            return (current_clicks or 0) + 1
+        return dash.no_update
 
     @app.callback(
         Output('search-results-info', 'children'),
@@ -1612,23 +1671,6 @@ def register_callbacks(app):
         except Exception as e:
             print(f"Error counting search results: {str(e)}")
             return "Error processing search query."
-
-    @app.callback(
-        Output('search-input', 'placeholder'),
-        [Input('language-selector', 'value')]
-    )
-    def update_search_placeholder(language):
-        return TRANSLATIONS[language]['search_placeholder']
-
-    @app.callback(
-        Output('search-button', 'n_clicks'),
-        [Input('search-input', 'n_submit')],
-        [State('search-button', 'n_clicks')]
-    )
-    def handle_enter_press(n_submit, current_clicks):
-        if n_submit:
-            return (current_clicks or 0) + 1
-        return dash.no_update
 
     @app.callback(
         Output('sentiment-filter', 'options'),
@@ -2040,7 +2082,7 @@ def create_trend_chart(display_categories, original_categories, time_series_data
         from datetime import datetime, timedelta
         from dateutil.relativedelta import relativedelta
         
-        start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
+        start_date = datetime.strptime(start_date_str, '%Y-%m')
         
         # Determine the end date based on time bucket pattern
         if '-01-01' in start_date_str:  # Year 
@@ -2128,7 +2170,6 @@ def create_trend_chart(display_categories, original_categories, time_series_data
                 line=dict(color=line_color, width=1)
             ),
             hovertemplate=(
-                f"{TRANSLATIONS[language]['hover_date']}: %{{x}}<br>" +
                 f"{TRANSLATIONS[language]['period']}: %{{customdata[0]}}<br>" +
                 f"{TRANSLATIONS[language]['hover_count']}: %{{y}}<br>" +
                 f"{TRANSLATIONS[language]['hover_satisfaction']}: %{{customdata[1]:.2f}}"
@@ -2158,7 +2199,9 @@ def create_trend_chart(display_categories, original_categories, time_series_data
             title=TRANSLATIONS[language]['trend_x_axis'],
             tickangle=45,
             tickmode='array',
-            tickvals=time_series_data['dates']
+            tickvals=time_series_data['dates'],
+            tickformat='%Y-%m',  # Display dates in Year-Month format
+            ticktext=time_series_data['dates']  # Use the same dates (already in YYYY-MM format)
         ),
         yaxis=dict(
             title=TRANSLATIONS[language]['trend_y_axis'],
