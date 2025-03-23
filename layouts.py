@@ -258,7 +258,7 @@ def get_main_layout(language='zh'):
             style={'display': 'none'}  # Initially hidden, shown only for bar chart
             ),
             dcc.Graph(
-                id='correlation-matrix', 
+                id='main-figure', 
                 style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px'}
             ),
             html.Div([

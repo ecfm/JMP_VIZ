@@ -821,7 +821,7 @@ def register_callbacks(app):
 
     # Callback for combined graph and UI control updates
     @app.callback(
-        [Output('correlation-matrix', 'figure'),
+        [Output('main-figure', 'figure'),
          Output('reviews-content', 'children'),
          Output('x-axis-dropdown', 'options'),
          Output('y-axis-dropdown', 'options'),
@@ -1027,7 +1027,7 @@ def register_callbacks(app):
         Output('sentiment-filter', 'style'),
         Output('review-counts', 'children')],
         [Input('sentiment-filter', 'value'),
-        Input('correlation-matrix', 'clickData'),
+        Input('main-figure', 'clickData'),
         Input('language-selector', 'value')],
         [State('plot-type', 'value'),
         State('x-axis-dropdown', 'value'),
@@ -1064,7 +1064,7 @@ def register_callbacks(app):
         if trigger_id == 'search-button.n_clicks':
             return [], 'show_all', hide_style, ''
             
-        if trigger_id == 'correlation-matrix.clickData':
+        if trigger_id == 'main-figure.clickData':
             sentiment_filter = 'show_all'
         
         if click_data:
