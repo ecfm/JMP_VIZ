@@ -28,6 +28,7 @@ type_colors = {
     'A: ': '#34A853',  # Green for Attribute
     'P: ': '#FBBC05',  # Yellow for Performance
 }
+
 # Highlight examples
 def get_highlight_examples(language='en'):
     if language == 'en':
@@ -42,6 +43,32 @@ def get_highlight_examples(language='en'):
         neg_highlight = f'<span style="background-color: {color_mapping["-"]}; color: black; padding: 5px;">红底表示不满意</span>'
     
     return x_highlight, y_highlight, pos_highlight, neg_highlight
+
+def get_review_format(language='en', plot_type='matrix'):
+    """
+    Get the appropriate review format based on language and plot type
+    
+    Args:
+        language: 'en' or 'zh'
+        plot_type: 'bar_chart' or 'matrix'
+        
+    Returns:
+        The formatted review format string
+    """
+    x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
+    
+    if plot_type == 'bar_chart':
+        # For bar chart, exclude the Y-axis highlight
+        if language == 'en':
+            return f'Display Format: Review: {x_highlight} {pos_highlight} {neg_highlight} ASIN (Star Rating) <b>Review Title</b> Review Text'
+        else:  # zh
+            return f'显示格式： 评论: {x_highlight} {pos_highlight} {neg_highlight} ASIN (评论星级) <b>评论标题</b> 评论内容'
+    else:  # matrix
+        # For matrix view, include both X and Y highlights
+        if language == 'en':
+            return f'Display Format: Review: {x_highlight} {y_highlight} {pos_highlight} {neg_highlight} ASIN (Star Rating) <b>Review Title</b> Review Text'
+        else:  # zh
+            return f'显示格式： 评论: {x_highlight} {y_highlight} {pos_highlight} {neg_highlight} ASIN (评论星级) <b>评论标题</b> 评论内容'
 
 # Language translations
 TRANSLATIONS = {
@@ -89,7 +116,7 @@ TRANSLATIONS = {
         'hover_date': 'Date',
         'period': 'Time period',
         'search_results': "Found {} reviews matching query: {}",
-        'review_format': f'Display Format: Review x: <PLACEHOLDER_X_HIGHLIGHT> <PLACEHOLDER_Y_HIGHLIGHT> <PLACEHOLDER_POS_HIGHLIGHT> <PLACEHOLDER_NEG_HIGHLIGHT> ASIN (Star Rating) <b>Review Title</b> Review Text',
+        'review_format': 'Display Format: Review x: <PLACEHOLDER_X_HIGHLIGHT> <PLACEHOLDER_Y_HIGHLIGHT> <PLACEHOLDER_POS_HIGHLIGHT> <PLACEHOLDER_NEG_HIGHLIGHT> ASIN (Star Rating) <b>Review Title</b> Review Text',
         'bar_chart': 'Category Mentions (Bar Chart)',
         'usage_category': 'Usage',
         'attribute_category': 'Attribute',
@@ -199,14 +226,13 @@ TRANSLATIONS = {
     }
 }
 
-# Fix placeholders in review_format
-x_highlight_en, y_highlight_en, pos_highlight_en, neg_highlight_en = get_highlight_examples('en')
-x_highlight_zh, y_highlight_zh, pos_highlight_zh, neg_highlight_zh = get_highlight_examples('zh')
-
-# Completely replace the placeholders with the actual highlight values
-TRANSLATIONS['en']['review_format'] = f'Display Format: Review x: {x_highlight_en} {y_highlight_en} {pos_highlight_en} {neg_highlight_en} ASIN (Star Rating) <b>Review Title</b> Review Text'
-
-TRANSLATIONS['zh']['review_format'] = f'显示格式： 评论 x: {x_highlight_zh} {y_highlight_zh} {pos_highlight_zh} {neg_highlight_zh} ASIN (评论星级) <b>评论标题</b> 评论内容'
+# Don't use the older method of fixing placeholders
+# Instead, we'll retrieve the appropriate format when needed
+# Add format keys for each plot type
+TRANSLATIONS['en']['bar_chart_review_format'] = get_review_format('en', 'bar_chart')
+TRANSLATIONS['en']['matrix_review_format'] = get_review_format('en', 'matrix')
+TRANSLATIONS['zh']['bar_chart_review_format'] = get_review_format('zh', 'bar_chart')
+TRANSLATIONS['zh']['matrix_review_format'] = get_review_format('zh', 'matrix')
 
 # Axis category names translations
 AXIS_CATEGORY_NAMES = {

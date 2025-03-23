@@ -1020,6 +1020,138 @@ def register_callbacks(app):
                 review_count_text       # total-reviews-count
             )
 
+    # Helper functions to reduce duplication
+    def categorize_reviews(reviews):
+        """Sort reviews into positive, negative, and neutral categories"""
+        positive_reviews = []
+        negative_reviews = []
+        neutral_reviews = []
+        for review in reviews:
+            if f'<span style="background-color: {color_mapping["+"]}' in review:
+                positive_reviews.append(review)
+            elif f'<span style="background-color: {color_mapping["-"]}' in review:
+                negative_reviews.append(review)
+            else:
+                neutral_reviews.append(review)
+        return positive_reviews, negative_reviews, neutral_reviews
+
+    def filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter):
+        """Filter reviews based on sentiment selection"""
+        if sentiment_filter == 'show_positive':
+            return positive_reviews
+        elif sentiment_filter == 'show_negative':
+            return negative_reviews
+        else:  # 'show_all'
+            return reviews
+
+    def create_review_display(filtered_reviews, language):
+        """Create HTML content for reviews display"""
+        if not filtered_reviews:
+            return [html.P(TRANSLATIONS[language]['no_reviews'])]
+            
+        reviews_html = []
+        for idx, review in enumerate(filtered_reviews):
+            reviews_html.append(f"""
+                <div class="review-container">
+                    <span>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
+                    {review}
+                </div>
+            """)
+        
+        html_content = f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    margin: 0;
+                    font-family: sans-serif;
+                    line-height: 1.4;
+                }}
+                .review-container {{
+                    margin: 0;
+                    padding: 3px;
+                    border-bottom: 1px solid #eee;
+                }}
+                .review-container:last-child {{
+                    border-bottom: none;
+                }}
+            </style>
+        </head>
+        <body>
+            {''.join(reviews_html)}
+        </body>
+        </html>
+        """
+        
+        return [html.Iframe(
+            srcDoc=html_content,
+            style={
+                'width': '100%',
+                'height': '630px',
+                'border': 'none',
+                'borderRadius': '3px',
+                'backgroundColor': 'white'
+            }
+        )]
+
+    def create_header_html(selected_text, language, plot_type):
+        """Create header HTML with selection info"""
+        # Use different review format based on plot type
+        if plot_type == 'bar_chart':
+            review_format = TRANSLATIONS[language]['bar_chart_review_format']
+        else:
+            review_format = TRANSLATIONS[language]['matrix_review_format']
+        
+        return f"""
+        <html>
+        <head>
+            <style>
+                body {{
+                    margin: 5px;
+                    font-family: sans-serif;
+                    line-height: 1.4;
+                    padding: 0px;
+                    border-bottom: 1px ridge #eee;
+                }}
+                span {{
+                    display: inline-block;
+                    margin: 2px;
+                }}
+            </style>
+        </head>
+        <body>
+            <div>{TRANSLATIONS[language]['selected']} {selected_text}</div>
+            <div style="margin-top: 3px;">
+                {review_format}
+            </div>
+        </body>
+        </html>
+        """
+
+    def create_count_display(positive_reviews, negative_reviews, sentiment_filter, language):
+        """Create count display based on filter selection"""
+        if sentiment_filter == 'show_all':
+            return [
+                html.Span(f"{TRANSLATIONS[language]['positive_count'].format(len(positive_reviews))} | "),
+                html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))
+            ]
+        elif sentiment_filter == 'show_positive':
+            return [html.Span(TRANSLATIONS[language]['positive_count'].format(len(positive_reviews)))]
+        else:  # show_negative
+            return [html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))]
+            
+    def get_filter_style():
+        """Return consistent filter style"""
+        return {
+            'display': 'block',
+            'marginBottom': '5px',
+            'whiteSpace': 'nowrap',
+            'display': 'flex',
+            'flexDirection': 'row',
+            'gap': '15px',
+            'alignItems': 'center'
+        }
+
     # Reviews update callback
     @app.callback(
         [Output('reviews-content', 'children', allow_duplicate=True),
@@ -1044,8 +1176,7 @@ def register_callbacks(app):
     def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, 
                                             plot_type, x_value, y_value, top_n_x, top_n_y, 
                                             search_query, bar_categories, bar_zoom, bar_count, date_filter_storage):
-        from dash import html
-        
+    
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
@@ -1056,7 +1187,7 @@ def register_callbacks(app):
         show_style = {'display': 'block'}
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-        # TODO: fix the click_data matching to match with the original category, so that switch language doesn't break the matching
+        
         # Initialize review styles
         if click_data is None:
             return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, ''
@@ -1171,63 +1302,21 @@ def register_callbacks(app):
                         
                     reviews = review_data[idx]
                     
-                    # Count positive and negative reviews
-                    positive_reviews = []
-                    negative_reviews = []
-                    neutral_reviews = []
-                    for review in reviews:
-                        if f'<span style="background-color: {color_mapping["+"]}' in review:
-                            positive_reviews.append(review)
-                        elif f'<span style="background-color: {color_mapping["-"]}' in review:
-                            negative_reviews.append(review)
-                        else:
-                            neutral_reviews.append(review)
-                    
-                    # Filter reviews based on selection
-                    if sentiment_filter == 'show_positive':
-                        filtered_reviews = positive_reviews
-                    elif sentiment_filter == 'show_negative':
-                        filtered_reviews = negative_reviews
-                    else:  # 'all'
-                        filtered_reviews = reviews
+                    # Categorize and filter reviews
+                    positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
+                    filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
                     
                     # Get highlight examples for current language
                     x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
                     
-                    # For display in the header, we use the original category (with percentages)
-                    # to provide more information to the user
+                    # For display in the header, use the original category with formatting
                     original_category = display_categories[idx]
                     category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{original_category}</span>'
                     
-                    # Create header HTML with sentiment filter
-                    review_format = TRANSLATIONS[language]['review_format']
+                    # Create header HTML
+                    header_html = create_header_html(category_clicked, language, plot_type)
                     
-                    header_html = f"""
-                    <html>
-                    <head>
-                        <style>
-                            body {{
-                                margin: 5px;
-                                font-family: sans-serif;
-                                line-height: 1.4;
-                                padding: 0px;
-                                border-bottom: 1px ridge #eee;
-                            }}
-                            span {{
-                                display: inline-block;
-                                margin: 2px;
-                            }}
-                        </style>
-                    </head>
-                    <body>
-                        <div>{TRANSLATIONS[language]['selected']} {category_clicked}</div>
-                        <div style="margin-top: 3px;">
-                            {review_format}
-                        </div>
-                    </body>
-                    </html>
-                    """
-                    
+                    # Create content with header
                     content = [
                         html.Iframe(
                             srcDoc=header_html,
@@ -1240,76 +1329,14 @@ def register_callbacks(app):
                         )
                     ]
                     
-                    if filtered_reviews:
-                        reviews_html = []
-                        for idx, review in enumerate(filtered_reviews):
-                            reviews_html.append(f"""
-                                <div class="review-container">
-                                    <span>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
-                                    {review}
-                                </div>
-                            """)
-                        
-                        html_content = f"""
-                        <html>
-                        <head>
-                            <style>
-                                body {{
-                                    margin: 0;
-                                    font-family: sans-serif;
-                                    line-height: 1.4;
-                                }}
-                                .review-container {{
-                                    margin: 0;
-                                    padding: 3px;
-                                    border-bottom: 1px solid #eee;
-                                }}
-                                .review-container:last-child {{
-                                    border-bottom: none;
-                                }}
-                            </style>
-                        </head>
-                        <body>
-                            {''.join(reviews_html)}
-                        </body>
-                        </html>
-                        """
-                        
-                        content.append(html.Iframe(
-                            srcDoc=html_content,
-                            style={
-                                'width': '100%',
-                                'height': '630px',
-                                'border': 'none',
-                                'borderRadius': '3px',
-                                'backgroundColor': 'white'
-                            }
-                        ))
-                    else:
-                        content.append(html.P(TRANSLATIONS[language]['no_reviews']))
+                    # Add review content
+                    content.extend(create_review_display(filtered_reviews, language))
                     
-                    # Create count display based on filter selection
-                    count_display = []
-                    if sentiment_filter == 'show_all':
-                        count_display = [
-                            html.Span(f"{TRANSLATIONS[language]['positive_count'].format(len(positive_reviews))} | "),
-                            html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))
-                        ]
-                    elif sentiment_filter == 'show_positive':
-                        count_display = [html.Span(TRANSLATIONS[language]['positive_count'].format(len(positive_reviews)))]
-                    else:  # show_negative
-                        count_display = [html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))]
+                    # Create count display
+                    count_display = create_count_display(positive_reviews, negative_reviews, sentiment_filter, language)
                     
-                    # Update filter style to show horizontally
-                    filter_style = {
-                        'display': 'block',
-                        'marginBottom': '5px',  # Decreased from 10px
-                        'whiteSpace': 'nowrap',  # Prevent wrapping
-                        'display': 'flex',
-                        'flexDirection': 'row',
-                        'gap': '15px',  # Decreased from 20px
-                        'alignItems': 'center'
-                    }
+                    # Get filter style
+                    filter_style = get_filter_style()
                     
                     return content, sentiment_filter, filter_style, count_display
                     
@@ -1364,66 +1391,24 @@ def register_callbacks(app):
                     if i is not None and j is not None:
                         reviews = review_matrix[i][j]
                         
-                        # Count positive and negative reviews - moved outside the sentiment filter condition
-                        positive_reviews = []
-                        negative_reviews = []
-                        neutral_reviews = []
-                        for review in reviews:
-                            if f'<span style="background-color: {color_mapping["+"]}' in review:
-                                positive_reviews.append(review)
-                            elif f'<span style="background-color: {color_mapping["-"]}' in review:
-                                negative_reviews.append(review)
-                            else:
-                                neutral_reviews.append(review)
-                        
-                        # Filter reviews based on selection
-                        if sentiment_filter == 'show_positive':
-                            filtered_reviews = positive_reviews
-                        elif sentiment_filter == 'show_negative':
-                            filtered_reviews = negative_reviews
-                        else:  # 'all'
-                            filtered_reviews = reviews
+                        # Categorize and filter reviews
+                        positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
+                        filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
                         
                         # Get highlight examples for current language
                         x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
                         
                         # For the header display, use the original values with percentages
-                        # to provide more information to the user
                         original_x = x_text[j]
                         original_y = y_text[i]
                         
                         x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{original_x}</b></span>'
                         y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{original_y}</b></span>'
                         
-                        # Create header HTML with sentiment filter
-                        review_format = TRANSLATIONS[language]['review_format']
+                        # Create header HTML
+                        header_html = create_header_html(f"{x_clicked}, {y_clicked}", language, plot_type)
                         
-                        header_html = f"""
-                        <html>
-                        <head>
-                            <style>
-                                body {{
-                                    margin: 5px;
-                                    font-family: sans-serif;
-                                    line-height: 1.4;
-                                    padding: 0px;
-                                    border-bottom: 1px ridge #eee;
-                                }}
-                                span {{
-                                    display: inline-block;
-                                    margin: 2px;
-                                }}
-                            </style>
-                        </head>
-                        <body>
-                            <div>{TRANSLATIONS[language]['selected']} {x_clicked}, {y_clicked}</div>
-                            <div style="margin-top: 3px;">
-                                {review_format}
-                            </div>
-                        </body>
-                        </html>
-                        """
-
+                        # Create content with header
                         content = [
                             html.Iframe(
                                 srcDoc=header_html,
@@ -1436,76 +1421,14 @@ def register_callbacks(app):
                             )
                         ]
                         
-                        if filtered_reviews:
-                            reviews_html = []
-                            for idx, review in enumerate(filtered_reviews):
-                                reviews_html.append(f"""
-                                    <div class="review-container">
-                                        <span>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
-                                        {review}
-                                    </div>
-                                """)
-                            
-                            html_content = f"""
-                            <html>
-                            <head>
-                                <style>
-                                    body {{
-                                        margin: 0;
-                                        font-family: sans-serif;
-                                        line-height: 1.4;
-                                    }}
-                                    .review-container {{
-                                        margin: 0;
-                                        padding: 3px;
-                                        border-bottom: 1px solid #eee;
-                                    }}
-                                    .review-container:last-child {{
-                                        border-bottom: none;
-                                    }}
-                                </style>
-                            </head>
-                            <body>
-                                {''.join(reviews_html)}
-                            </body>
-                            </html>
-                            """
-                            
-                            content.append(html.Iframe(
-                                srcDoc=html_content,
-                                style={
-                                    'width': '100%',
-                                    'height': '630px',
-                                    'border': 'none',
-                                    'borderRadius': '3px',
-                                    'backgroundColor': 'white'
-                                }
-                            ))
-                        else:
-                            content.append(html.P(TRANSLATIONS[language]['no_reviews']))
+                        # Add review content
+                        content.extend(create_review_display(filtered_reviews, language))
                         
-                        # Create count display based on filter selection
-                        count_display = []
-                        if sentiment_filter == 'show_all':
-                            count_display = [
-                                html.Span(f"{TRANSLATIONS[language]['positive_count'].format(len(positive_reviews))} | "),
-                                html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))
-                            ]
-                        elif sentiment_filter == 'show_positive':
-                            count_display = [html.Span(TRANSLATIONS[language]['positive_count'].format(len(positive_reviews)))]
-                        else:  # show_negative
-                            count_display = [html.Span(TRANSLATIONS[language]['negative_count'].format(len(negative_reviews)))]
+                        # Create count display
+                        count_display = create_count_display(positive_reviews, negative_reviews, sentiment_filter, language)
                         
-                        # Update filter style to show horizontally
-                        filter_style = {
-                            'display': 'block',
-                            'marginBottom': '5px',  # Decreased from 10px
-                            'whiteSpace': 'nowrap',  # Prevent wrapping
-                            'display': 'flex',
-                            'flexDirection': 'row',
-                            'gap': '15px',  # Decreased from 20px
-                            'alignItems': 'center'
-                        }
+                        # Get filter style
+                        filter_style = get_filter_style()
                         
                         return content, sentiment_filter, filter_style, count_display
                         
