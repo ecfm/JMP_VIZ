@@ -44,18 +44,33 @@ def get_highlight_examples(language='en'):
     
     return x_highlight, y_highlight, pos_highlight, neg_highlight
 
-def get_review_format(language='en', plot_type='matrix'):
+def get_review_format(language='en', plot_type='matrix', x_category=None, y_category=None):
     """
     Get the appropriate review format based on language and plot type
     
     Args:
         language: 'en' or 'zh'
         plot_type: 'bar_chart' or 'matrix'
+        x_category: The selected X-axis category (optional)
+        y_category: The selected Y-axis category (optional)
         
     Returns:
         The formatted review format string
     """
     x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
+    
+    # Replace placeholder text with selected category if provided
+    if x_category:
+        if language == 'en':
+            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">Text related to {x_category}</span>'
+        else:  # zh
+            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">{x_category}相关文本</span>'
+    
+    if y_category:
+        if language == 'en':
+            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Text related to {y_category}</span>'
+        else:  # zh
+            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">{y_category}相关文本</span>'
     
     if plot_type == 'bar_chart':
         # For bar chart, exclude the Y-axis highlight
@@ -226,9 +241,13 @@ TRANSLATIONS = {
     }
 }
 
-# Don't use the older method of fixing placeholders
-# Instead, we'll retrieve the appropriate format when needed
-# Add format keys for each plot type
+# Instead of static values, we'll make these callable functions
+TRANSLATIONS['en']['get_bar_chart_review_format'] = lambda x_category=None: get_review_format('en', 'bar_chart', x_category)
+TRANSLATIONS['en']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('en', 'matrix', x_category, y_category)
+TRANSLATIONS['zh']['get_bar_chart_review_format'] = lambda x_category=None: get_review_format('zh', 'bar_chart', x_category)
+TRANSLATIONS['zh']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('zh', 'matrix', x_category, y_category)
+
+# For backward compatibility, keep the old keys but with default values
 TRANSLATIONS['en']['bar_chart_review_format'] = get_review_format('en', 'bar_chart')
 TRANSLATIONS['en']['matrix_review_format'] = get_review_format('en', 'matrix')
 TRANSLATIONS['zh']['bar_chart_review_format'] = get_review_format('zh', 'bar_chart')

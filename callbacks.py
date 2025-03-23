@@ -11,7 +11,7 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 from dash import dcc
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors, get_review_format
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series
 from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
 from layouts import get_login_layout, get_main_layout
@@ -1094,13 +1094,13 @@ def register_callbacks(app):
             }
         )]
 
-    def create_header_html(selected_text, language, plot_type):
+    def create_header_html(selected_text, language, plot_type, x_category=None, y_category=None):
         """Create header HTML with selection info"""
-        # Use different review format based on plot type
+        # Use the appropriate lambda function based on plot type
         if plot_type == 'bar_chart':
-            review_format = TRANSLATIONS[language]['bar_chart_review_format']
-        else:
-            review_format = TRANSLATIONS[language]['matrix_review_format']
+            review_format = TRANSLATIONS[language]['get_bar_chart_review_format'](x_category)
+        else:  # matrix
+            review_format = TRANSLATIONS[language]['get_matrix_review_format'](x_category, y_category)
         
         return f"""
         <html>
@@ -1314,7 +1314,7 @@ def register_callbacks(app):
                     category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{original_category}</span>'
                     
                     # Create header HTML
-                    header_html = create_header_html(category_clicked, language, plot_type)
+                    header_html = create_header_html(category_clicked, language, plot_type, original_category)
                     
                     # Create content with header
                     content = [
@@ -1406,7 +1406,7 @@ def register_callbacks(app):
                         y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{original_y}</b></span>'
                         
                         # Create header HTML
-                        header_html = create_header_html(f"{x_clicked}, {y_clicked}", language, plot_type)
+                        header_html = create_header_html(f"{x_clicked}, {y_clicked}", language, plot_type, original_x, original_y)
                         
                         # Create content with header
                         content = [
