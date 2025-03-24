@@ -170,6 +170,7 @@ TRANSLATIONS = {
         'select_all_words': 'Select All Words',
         'deselect_all_words': 'Deselect All Words',
         'showing_reviews_with': 'Showing reviews containing:',
+        'showing_all_reviews': 'Showing all reviews',
         'no_word_selected': 'No word selected',
         'clear_word_selection': 'Clear selection',
     },
@@ -256,6 +257,7 @@ TRANSLATIONS = {
         'select_all_words': '全选词',
         'deselect_all_words': '全不选词',
         'showing_reviews_with': '显示包含:',
+        'showing_all_reviews': '显示所有评论',
         'no_word_selected': '没有选词',
         'clear_word_selection': '清除选择',
     }

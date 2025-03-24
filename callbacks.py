@@ -147,11 +147,11 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
     
     # Create clickable word buttons
     word_buttons = []
-    for word, count in word_counts:
+    for i, (word, count) in enumerate(word_counts):
         # Calculate font size based on frequency (between 12 and 24)
         # Find the max count to normalize
         max_count = max([c for _, c in word_counts])
-        font_size = 12 + (count / max_count) * 12
+        font_size = 11 + (count / max_count) * 11
         
         # Determine if this word is selected
         is_selected = word in selected_words
@@ -1319,7 +1319,7 @@ def register_callbacks(app):
                     id='clear-word-selection-button',
                     style={
                         'padding': '6px 12px',
-                        'backgroundColor': '#f0f0f0',
+                        'backgroundColor': '#a0a0c0',
                         'border': '1px solid #ddd',
                         'borderRadius': '4px',
                         'cursor': 'pointer'
@@ -1329,13 +1329,21 @@ def register_callbacks(app):
             
             # Add label showing which words are selected
             if selected_words and len(selected_words) > 0:
-                selected_display = html.Div([
+                selected_span = [
                     html.Span(
                         TRANSLATIONS[language]['showing_reviews_with'] + ' ',
                         style={'fontWeight': 'bold'}
                     ),
                     html.Span(', '.join(selected_words))
-                ], style={
+                ]
+            else:
+                selected_span = [html.Span(
+                        TRANSLATIONS[language]['showing_all_reviews'],
+                        style={'fontWeight': 'bold'}
+                    )
+                    ]
+
+                selected_display = html.Div(selected_span, style={
                     'marginBottom': '10px', 
                     'padding': '8px 10px', 
                     'backgroundColor': '#e8f4ff', 
@@ -1477,7 +1485,8 @@ def register_callbacks(app):
         [Output('reviews-content', 'children', allow_duplicate=True),
         Output('sentiment-filter', 'value'),
         Output('sentiment-filter', 'style'),
-        Output('review-counts', 'children')],
+        Output('review-counts', 'children'),
+        Output('selected-words-storage', 'children', allow_duplicate=True)],
         [Input('sentiment-filter', 'value'),
         Input('main-figure', 'clickData'),
         Input('language-selector', 'value')],
@@ -1490,18 +1499,13 @@ def register_callbacks(app):
         State('bar-category-checklist', 'value'),
         State('bar-zoom-dropdown', 'value'),
         State('bar-count-slider', 'value'),
-        State('date-filter-storage', 'children'),
-        State('selected-words-storage', 'children')],
+        State('date-filter-storage', 'children')],
         prevent_initial_call=True
     )
     def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, 
                                             plot_type, x_value, y_value, top_n_x, top_n_y, 
-                                            search_query, bar_categories, bar_zoom, bar_count, 
-                                            date_filter_storage, selected_words_json):
+                                            search_query, bar_categories, bar_zoom, bar_count, date_filter_storage):
     
-        # Get selected words
-        selected_words = json.loads(selected_words_json) if selected_words_json else []
-        
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
@@ -1515,10 +1519,10 @@ def register_callbacks(app):
         
         # Initialize review styles
         if click_data is None:
-            return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, ''
+            return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, '[]'
         
         if trigger_id == 'search-button.n_clicks':
-            return [], 'show_all', hide_style, ''
+            return [], 'show_all', hide_style, '[]'
             
         if trigger_id == 'main-figure.clickData':
             sentiment_filter = 'show_all'
@@ -1623,7 +1627,7 @@ def register_callbacks(app):
                     # If we still couldn't find a match, show a message and return
                     if idx is None:
                         print(f"Could not find a match for clicked category: {clicked_category}")
-                        return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), sentiment_filter, dash.no_update, dash.no_update
+                        return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), sentiment_filter, dash.no_update, dash.no_update, '[]'
                         
                     reviews = review_data[idx]
                     
@@ -1659,8 +1663,7 @@ def register_callbacks(app):
                         filtered_reviews, 
                         language, 
                         plot_type='bar_chart',
-                        x_category=original_category,
-                        selected_words=selected_words
+                        x_category=original_category
                     ))
                     
                     # Create count display
@@ -1669,11 +1672,11 @@ def register_callbacks(app):
                     # Get filter style
                     filter_style = get_filter_style()
                     
-                    return content, sentiment_filter, filter_style, count_display
+                    return content, sentiment_filter, filter_style, count_display, '[]'
                     
                 except (ValueError, IndexError) as e:
                     print(f"Error processing bar chart click data: {str(e)}")
-                    return dash.no_update, sentiment_filter, dash.no_update, dash.no_update
+                    return dash.no_update, sentiment_filter, dash.no_update, dash.no_update, '[]'
             else:
                 # Original heatmap click handling
                 point = click_data['points'][0]
@@ -1758,8 +1761,7 @@ def register_callbacks(app):
                             language, 
                             plot_type='matrix',
                             x_category=original_x,
-                            y_category=original_y,
-                            selected_words=selected_words
+                            y_category=original_y
                         ))
                         
                         # Create count display
@@ -1768,17 +1770,17 @@ def register_callbacks(app):
                         # Get filter style
                         filter_style = get_filter_style()
                         
-                        return content, sentiment_filter, filter_style, count_display
+                        return content, sentiment_filter, filter_style, count_display, '[]'
                         
                 except ValueError as e:
                     print(f"Error processing click data: {str(e)}")
                     
-        return dash.no_update, sentiment_filter, dash.no_update, dash.no_update
+        return dash.no_update, sentiment_filter, dash.no_update, dash.no_update, '[]'
 
     # Add callback to handle word selection
     @app.callback(
         [Output('reviews-content', 'children', allow_duplicate=True),
-         Output('selected-words-storage', 'children')],
+         Output('selected-words-storage', 'children', allow_duplicate=True)],
         [Input({'type': 'word-button', 'index': dash.dependencies.ALL}, 'n_clicks'),
          Input('clear-word-selection-button', 'n_clicks')],
         [State('selected-words-storage', 'children'),
@@ -1818,7 +1820,7 @@ def register_callbacks(app):
         # Handle different triggers
         if 'clear-word-selection-button' in trigger_id:
             selected_words = []
-        elif 'word-button' in trigger_id:
+        elif 'word-button' in trigger_id and sum(word_buttons_clicks) > 0:
             # Find which word button was clicked
             for i, item in enumerate(ctx.inputs_list[0]):
                 if 'id' in item and isinstance(item['id'], dict) and 'index' in item['id']:
