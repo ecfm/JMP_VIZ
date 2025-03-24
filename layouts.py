@@ -279,6 +279,8 @@ def get_main_layout(language='zh'):
                     id='review-counts', 
                     style={'margin': '5px', 'fontSize': '1em', 'color': '#444'}
                 ),
+                # Hidden div to store selected words
+                html.Div(id='selected-words-storage', children='[]', style={'display': 'none'}),
                 html.Div(
                     id='reviews-content', 
                     style={

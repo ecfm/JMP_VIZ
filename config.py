@@ -162,6 +162,16 @@ TRANSLATIONS = {
         'three_month': '3 Months',
         'six_month': '6 Months',
         'year': 'Year',
+        'frequent_words': 'Frequent Words',
+        'frequent_positive_words': 'Frequent Positive Words',
+        'frequent_negative_words': 'Frequent Negative Words',
+        'x_axis_frequent_words': 'Frequent Words in X-axis Highlights',
+        'y_axis_frequent_words': 'Frequent Words in Y-axis Highlights',
+        'select_all_words': 'Select All Words',
+        'deselect_all_words': 'Deselect All Words',
+        'showing_reviews_with': 'Showing reviews containing:',
+        'no_word_selected': 'No word selected',
+        'clear_word_selection': 'Clear selection',
     },
     'zh': {
         'login': '登录',
@@ -238,6 +248,16 @@ TRANSLATIONS = {
         'three_month': '3个月',
         'six_month': '6个月',
         'year': '年',
+        'frequent_words': '高频词',
+        'frequent_positive_words': '高频正面词',
+        'frequent_negative_words': '高频负面词',
+        'x_axis_frequent_words': 'X轴高频词',
+        'y_axis_frequent_words': 'Y轴高频词',
+        'select_all_words': '全选词',
+        'deselect_all_words': '全不选词',
+        'showing_reviews_with': '显示包含:',
+        'no_word_selected': '没有选词',
+        'clear_word_selection': '清除选择',
     }
 }
 
