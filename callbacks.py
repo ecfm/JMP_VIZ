@@ -2228,6 +2228,13 @@ def register_callbacks(app):
             display_categories = display_categories[:bar_count]
             original_categories = original_categories[:bar_count]
             
+        # Initialize time series data
+        time_series_data = {
+            'dates': [],
+            'category_data': {cat: {'counts': [], 'sentiment': []} for cat in display_categories},
+            'time_bucket': time_bucket  # Add time_bucket to the returned data
+        }
+        
         # Get time series data for the trend chart
         time_series_data = get_category_time_series(
             bar_categories, display_categories, original_categories, 
@@ -2399,26 +2406,26 @@ def create_trend_chart(display_categories, original_categories, time_series_data
     end_dates = []
     
     # Calculate end dates based on the time bucket
-    for i, start_date_str in enumerate(start_dates):
-        from datetime import datetime, timedelta
-        from dateutil.relativedelta import relativedelta
-        
+    for start_date_str in start_dates:
         start_date = datetime.strptime(start_date_str, '%Y-%m')
         
-        # Determine the end date based on time bucket pattern
-        if '-01-01' in start_date_str:  # Year 
+        # Get the time bucket from the data
+        time_bucket = time_series_data.get('time_bucket', 'month')
+        
+        # Calculate end date based on time bucket
+        if time_bucket == 'year':
             end_date = start_date + relativedelta(years=1, days=-1)
-        elif start_date.month in [1, 4, 7, 10] and start_date.day == 1:  # 3-month pattern
-            end_date = start_date + relativedelta(months=3, days=-1)
-        elif start_date.month in [1, 7] and start_date.day == 1:  # 6-month pattern
+        elif time_bucket == '6month':
             end_date = start_date + relativedelta(months=6, days=-1)
-        else:  # Month or other patterns
+        elif time_bucket == '3month':
+            end_date = start_date + relativedelta(months=3, days=-1)
+        else:  # month
             if start_date.month == 12:
                 end_date = datetime(start_date.year + 1, 1, 1) - timedelta(days=1)
             else:
                 end_date = datetime(start_date.year, start_date.month + 1, 1) - timedelta(days=1)
                 
-        end_dates.append(end_date.strftime('%Y-%m-%d'))
+        end_dates.append(end_date.strftime('%Y-%m'))
     
     # Track the maximum y-value for setting the y-axis range
     max_y_value = 0

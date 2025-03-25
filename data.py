@@ -356,44 +356,89 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
         try:
             # Convert operators and clean up query
             query = search_query.lower().strip()
+            
+            # Add spaces around parentheses to ensure proper tokenization
+            query = re.sub(r'\(', ' ( ', query)
+            query = re.sub(r'\)', ' ) ', query)
+            query = re.sub(r'\s+', ' ', query).strip()
+            
             query = re.sub(r'\s*&\s*', ' and ', query)
             query = re.sub(r'\s*\|\s*', ' or ', query)
             
             # Parse terms in quotes as single terms
             quoted_terms = re.findall(r'"([^"]+)"', query)
             for term in quoted_terms:
-                if ' ' in term:  # Only replace if it has spaces
-                    query = query.replace(f'"{term}"', f'"{term.replace(" ", "_")}"')
+                # Replace the quoted term with a placeholder that won't be split
+                placeholder = f"__QUOTED_{term.replace(' ', '_')}__"
+                query = query.replace(f'"{term}"', placeholder)
+            
+            # Split by spaces but preserve parentheses and operators
+            tokens = re.findall(r'__QUOTED_[^_]+__|[()]|\band\b|\bor\b|\S+', query)
             
             # Convert terms to regex patterns
             terms = []
-            current_group = []
+            current_terms = []
+            paren_groups = []
             
-            for term in re.findall(r'"[^"]+"|\w+|[()&|]', query):
-                if term in ('and', 'or', '(', ')'):
-                    # If we've collected terms and hit an operator, join them with OR
-                    if current_group and term not in ('(', ')'):
-                        if len(current_group) > 1:
-                            terms.append(f"({' or '.join(current_group)})")
+            for token in tokens:
+                if token == '(':
+                    # Save current terms if any before starting a new group
+                    if current_terms:
+                        if len(current_terms) > 1:
+                            terms.append(f"({' or '.join(current_terms)})")
                         else:
-                            terms.append(current_group[0])
-                        current_group = []
-                        
-                    terms.append(term)
+                            terms.append(current_terms[0])
+                        current_terms = []
+                    # Push a new group onto the stack
+                    paren_groups.append(terms)
+                    terms = []
+                elif token == ')':
+                    # Handle any pending terms in current group
+                    if current_terms:
+                        if len(current_terms) > 1:
+                            terms.append(f"({' or '.join(current_terms)})")
+                        else:
+                            terms.append(current_terms[0])
+                        current_terms = []
+                    
+                    # Pop the outer group and add current group to it
+                    if not paren_groups:
+                        raise ValueError("Unmatched closing parenthesis")
+                    
+                    # Join current terms with OR if multiple
+                    current_expr = f"({' or '.join(terms)})" if len(terms) > 1 else terms[0] if terms else ""
+                    
+                    # Restore outer group
+                    terms = paren_groups.pop()
+                    if current_expr:
+                        terms.append(current_expr)
+                elif token in ('and', 'or'):
+                    # Handle any pending terms before the operator
+                    if current_terms:
+                        if len(current_terms) > 1:
+                            terms.append(f"({' or '.join(current_terms)})")
+                        else:
+                            terms.append(current_terms[0])
+                        current_terms = []
+                    terms.append(token)
                 else:
-                    # Handle quoted terms
-                    if term.startswith('"') and term.endswith('"'):
-                        clean_term = term[1:-1].replace('_', ' ')  # Convert back underscores to spaces
-                        current_group.append(f"'{clean_term}' in review_text")
+                    # Handle quoted terms and regular terms
+                    if token.startswith('__QUOTED_') and token.endswith('__'):
+                        clean_term = token[9:-2].replace('_', ' ')
+                        current_terms.append(f"'{clean_term}' in review_text")
                     else:
-                        current_group.append(f"'{term}' in review_text")
+                        current_terms.append(f"'{token}' in review_text")
             
             # Handle any remaining terms
-            if current_group:
-                if len(current_group) > 1:
-                    terms.append(f"({' or '.join(current_group)})")
+            if current_terms:
+                if len(current_terms) > 1:
+                    terms.append(f"({' or '.join(current_terms)})")
                 else:
-                    terms.append(current_group[0])
+                    terms.append(current_terms[0])
+            
+            # Check for unmatched opening parentheses
+            if paren_groups:
+                raise ValueError("Unmatched opening parenthesis")
             
             # Create the filter expression
             filter_expr = ' '.join(terms)
@@ -402,12 +447,18 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             filter_expr = re.sub(r'\(\s+', '(', filter_expr)
             filter_expr = re.sub(r'\s+\)', ')', filter_expr)
             
-            # Force spacing around operators for proper evaluation
-            filter_expr = re.sub(r'(\))\s*(\()', r'\1 and \2', filter_expr)
+            # Validate the expression is not empty
+            if not filter_expr.strip():
+                raise ValueError("Empty search expression")
             
             # Create a compiled filter function to avoid re-evaluation
-            filter_code = compile(f"lambda review_text: {filter_expr}", "<string>", "eval")
-            query_filter = eval(filter_code, {"__builtins__": {}})
+            try:
+                filter_code = compile(f"lambda review_text: {filter_expr}", "<string>", "eval")
+                query_filter = eval(filter_code, {"__builtins__": {}})
+            except Exception as e:
+                print(f"Search query error: {str(e)}")
+                print(f"Filter expression was: {filter_expr}")
+                raise
             
         except Exception as e:
             print(f"Search query error: {str(e)}")
@@ -785,7 +836,8 @@ def get_category_time_series(categories, display_categories, original_categories
     # Initialize time series data
     time_series_data = {
         'dates': [],
-        'category_data': {cat: {'counts': [], 'sentiment': []} for cat in display_categories}
+        'category_data': {cat: {'counts': [], 'sentiment': []} for cat in display_categories},
+        'time_bucket': time_bucket
     }
     
     # Track all reviews by date and category
