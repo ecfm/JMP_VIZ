@@ -753,9 +753,7 @@ def get_category_time_series(categories, display_categories, original_categories
     """
     from datetime import datetime
     import pandas as pd
-    
-    print(f"get_category_time_series called with time_bucket={time_bucket}")
-    
+        
     # Default to month if invalid bucket size provided
     valid_buckets = ['day', 'week', 'month', '3month', '6month', 'year']
     if time_bucket not in valid_buckets:

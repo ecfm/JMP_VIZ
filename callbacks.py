@@ -100,10 +100,10 @@ def get_frequent_words(reviews, sentiment=None, axis=None, num_words=15):
     # Count word frequencies
     word_counts = Counter(words)
     
-    # Return the most common words
-    return word_counts.most_common(num_words)
+    # Return the most common words with at least 5 occurrences
+    return [(word, count) for word, count in word_counts.most_common(num_words) if count >= 5]
 
-def create_word_frequency_display(word_counts, language, word_type='common', on_click_id=None, selected_words=None):
+def create_word_frequency_display(word_counts, language, word_type='common', on_click_id=None, selected_words=None, title_word=None):
     """
     Create a clickable display of word frequencies.
     
@@ -113,6 +113,7 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
         word_type: Type of words ('positive', 'negative', or 'common')
         on_click_id: ID for the div to enable click events
         selected_words: List of currently selected words
+        title_word: Category name to include in title
         
     Returns:
         HTML div containing the word cloud display
@@ -127,23 +128,43 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
         base_color = '#E6F3FF'  # Light blue for positive
         title = TRANSLATIONS[language]['frequent_positive_words']
         selected_color = '#6BB5FF'  # Even darker blue for selected
+        title_style = {'marginBottom': '5px'}
+        category_style = {}
     elif word_type == 'negative':
         base_color = '#FFE6E6'  # Light red for negative
         title = TRANSLATIONS[language]['frequent_negative_words']
         selected_color = '#FFB5B5'  # Even darker red for selected
+        title_style = {'marginBottom': '5px'}
+        category_style = {}
     else:
         if on_click_id == 'x-axis-words-container':
             base_color = '#FFFDE6'  # Light yellow for X-axis
-            title = TRANSLATIONS[language]['x_axis_frequent_words']
+            title = TRANSLATIONS[language]['frequent_words']
             selected_color = '#FFEC51'  # Even darker yellow for selected
+            title_style = {'marginBottom': '5px'}
+            category_style = {
+                'border': f'5px solid {color_mapping["x"]}',  # Purple border for X-axis
+                'padding': '5px',
+                'display': 'inline-block',
+                'marginLeft': '10px'
+            }
         elif on_click_id == 'y-axis-words-container':
             base_color = '#E6FFE6'  # Light green for Y-axis
-            title = TRANSLATIONS[language]['y_axis_frequent_words']
+            title = TRANSLATIONS[language]['frequent_words']
             selected_color = '#51FF51'  # Even darker green for selected
+            title_style = {'marginBottom': '5px'}
+            category_style = {
+                'border': f'5px solid {color_mapping["y"]}',  # Green border for Y-axis
+                'padding': '5px',
+                'display': 'inline-block',
+                'marginLeft': '10px'
+            }
         else:
             base_color = '#F0F0F0'  # Light gray for common
             title = TRANSLATIONS[language]['frequent_words']
             selected_color = '#C0C0C0'  # Even darker gray for selected
+            title_style = {'marginBottom': '5px'}
+            category_style = {}
     
     # Create clickable word buttons
     word_buttons = []
@@ -151,20 +172,20 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
         # Calculate font size based on frequency (between 12 and 24)
         # Find the max count to normalize
         max_count = max([c for _, c in word_counts])
-        font_size = 11 + (count / max_count) * 11
+        font_size = 9 + (count / max_count) * 10
         
         # Determine if this word is selected
         is_selected = word in selected_words
         
         # Set style based on selection state
         button_style = {
-            'margin': '3px',
-            'padding': '3px 8px',
+            'margin': '2px',
+            'padding': '2px 4px',
             'fontSize': f'{font_size}px',
             'backgroundColor': selected_color if is_selected else base_color,
             'color': '#000' if is_selected else '#333',
             'border': '1px solid #aaa' if is_selected else '1px solid #ddd',
-            'borderRadius': '12px',
+            'borderRadius': '8px',
             'cursor': 'pointer',
             'fontWeight': 'bold' if is_selected else 'normal',
             'boxShadow': '0px 2px 3px rgba(0,0,0,0.1)' if is_selected else 'none',
@@ -184,17 +205,20 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
         )
     
     return html.Div([
-        html.H4(title, style={'marginBottom': '5px'}),
+        html.H4([
+            html.Span(f"{title_word} ", style=category_style) if title_word else None,
+            html.Span(title, style=title_style)
+        ]),
         html.Div(
             word_buttons,
             style={
                 'display': 'flex',
                 'flexWrap': 'wrap',
                 'gap': '5px',
-                'padding': '10px',
+                'padding': '5px',
                 'border': '1px solid #ddd',
                 'borderRadius': '5px',
-                'marginBottom': '15px',
+                'marginBottom': '10px',
                 'backgroundColor': '#fff'
             },
             id=on_click_id
@@ -1242,16 +1266,16 @@ def register_callbacks(app):
         # Create word frequency analysis if there are enough reviews
         if len(filtered_reviews) > 10:
             # Get high frequency words from all reviews
-            common_words = get_frequent_words(filtered_reviews, num_words=20)
+            common_words = get_frequent_words(filtered_reviews, num_words=30)
             
             # Get positive and negative words separately
-            positive_words = get_frequent_words(filtered_reviews, sentiment='positive', num_words=15)
-            negative_words = get_frequent_words(filtered_reviews, sentiment='negative', num_words=15)
+            positive_words = get_frequent_words(filtered_reviews, sentiment='positive', num_words=25)
+            negative_words = get_frequent_words(filtered_reviews, sentiment='negative', num_words=25)
             
             # For matrix view, also get X and Y axis highlights
             if plot_type == 'matrix':
-                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=15)
-                y_highlight_words = get_frequent_words(filtered_reviews, axis='y', num_words=15)
+                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=25)
+                y_highlight_words = get_frequent_words(filtered_reviews, axis='y', num_words=25)
                 
                 # Create word cloud displays for X and Y axis
                 if x_highlight_words:
@@ -1261,7 +1285,8 @@ def register_callbacks(app):
                             language, 
                             'common',
                             on_click_id='x-axis-words-container',
-                            selected_words=selected_words
+                            selected_words=selected_words,
+                            title_word=x_category
                         )
                     )
                 
@@ -1272,12 +1297,13 @@ def register_callbacks(app):
                             language, 
                             'common',
                             on_click_id='y-axis-words-container',
-                            selected_words=selected_words
+                            selected_words=selected_words,
+                            title_word=y_category
                         )
                     )
             else:
                 # For bar chart, get only X axis highlights
-                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=15)
+                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=25)
                 if x_highlight_words:
                     word_freq_components.append(
                         create_word_frequency_display(
@@ -1285,7 +1311,8 @@ def register_callbacks(app):
                             language, 
                             'common',
                             on_click_id='x-axis-words-container',
-                            selected_words=selected_words
+                            selected_words=selected_words,
+                            title_word=x_category
                         )
                     )
             
@@ -1343,15 +1370,15 @@ def register_callbacks(app):
                     )
                     ]
 
-                selected_display = html.Div(selected_span, style={
-                    'marginBottom': '10px', 
-                    'padding': '8px 10px', 
-                    'backgroundColor': '#e8f4ff', 
-                    'borderRadius': '4px',
-                    'border': '1px solid #b8d8ff',
-                    'fontSize': '14px'
-                })
-                word_freq_components.append(selected_display)
+            selected_display = html.Div(selected_span, style={
+                'marginBottom': '10px', 
+                'padding': '8px 10px', 
+                'backgroundColor': '#e8f4ff', 
+                'borderRadius': '4px',
+                'border': '1px solid #b8d8ff',
+                'fontSize': '14px'
+            })
+            word_freq_components.append(selected_display)
         
         # Filter reviews by selected words if needed
         if selected_words and len(selected_words) > 0:
@@ -1405,6 +1432,19 @@ def register_callbacks(app):
         
         # Combine word frequency components with reviews iframe
         result = []
+        # Add header HTML after word frequency components
+        header_html = create_header_html(language, plot_type, x_category, y_category)
+        result.append(html.Iframe(
+            srcDoc=header_html,
+            style={
+                'width': '100%',
+                'height': '60px',
+                'border': 'none',
+                'borderRadius': '3px',
+                'backgroundColor': 'white',
+                'marginBottom': '10px'
+            }
+        ))
         if word_freq_components:
             result.append(html.Div(word_freq_components))
         
@@ -1422,7 +1462,7 @@ def register_callbacks(app):
         
         return result
 
-    def create_header_html(selected_text, language, plot_type, x_category=None, y_category=None):
+    def create_header_html(language, plot_type, x_category=None, y_category=None):
         """Create header HTML with selection info"""
         # Use the appropriate lambda function based on plot type
         if plot_type == 'bar_chart':
@@ -1448,7 +1488,6 @@ def register_callbacks(app):
             </style>
         </head>
         <body>
-            <div>{TRANSLATIONS[language]['selected']} {selected_text}</div>
             <div style="margin-top: 3px;">
                 {review_format}
             </div>
@@ -1480,31 +1519,208 @@ def register_callbacks(app):
             'alignItems': 'center'
         }
 
+    def update_reviews_with_filters(click_data, sentiment_filter, language, plot_type, 
+                                  x_value, y_value, top_n_x, top_n_y, search_query, 
+                                  bar_categories, bar_zoom, bar_count, start_date, end_date, selected_words=None):
+        """Helper function to update reviews display with sentiment and word filtering"""
+        if not click_data:
+            return dash.no_update, None, None, None
+            
+        search_query = search_query if search_query else ''
+        selected_words = selected_words if selected_words else []
+        
+        if plot_type == 'bar_chart':
+            # Handle bar chart selection
+            point = click_data['points'][0]
+            clicked_category = point['x']
+            
+            # Get bar chart data
+            if not bar_categories:
+                bar_categories = ['usage', 'attribute', 'performance']
+            
+            # Handle empty string as None
+            if bar_zoom == '':
+                bar_zoom = None
+                
+            display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+                bar_categories, bar_zoom, language, search_query, start_date, end_date
+            )
+            
+            # Apply bar count limit
+            if bar_count > 0 and bar_count < len(display_categories):
+                display_categories = display_categories[:bar_count]
+                original_categories = original_categories[:bar_count]
+                counts = counts[:bar_count]
+                sentiment_ratios = sentiment_ratios[:bar_count]
+                review_data = review_data[:bar_count]
+                colors = colors[:bar_count]
+            
+            # Create formatted category names mapping
+            formatted_to_original = {}
+            
+            # Check if we're zoomed into a parent category
+            is_zoomed = bar_zoom and bar_zoom != ''
+            
+            for i, category in enumerate(display_categories):
+                # Determine the category type prefix
+                prefix = None
+                for p in type_colors.keys():
+                    if category.startswith(p):
+                        prefix = p
+                        break
+                    
+                if prefix:
+                    category_text = category[len(prefix):]
+                    
+                    # Format based on zoom state
+                    if is_zoomed and '|' in category_text:
+                        parts = category_text.split('|')
+                        if len(parts) > 1:
+                            display_text = '|'.join(parts[1:])
+                        else:
+                            display_text = parts[0]
+                        display_text = format_category_display(display_text, language)
+                            
+                        formatted_to_original[display_text] = i
+                        
+                        for part in parts[1:]:
+                            part = part.strip()
+                            if part:
+                                formatted_part = format_category_display(part, language)
+                                formatted_to_original[formatted_part] = i
+                        
+                        full_formatted = format_category_display(category, language)
+                        formatted_to_original[full_formatted] = i
+                    else:
+                        display_text = prefix + category_text
+                        formatted = format_category_display(display_text, language)
+                        formatted_to_original[formatted] = i
+                else:
+                    formatted = format_category_display(category, language)
+                    formatted_to_original[formatted] = i
+            
+            try:
+                # Find the index of clicked category
+                idx = formatted_to_original.get(clicked_category)
+                if idx is None:
+                    try:
+                        idx = display_categories.index(clicked_category)
+                    except ValueError:
+                        for i, orig_cat in enumerate(original_categories):
+                            if orig_cat == clicked_category:
+                                idx = i
+                                break
+                
+                if idx is None:
+                    return dash.no_update, None, None, None
+                
+                reviews = review_data[idx]
+                
+                # Apply sentiment filtering
+                positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
+                filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
+                
+                # Create updated review display with word filtering
+                reviews_display = create_review_display(
+                    filtered_reviews, 
+                    language, 
+                    plot_type='bar_chart',
+                    x_category=display_categories[idx],
+                    selected_words=selected_words
+                )
+                
+                return reviews_display, positive_reviews, negative_reviews, display_categories[idx]
+                
+            except (ValueError, IndexError) as e:
+                print(f"Error processing bar chart click data: {str(e)}")
+                return dash.no_update, None, None, None
+        else:
+            # Handle matrix view selection
+            point = click_data['points'][0]
+            clicked_x = point['x']
+            clicked_y = point['y']
+            
+            matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
+                plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
+            )
+            
+            # Format display labels
+            formatted_x_display = [format_category_display(label, language) for label in x_text]
+            formatted_y_display = [format_category_display(label, language) for label in y_text]
+            
+            # Create mappings
+            x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
+            y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
+            
+            try:
+                # Find the indices
+                i = y_mapping.get(clicked_y)
+                j = x_mapping.get(clicked_x)
+                
+                # Try lenient matching if not found
+                if i is None:
+                    for formatted_y, idx in y_mapping.items():
+                        if clicked_y in formatted_y or formatted_y in clicked_y:
+                            i = idx
+                            break
+                
+                if j is None:
+                    for formatted_x, idx in x_mapping.items():
+                        if clicked_x in formatted_x or formatted_x in clicked_x:
+                            j = idx
+                            break
+                
+                if i is not None and j is not None:
+                    reviews = review_matrix[i][j]
+                    
+                    # Apply sentiment filtering
+                    positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
+                    filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
+                    
+                    # Create updated review display with word filtering
+                    reviews_display = create_review_display(
+                        filtered_reviews, 
+                        language, 
+                        plot_type='matrix',
+                        x_category=x_text[j],
+                        y_category=y_text[i],
+                        selected_words=selected_words
+                    )
+                    
+                    return reviews_display, positive_reviews, negative_reviews, None
+                    
+            except ValueError as e:
+                print(f"Error processing matrix click data: {str(e)}")
+        
+        return dash.no_update, None, None, None
+
     # Reviews update callback
     @app.callback(
         [Output('reviews-content', 'children', allow_duplicate=True),
-        Output('sentiment-filter', 'value'),
-        Output('sentiment-filter', 'style'),
-        Output('review-counts', 'children'),
-        Output('selected-words-storage', 'children', allow_duplicate=True)],
+         Output('sentiment-filter', 'value'),
+         Output('sentiment-filter', 'style'),
+         Output('review-counts', 'children'),
+         Output('selected-words-storage', 'children', allow_duplicate=True)],
         [Input('sentiment-filter', 'value'),
-        Input('main-figure', 'clickData'),
-        Input('language-selector', 'value')],
+         Input('main-figure', 'clickData'),
+         Input('language-selector', 'value')],
         [State('plot-type', 'value'),
-        State('x-axis-dropdown', 'value'),
-        State('y-axis-dropdown', 'value'),
-        State('x-features-slider', 'value'),
-        State('y-features-slider', 'value'),
-        State('search-input', 'value'),
-        State('bar-category-checklist', 'value'),
-        State('bar-zoom-dropdown', 'value'),
-        State('bar-count-slider', 'value'),
-        State('date-filter-storage', 'children')],
+         State('x-axis-dropdown', 'value'),
+         State('y-axis-dropdown', 'value'),
+         State('x-features-slider', 'value'),
+         State('y-features-slider', 'value'),
+         State('search-input', 'value'),
+         State('bar-category-checklist', 'value'),
+         State('bar-zoom-dropdown', 'value'),
+         State('bar-count-slider', 'value'),
+         State('date-filter-storage', 'children'),
+         State('selected-words-storage', 'children')],
         prevent_initial_call=True
     )
     def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, 
-                                            plot_type, x_value, y_value, top_n_x, top_n_y, 
-                                            search_query, bar_categories, bar_zoom, bar_count, date_filter_storage):
+                                        plot_type, x_value, y_value, top_n_x, top_n_y, 
+                                        search_query, bar_categories, bar_zoom, bar_count, 
+                                        date_filter_storage, selected_words_json):
     
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
@@ -1513,269 +1729,40 @@ def register_callbacks(app):
         
         # Default responses
         hide_style = {'display': 'none'}
-        show_style = {'display': 'block'}
+        show_style = get_filter_style()
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
         
-        # Initialize review styles
+        # Initialize review styles and variables
+        reviews_content = html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})])
+        count_display = ''
+        
+        # Initialize review counts
         if click_data is None:
-            return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), 'show_all', hide_style, '[]'
+            return reviews_content, 'show_all', hide_style, count_display, '[]'
         
-        if trigger_id == 'search-button.n_clicks':
-            return [], 'show_all', hide_style, '[]'
-            
-        if trigger_id == 'main-figure.clickData':
-            sentiment_filter = 'show_all'
+        # Get selected words
+        selected_words = json.loads(selected_words_json) if selected_words_json else []
         
-        if click_data:
-            search_query = search_query if search_query else ''
+        try:
+            # Update reviews with current filters
+            result = update_reviews_with_filters(
+                click_data, sentiment_filter, language, plot_type, x_value, y_value, 
+                top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count, 
+                start_date, end_date, selected_words
+            )
             
-            if plot_type == 'bar_chart':
-                # Get clicked category from the bar chart
-                point = click_data['points'][0]
-                clicked_category = point['x']
+            if result is not None and len(result) == 4:
+                reviews_content, pos_reviews, neg_reviews, _ = result
                 
-                # Get bar chart data
-                if not bar_categories:
-                    bar_categories = ['usage', 'attribute', 'performance']
-                
-                # Handle empty string as None
-                if bar_zoom == '':
-                    bar_zoom = None
-                    
-                display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
-                    bar_categories, bar_zoom, language, search_query, start_date, end_date
-                )
-                
-                # Apply bar count limit from bar_count slider
-                if bar_count > 0 and bar_count < len(display_categories):
-                    display_categories = display_categories[:bar_count]
-                    original_categories = original_categories[:bar_count]
-                    counts = counts[:bar_count]
-                    sentiment_ratios = sentiment_ratios[:bar_count]
-                    review_data = review_data[:bar_count]
-                    colors = colors[:bar_count]
-                
-                # Create formatted category names to match what's displayed in the chart
-                formatted_to_original = {}
-                
-                # Check if we're zoomed into a parent category
-                is_zoomed = bar_zoom and bar_zoom != ''
-                
-                for i, category in enumerate(display_categories):
-                    # Determine the category type prefix
-                    prefix = None
-                    for p in type_colors.keys():
-                        if category.startswith(p):
-                            prefix = p
-                            break
-                            
-                    if prefix:
-                        category_text = category[len(prefix):]
-                        
-                        # When zoomed into a parent category, format display matches matrix plot
-                        if is_zoomed and '|' in category_text:
-                            # Extract the path parts
-                            parts = category_text.split('|')
-                            
-                            # Exclude the topmost category for display (same format as in the graph)
-                            if len(parts) > 1:
-                                display_text = '|'.join(parts[1:])
-                            else:
-                                display_text = parts[0]
-                            
-                            # Format the display text based on language
-                            display_text = format_category_display(display_text, language)
-                            
-                            # Map the formatted display text to its index
-                            formatted_to_original[display_text] = i
-                            
-                            # Also map individual parts for fallback - users might click on subpart
-                            for part in parts[1:]:  # Only map sub-parts, not the topmost category
-                                part = part.strip()
-                                if part:
-                                    formatted_part = format_category_display(part, language)
-                                    formatted_to_original[formatted_part] = i
-                                    
-                            # Also map the full format without parentheses as fallback
-                            full_formatted = format_category_display(category, language)
-                            formatted_to_original[full_formatted] = i
-                        else:
-                            # Standard format without parentheses
-                            display_text = prefix + category_text
-                            formatted = format_category_display(display_text, language)
-                            formatted_to_original[formatted] = i
-                    else:
-                        # Default case
-                        formatted = format_category_display(category, language)
-                        formatted_to_original[formatted] = i
-                
-                try:
-                    # Find the index of clicked category in results using the formatted version
-                    idx = formatted_to_original.get(clicked_category)
-                    if idx is None:
-                        # If not found by formatted name, try direct match (backward compatibility)
-                        try:
-                            idx = display_categories.index(clicked_category)
-                        except ValueError:
-                            # Try matching against original category
-                            for i, orig_cat in enumerate(original_categories):
-                                if orig_cat == clicked_category:
-                                    idx = i
-                                    break
-                    
-                    # If we still couldn't find a match, show a message and return
-                    if idx is None:
-                        print(f"Could not find a match for clicked category: {clicked_category}")
-                        return html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})]), sentiment_filter, dash.no_update, dash.no_update, '[]'
-                        
-                    reviews = review_data[idx]
-                    
-                    # Categorize and filter reviews
-                    positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                    filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                    
-                    # Get highlight examples for current language
-                    x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
-                    
-                    # For display in the header, use the original category with formatting
-                    original_category = display_categories[idx]
-                    category_clicked = f'<span style="background-color: {colors[idx]}; color: white; padding: 5px; border-radius: 3px;">{original_category}</span>'
-                    
-                    # Create header HTML
-                    header_html = create_header_html(category_clicked, language, plot_type, original_category)
-                    
-                    # Create content with header
-                    content = [
-                        html.Iframe(
-                            srcDoc=header_html,
-                            style={
-                                'width': '100%',
-                                'height': '120px',
-                                'border': 'none',
-                                'backgroundColor': 'white'
-                            }
-                        )
-                    ]
-                    
-                    # Add review content
-                    content.extend(create_review_display(
-                        filtered_reviews, 
-                        language, 
-                        plot_type='bar_chart',
-                        x_category=original_category
-                    ))
-                    
-                    # Create count display
-                    count_display = create_count_display(positive_reviews, negative_reviews, sentiment_filter, language)
-                    
-                    # Get filter style
-                    filter_style = get_filter_style()
-                    
-                    return content, sentiment_filter, filter_style, count_display, '[]'
-                    
-                except (ValueError, IndexError) as e:
-                    print(f"Error processing bar chart click data: {str(e)}")
-                    return dash.no_update, sentiment_filter, dash.no_update, dash.no_update, '[]'
-            else:
-                # Original heatmap click handling
-                point = click_data['points'][0]
-                clicked_x = point['x']
-                clicked_y = point['y']
-                
-                matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
-                    plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
-                )
-                
-                # Format display labels - remove all parentheses content for all categories
-                formatted_x_display = []
-                for label in x_text:
-                    # Remove any parentheses content, regardless of language or content
-                    formatted_label = format_category_display(label, language)
-                    formatted_x_display.append(formatted_label)
-                    
-                formatted_y_display = []
-                for label in y_text:
-                    # Remove any parentheses content, regardless of language or content
-                    formatted_label = format_category_display(label, language)
-                    formatted_y_display.append(formatted_label)
-                
-                # Create a mapping from formatted labels to original indices
-                x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
-                y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
-                
-                try:
-                    # Find the indices using the mapping with formatted labels
-                    i = y_mapping.get(clicked_y)
-                    j = x_mapping.get(clicked_x)
-                    
-                    # If not found by direct mapping, try a more lenient search
-                    if i is None:
-                        for formatted_y, idx in y_mapping.items():
-                            if clicked_y in formatted_y or formatted_y in clicked_y:
-                                i = idx
-                                break
-                    
-                    if j is None:
-                        for formatted_x, idx in x_mapping.items():
-                            if clicked_x in formatted_x or formatted_x in clicked_x:
-                                j = idx
-                                break
-                    
-                    if i is not None and j is not None:
-                        reviews = review_matrix[i][j]
-                        
-                        # Categorize and filter reviews
-                        positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                        filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                        
-                        # Get highlight examples for current language
-                        x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
-                        
-                        # For the header display, use the original values with percentages
-                        original_x = x_text[j]
-                        original_y = y_text[i]
-                        
-                        x_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X=<b>{original_x}</b></span>'
-                        y_clicked = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y=<b>{original_y}</b></span>'
-                        
-                        # Create header HTML
-                        header_html = create_header_html(f"{x_clicked}, {y_clicked}", language, plot_type, original_x, original_y)
-                        
-                        # Create content with header
-                        content = [
-                            html.Iframe(
-                                srcDoc=header_html,
-                                style={
-                                    'width': '100%',
-                                    'height': '120px',
-                                    'border': 'none',
-                                    'backgroundColor': 'white'
-                                }
-                            )
-                        ]
-                        
-                        # Add review content
-                        content.extend(create_review_display(
-                            filtered_reviews, 
-                            language, 
-                            plot_type='matrix',
-                            x_category=original_x,
-                            y_category=original_y
-                        ))
-                        
-                        # Create count display
-                        count_display = create_count_display(positive_reviews, negative_reviews, sentiment_filter, language)
-                        
-                        # Get filter style
-                        filter_style = get_filter_style()
-                        
-                        return content, sentiment_filter, filter_style, count_display, '[]'
-                        
-                except ValueError as e:
-                    print(f"Error processing click data: {str(e)}")
-                    
-        return dash.no_update, sentiment_filter, dash.no_update, dash.no_update, '[]'
+                # Create count display if we have review counts
+                if pos_reviews is not None and neg_reviews is not None:
+                    count_display = create_count_display(pos_reviews, neg_reviews, sentiment_filter, language)
+        except Exception as e:
+            print(f"Error in update_reviews_with_sentiment_filter: {str(e)}")
+            # Keep default values in case of error
+        
+        return reviews_content, sentiment_filter, show_style, count_display, selected_words_json
 
     # Add callback to handle word selection
     @app.callback(
@@ -1821,210 +1808,33 @@ def register_callbacks(app):
         if 'clear-word-selection-button' in trigger_id:
             selected_words = []
         elif 'word-button' in trigger_id and sum(word_buttons_clicks) > 0:
-            # Find which word button was clicked
-            for i, item in enumerate(ctx.inputs_list[0]):
-                if 'id' in item and isinstance(item['id'], dict) and 'index' in item['id']:
-                    try:
-                        # Try to parse the trigger ID as JSON
-                        trigger_dict = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
-                        if trigger_dict.get('type') == 'word-button':
-                            clicked_word = trigger_dict.get('index')
-                            # Toggle the word selection
-                            if clicked_word in selected_words:
-                                selected_words.remove(clicked_word)
-                            else:
-                                selected_words.append(clicked_word)
-                    except json.JSONDecodeError:
-                        pass
-        
-        # If no words are selected, update the storage but don't filter
-        if not selected_words:
-            # Return dash.no_update only if we're not explicitly clearing the selection
-            if 'clear-word-selection-button' in trigger_id:
-                # Parse date range from storage
-                date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
-                start_date = date_range.get("start_date")
-                end_date = date_range.get("end_date")
-                
-                # Re-render all reviews without word filtering
-                return update_reviews_without_word_filtering(
-                    click_data, sentiment_filter, language, plot_type, x_value, y_value, 
-                    top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count, 
-                    start_date, end_date
-                ), json.dumps(selected_words)
-            else:
-                return dash.no_update, json.dumps(selected_words)
+            try:
+                # Try to parse the trigger ID as JSON
+                trigger_dict = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
+                if trigger_dict.get('type') == 'word-button':
+                    clicked_word = trigger_dict.get('index')
+                    # Toggle the word selection
+                    if clicked_word in selected_words:
+                        selected_words.remove(clicked_word)
+                    else:
+                        selected_words.append(clicked_word)
+            except json.JSONDecodeError:
+                pass
         
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
         end_date = date_range.get("end_date")
         
-        # Get the reviews based on the current selection
-        if click_data:
-            search_query = search_query if search_query else ''
-            
-            if plot_type == 'bar_chart':
-                # Handle bar chart selection
-                point = click_data['points'][0]
-                clicked_category = point['x']
-                
-                # Get bar chart data
-                if not bar_categories:
-                    bar_categories = ['usage', 'attribute', 'performance']
-                
-                # Handle empty string as None
-                if bar_zoom == '':
-                    bar_zoom = None
-                    
-                display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
-                    bar_categories, bar_zoom, language, search_query, start_date, end_date
-                )
-                
-                # Apply bar count limit
-                if bar_count > 0 and bar_count < len(display_categories):
-                    display_categories = display_categories[:bar_count]
-                    original_categories = original_categories[:bar_count]
-                    counts = counts[:bar_count]
-                    sentiment_ratios = sentiment_ratios[:bar_count]
-                    review_data = review_data[:bar_count]
-                    colors = colors[:bar_count]
-                
-                # Create formatted category names mapping
-                formatted_to_original = {}
-                
-                # Check if we're zoomed into a parent category
-                is_zoomed = bar_zoom and bar_zoom != ''
-                
-                for i, category in enumerate(display_categories):
-                    # Determine the category type prefix
-                    prefix = None
-                    for p in type_colors.keys():
-                        if category.startswith(p):
-                            prefix = p
-                            break
-                        
-                    if prefix:
-                        category_text = category[len(prefix):]
-                        
-                        # Format based on zoom state
-                        if is_zoomed and '|' in category_text:
-                            parts = category_text.split('|')
-                            if len(parts) > 1:
-                                display_text = '|'.join(parts[1:])
-                            else:
-                                display_text = parts[0]
-                            
-                            display_text = format_category_display(display_text, language)
-                            formatted_to_original[display_text] = i
-                            
-                            for part in parts[1:]:
-                                part = part.strip()
-                                if part:
-                                    formatted_part = format_category_display(part, language)
-                                    formatted_to_original[formatted_part] = i
-                            
-                            full_formatted = format_category_display(category, language)
-                            formatted_to_original[full_formatted] = i
-                        else:
-                            display_text = prefix + category_text
-                            formatted = format_category_display(display_text, language)
-                            formatted_to_original[formatted] = i
-                    else:
-                        formatted = format_category_display(category, language)
-                        formatted_to_original[formatted] = i
-                
-                try:
-                    # Find the index of clicked category
-                    idx = formatted_to_original.get(clicked_category)
-                    if idx is None:
-                        try:
-                            idx = display_categories.index(clicked_category)
-                        except ValueError:
-                            for i, orig_cat in enumerate(original_categories):
-                                if orig_cat == clicked_category:
-                                    idx = i
-                                    break
-                    
-                    if idx is None:
-                        return dash.no_update, json.dumps(selected_words)
-                    
-                    reviews = review_data[idx]
-                    
-                    # Apply sentiment filtering
-                    positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                    filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                    
-                    # Create updated review display with word filtering
-                    return create_review_display(
-                        filtered_reviews, 
-                        language, 
-                        plot_type='bar_chart',
-                        x_category=display_categories[idx],
-                        selected_words=selected_words
-                    ), json.dumps(selected_words)
-                    
-                except (ValueError, IndexError) as e:
-                    print(f"Error processing bar chart click data: {str(e)}")
-                    return dash.no_update, json.dumps(selected_words)
-            else:
-                # Handle matrix view selection
-                point = click_data['points'][0]
-                clicked_x = point['x']
-                clicked_y = point['y']
-                
-                matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
-                    plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
-                )
-                
-                # Format display labels
-                formatted_x_display = [format_category_display(label, language) for label in x_text]
-                formatted_y_display = [format_category_display(label, language) for label in y_text]
-                
-                # Create mappings
-                x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
-                y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
-                
-                try:
-                    # Find the indices
-                    i = y_mapping.get(clicked_y)
-                    j = x_mapping.get(clicked_x)
-                    
-                    # Try lenient matching if not found
-                    if i is None:
-                        for formatted_y, idx in y_mapping.items():
-                            if clicked_y in formatted_y or formatted_y in clicked_y:
-                                i = idx
-                                break
-                    
-                    if j is None:
-                        for formatted_x, idx in x_mapping.items():
-                            if clicked_x in formatted_x or formatted_x in clicked_x:
-                                j = idx
-                                break
-                    
-                    if i is not None and j is not None:
-                        reviews = review_matrix[i][j]
-                        
-                        # Apply sentiment filtering
-                        positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                        filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                        
-                        # Create updated review display with word filtering
-                        return create_review_display(
-                            filtered_reviews, 
-                            language, 
-                            plot_type='matrix',
-                            x_category=x_text[j],
-                            y_category=y_text[i],
-                            selected_words=selected_words
-                        ), json.dumps(selected_words)
-                        
-                except ValueError as e:
-                    print(f"Error processing matrix click data: {str(e)}")
+        # Update reviews with the current word selection
+        reviews_content, _, _, _ = update_reviews_with_filters(
+            click_data, sentiment_filter, language, plot_type, x_value, y_value, 
+            top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count, 
+            start_date, end_date, selected_words
+        )
         
-        return dash.no_update, json.dumps(selected_words)
-    
+        return reviews_content, json.dumps(selected_words)
+
     # Search-related callbacks
     @app.callback(
         Output('search-help-tooltip', 'children'),
@@ -2561,176 +2371,6 @@ def register_callbacks(app):
         
         # Default case - should not reach here
         raise dash.exceptions.PreventUpdate
-
-    def update_reviews_without_word_filtering(click_data, sentiment_filter, language, plot_type, 
-                                  x_value, y_value, top_n_x, top_n_y, search_query, 
-                                  bar_categories, bar_zoom, bar_count, start_date, end_date):
-        """Helper function to update reviews display without word filtering when clearing selection"""
-        if not click_data:
-            return dash.no_update
-            
-        search_query = search_query if search_query else ''
-        
-        if plot_type == 'bar_chart':
-            # Handle bar chart selection
-            point = click_data['points'][0]
-            clicked_category = point['x']
-            
-            # Get bar chart data
-            if not bar_categories:
-                bar_categories = ['usage', 'attribute', 'performance']
-            
-            # Handle empty string as None
-            if bar_zoom == '':
-                bar_zoom = None
-                
-            display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
-                bar_categories, bar_zoom, language, search_query, start_date, end_date
-            )
-            
-            # Apply bar count limit
-            if bar_count > 0 and bar_count < len(display_categories):
-                display_categories = display_categories[:bar_count]
-                original_categories = original_categories[:bar_count]
-                counts = counts[:bar_count]
-                sentiment_ratios = sentiment_ratios[:bar_count]
-                review_data = review_data[:bar_count]
-                colors = colors[:bar_count]
-            
-            # Create formatted category names mapping
-            formatted_to_original = {}
-            
-            # Check if we're zoomed into a parent category
-            is_zoomed = bar_zoom and bar_zoom != ''
-            
-            for i, category in enumerate(display_categories):
-                # Determine the category type prefix
-                prefix = None
-                for p in type_colors.keys():
-                    if category.startswith(p):
-                        prefix = p
-                        break
-                    
-                if prefix:
-                    category_text = category[len(prefix):]
-                    
-                    # Format based on zoom state
-                    if is_zoomed and '|' in category_text:
-                        parts = category_text.split('|')
-                        if len(parts) > 1:
-                            display_text = '|'.join(parts[1:])
-                        else:
-                            display_text = parts[0]
-                        
-                        display_text = format_category_display(display_text, language)
-                        formatted_to_original[display_text] = i
-                        
-                        for part in parts[1:]:
-                            part = part.strip()
-                            if part:
-                                formatted_part = format_category_display(part, language)
-                                formatted_to_original[formatted_part] = i
-                        
-                        full_formatted = format_category_display(category, language)
-                        formatted_to_original[full_formatted] = i
-                    else:
-                        display_text = prefix + category_text
-                        formatted = format_category_display(display_text, language)
-                        formatted_to_original[formatted] = i
-                else:
-                    formatted = format_category_display(category, language)
-                    formatted_to_original[formatted] = i
-            
-            try:
-                # Find the index of clicked category
-                idx = formatted_to_original.get(clicked_category)
-                if idx is None:
-                    try:
-                        idx = display_categories.index(clicked_category)
-                    except ValueError:
-                        for i, orig_cat in enumerate(original_categories):
-                            if orig_cat == clicked_category:
-                                idx = i
-                                break
-                
-                if idx is None:
-                    return dash.no_update
-                
-                reviews = review_data[idx]
-                
-                # Apply sentiment filtering
-                positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                
-                # Create updated review display without word filtering
-                return create_review_display(
-                    filtered_reviews, 
-                    language, 
-                    plot_type='bar_chart',
-                    x_category=display_categories[idx],
-                    selected_words=[]  # Empty list to show all reviews
-                )
-                
-            except (ValueError, IndexError) as e:
-                print(f"Error processing bar chart click data: {str(e)}")
-                return dash.no_update
-        else:
-            # Handle matrix view selection
-            point = click_data['points'][0]
-            clicked_x = point['x']
-            clicked_y = point['y']
-            
-            matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
-                plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
-            )
-            
-            # Format display labels
-            formatted_x_display = [format_category_display(label, language) for label in x_text]
-            formatted_y_display = [format_category_display(label, language) for label in y_text]
-            
-            # Create mappings
-            x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
-            y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
-            
-            try:
-                # Find the indices
-                i = y_mapping.get(clicked_y)
-                j = x_mapping.get(clicked_x)
-                
-                # Try lenient matching if not found
-                if i is None:
-                    for formatted_y, idx in y_mapping.items():
-                        if clicked_y in formatted_y or formatted_y in clicked_y:
-                            i = idx
-                            break
-                
-                if j is None:
-                    for formatted_x, idx in x_mapping.items():
-                        if clicked_x in formatted_x or formatted_x in clicked_x:
-                            j = idx
-                            break
-                
-                if i is not None and j is not None:
-                    reviews = review_matrix[i][j]
-                    
-                    # Apply sentiment filtering
-                    positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                    filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                    
-                    # Create updated review display without word filtering
-                    return create_review_display(
-                        filtered_reviews, 
-                        language, 
-                        plot_type='matrix',
-                        x_category=x_text[j],
-                        y_category=y_text[i],
-                        selected_words=[]  # Empty list to show all reviews
-                    )
-                    
-            except ValueError as e:
-                print(f"Error processing matrix click data: {str(e)}")
-        
-        return dash.no_update
 
 def create_trend_chart(display_categories, original_categories, time_series_data, language, selected_trend_lines=None):
     """Create a trend line chart figure based on the time series data."""

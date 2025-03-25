@@ -32,17 +32,33 @@ type_colors = {
 # Highlight examples
 def get_highlight_examples(language='en'):
     if language == 'en':
-        x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">Text related to X-axis</span>'
-        y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Text related to Y-axis</span>'
         pos_highlight = f'<span style="background-color: {color_mapping["+"]}; color: black; padding: 5px;">Blue background indicates positive sentiment</span>'
         neg_highlight = f'<span style="background-color: {color_mapping["-"]}; color: black; padding: 5px;">Red background indicates negative sentiment</span>'
     else:  # zh
-        x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">X轴相关文本</span>'
-        y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Y轴相关文本</span>'
         pos_highlight = f'<span style="background-color: {color_mapping["+"]}; color: black; padding: 5px;">蓝底表示满意</span>'
         neg_highlight = f'<span style="background-color: {color_mapping["-"]}; color: black; padding: 5px;">红底表示不满意</span>'
     
-    return x_highlight, y_highlight, pos_highlight, neg_highlight
+    return pos_highlight, neg_highlight
+
+def get_review_highlight(language='en', plot_type='matrix', x_category=None, y_category=None):
+    """
+    Get the appropriate review highlight based on language and plot type
+    """
+    x_highlight = ''
+    y_highlight = ''
+    if x_category:
+        if language == 'en':
+            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">Text related to {x_category}</span>'
+        else:  # zh
+            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">{x_category}相关文本</span>'
+    
+    if y_category:
+        if language == 'en':
+            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Text related to {y_category}</span>'
+        else:  # zh
+            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">{y_category}相关文本</span>'
+        
+    return x_highlight, y_highlight
 
 def get_review_format(language='en', plot_type='matrix', x_category=None, y_category=None):
     """
@@ -56,22 +72,9 @@ def get_review_format(language='en', plot_type='matrix', x_category=None, y_cate
         
     Returns:
         The formatted review format string
-    """
-    x_highlight, y_highlight, pos_highlight, neg_highlight = get_highlight_examples(language)
-    
-    # Replace placeholder text with selected category if provided
-    if x_category:
-        if language == 'en':
-            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">Text related to {x_category}</span>'
-        else:  # zh
-            x_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["x"]}; color: black; padding: 5px;">{x_category}相关文本</span>'
-    
-    if y_category:
-        if language == 'en':
-            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">Text related to {y_category}</span>'
-        else:  # zh
-            y_highlight = f'<span style="background-color: {color_mapping["?"]}; border: 5px solid {color_mapping["y"]}; color: black; padding: 5px;">{y_category}相关文本</span>'
-    
+    """ 
+    x_highlight, y_highlight = get_review_highlight(language, plot_type, x_category, y_category)
+    pos_highlight, neg_highlight = get_highlight_examples(language)
     if plot_type == 'bar_chart':
         # For bar chart, exclude the Y-axis highlight
         if language == 'en':
@@ -165,8 +168,6 @@ TRANSLATIONS = {
         'frequent_words': 'Frequent Words',
         'frequent_positive_words': 'Frequent Positive Words',
         'frequent_negative_words': 'Frequent Negative Words',
-        'x_axis_frequent_words': 'Frequent Words in X-axis Highlights',
-        'y_axis_frequent_words': 'Frequent Words in Y-axis Highlights',
         'select_all_words': 'Select All Words',
         'deselect_all_words': 'Deselect All Words',
         'showing_reviews_with': 'Showing reviews containing:',
@@ -252,8 +253,6 @@ TRANSLATIONS = {
         'frequent_words': '高频词',
         'frequent_positive_words': '高频正面词',
         'frequent_negative_words': '高频负面词',
-        'x_axis_frequent_words': 'X轴高频词',
-        'y_axis_frequent_words': 'Y轴高频词',
         'select_all_words': '全选词',
         'deselect_all_words': '全不选词',
         'showing_reviews_with': '显示包含:',
@@ -268,12 +267,6 @@ TRANSLATIONS['en']['get_bar_chart_review_format'] = lambda x_category=None: get_
 TRANSLATIONS['en']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('en', 'matrix', x_category, y_category)
 TRANSLATIONS['zh']['get_bar_chart_review_format'] = lambda x_category=None: get_review_format('zh', 'bar_chart', x_category)
 TRANSLATIONS['zh']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('zh', 'matrix', x_category, y_category)
-
-# For backward compatibility, keep the old keys but with default values
-TRANSLATIONS['en']['bar_chart_review_format'] = get_review_format('en', 'bar_chart')
-TRANSLATIONS['en']['matrix_review_format'] = get_review_format('en', 'matrix')
-TRANSLATIONS['zh']['bar_chart_review_format'] = get_review_format('zh', 'bar_chart')
-TRANSLATIONS['zh']['matrix_review_format'] = get_review_format('zh', 'matrix')
 
 # Axis category names translations
 AXIS_CATEGORY_NAMES = {
