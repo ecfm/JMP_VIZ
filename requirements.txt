@@ -5,3 +5,5 @@ gunicorn
 pandas
 flask_login
 cachetools
+nltk
+python-dateutil
