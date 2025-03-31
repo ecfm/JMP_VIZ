@@ -3,7 +3,10 @@ from cachetools import TTLCache
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310_v2")
+
+def get_result_dir(category='Cables'):
+    """Get the result directory based on the category."""
+    return os.path.join(ROOT_DIR, f"result/{category}")
 
 # Authentication configuration
 VALID_USERNAME = "xsight"

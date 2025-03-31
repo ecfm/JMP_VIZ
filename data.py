@@ -6,7 +6,7 @@ from collections import defaultdict
 from typing import Dict
 
 from config import (
-    RESULT_DIR, 
+    get_result_dir, 
     color_mapping, 
     path_dict_cache, 
     plot_data_cache
@@ -60,23 +60,28 @@ def custom_cached(cache):
         return wrapper
     return decorator
 
-# Load data
-use_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'use_path_to_sents_dict.json')))
-attr_perf_path_to_ids_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_perf_path_to_ids_dict.json')))
-attr_perf_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_perf_path_to_sents_dict.json')))
-perf_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'perf_path_to_sents_dict.json')))
-attr_path_to_ids_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_ids_dict.json')))
-attr_path_to_sents_dict = json.load(open(os.path.join(RESULT_DIR, 'attr_path_to_sents_dict.json')))
+# Global dictionary to store raw data
+raw_dict_map = {}
 
-# Map type to raw dictionaries
-raw_dict_map = {
-    'use_sents': use_path_to_sents_dict,
-    'perf_sents': perf_path_to_sents_dict,
-    'attr_sents': attr_path_to_sents_dict,
-    'attr_perf_sents': attr_perf_path_to_sents_dict,
-    'attr_ids': attr_path_to_ids_dict,
-    'attr_perf_ids': attr_perf_path_to_ids_dict
-}
+def load_data_files(category='Cables'):
+    """Load data files for the specified category."""
+    result_dir = get_result_dir(category)
+    return {
+        'use_sents': json.load(open(os.path.join(result_dir, 'use_path_to_sents_dict.json'))),
+        'attr_perf_ids': json.load(open(os.path.join(result_dir, 'attr_perf_path_to_ids_dict.json'))),
+        'attr_perf_sents': json.load(open(os.path.join(result_dir, 'attr_perf_path_to_sents_dict.json'))),
+        'perf_sents': json.load(open(os.path.join(result_dir, 'perf_path_to_sents_dict.json'))),
+        'attr_ids': json.load(open(os.path.join(result_dir, 'attr_path_to_ids_dict.json'))),
+        'attr_sents': json.load(open(os.path.join(result_dir, 'attr_path_to_sents_dict.json')))
+    }
+
+def update_raw_dict_map(category='Cables'):
+    """Update the raw dictionary map with data for the specified category."""
+    global raw_dict_map
+    raw_dict_map = load_data_files(category)
+
+# Initial load with default category
+update_raw_dict_map()
 
 def merge_values(val1, val2):
     """Merge two values together, handling different types (lists, dicts, etc)."""
@@ -218,6 +223,9 @@ def get_cached_dict(plot_type: str, category: str, search_query: str = '', start
     """
     Get filtered dictionary from cache. Can return both sents and ids dicts for attr/attr_perf.
     """
+    if plot_type not in raw_dict_map:
+        raise KeyError(f"Invalid plot type: {plot_type}. Available types: {list(raw_dict_map.keys())}")
+        
     raw_dict = raw_dict_map[plot_type]
     
     # Filter by category
@@ -230,12 +238,12 @@ def get_cached_dict(plot_type: str, category: str, search_query: str = '', start
     # If we need both sents and ids dicts
     if return_both:
         if plot_type == 'attr_perf_sents':
-            ids_dict = filter_dict(attr_perf_path_to_ids_dict, category)
+            ids_dict = filter_dict(raw_dict_map['attr_perf_ids'], category)
             # Filter ids_dict to match paths in filtered sents dict
             ids_dict = {path: ids for path, ids in ids_dict.items() 
                        if path in filtered_dict}
         elif plot_type == 'attr_sents':
-            ids_dict = filter_dict(attr_path_to_ids_dict, category)
+            ids_dict = filter_dict(raw_dict_map['attr_ids'], category)
             # Filter ids_dict to match paths in filtered sents dict
             ids_dict = {path: ids for path, ids in ids_dict.items() 
                        if path in filtered_dict}

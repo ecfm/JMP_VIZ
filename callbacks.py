@@ -13,11 +13,13 @@ from dash import dcc
 from collections import Counter
 import nltk
 from nltk.corpus import stopwords
+from urllib.parse import parse_qs
 
 from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, color_to_prefix, type_colors, get_review_format
-from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series
-from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
+from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series, update_raw_dict_map
+from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html, create_search_box
 from layouts import get_login_layout, get_main_layout
+from url_utils import get_category_from_url
 
 # Initialize NLTK stopwords
 try:
@@ -278,14 +280,13 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def login_callback(n_clicks, username, password):
-        if not n_clicks:
-            return dash.no_update, dash.no_update
-        
-        if username == VALID_USERNAME and password == VALID_PASSWORD:
-            user = User(username)
-            login_user(user)
-            return '/', ''
-        return dash.no_update, html.Div('Invalid credentials', style={'color': 'red'})
+        if n_clicks:
+            if username == VALID_USERNAME and password == VALID_PASSWORD:
+                user = User(username)
+                login_user(user)
+                return '/', ''
+            return '/login', TRANSLATIONS['en']['invalid_credentials']
+        return '/login', ''
 
     @app.callback(
         Output('url', 'pathname', allow_duplicate=True),
@@ -294,7 +295,7 @@ def register_callbacks(app):
         prevent_initial_call=True
     )
     def logout_callback(n_clicks, pathname):
-        if n_clicks is not None and n_clicks > 0:
+        if n_clicks:
             logout_user()
             return '/login'
         return pathname
@@ -1089,16 +1090,27 @@ def register_callbacks(app):
          Input('bar-zoom-dropdown', 'value'),
          Input('bar-count-slider', 'value'),
          Input('date-filter-slider', 'value'),
-         Input('url', 'pathname')],
+         Input('url', 'pathname'),
+         Input('url', 'search')],  # Add URL search parameter as input
         [State('search-input', 'value'),
          State('date-filter-storage', 'children')]
     )
     def update_visualization_and_controls(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
-                   bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search_query, date_filter_storage):
+                   bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search, search_query, date_filter_storage):
         """
         Unified callback to update both the graph visualization and UI controls.
         This eliminates redundant calculations by using helper functions for specific plot types.
         """
+        # Get category from URL search parameters
+        try:
+            query_params = parse_qs(search.lstrip('?'))
+            category = query_params.get('category', ['Cables'])[0]
+        except:
+            category = 'Cables'
+        
+        # Update data for the current category
+        update_raw_dict_map(category)
+        
         # Check which input triggered the callback
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
