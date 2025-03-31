@@ -3,7 +3,7 @@ from cachetools import TTLCache
 
 # Constants and directory setup
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
-RESULT_DIR = os.path.join(ROOT_DIR, "result/Ribbons")
+RESULT_DIR = os.path.join(ROOT_DIR, "result/Cables_495310_v2")
 
 # Authentication configuration
 VALID_USERNAME = "xsight"
@@ -28,6 +28,8 @@ type_colors = {
     'A: ': '#34A853',  # Green for Attribute
     'P: ': '#FBBC05',  # Yellow for Performance
 }
+
+color_to_prefix = {v: k for k, v in type_colors.items()}
 
 # Highlight examples
 def get_highlight_examples(language='en'):

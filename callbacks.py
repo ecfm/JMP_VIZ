@@ -14,7 +14,7 @@ from collections import Counter
 import nltk
 from nltk.corpus import stopwords
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, type_colors, get_review_format
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, color_to_prefix, type_colors, get_review_format
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series
 from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
 from layouts import get_login_layout, get_main_layout
@@ -229,7 +229,7 @@ def format_category_display(category, language):
     """
     Format category display text based on language.
     For Chinese (zh): Remove content within parentheses
-    For English (en): Extract and keep only content within parentheses
+    For English (en): Extract and keep only content within parentheses, handle hierarchy
     For other languages: Remove content within parentheses
     
     Args:
@@ -240,7 +240,19 @@ def format_category_display(category, language):
         Formatted category string
     """
     if language == 'en':
-        # For English, extract content within parentheses if present
+        # For English, handle both hierarchy and parentheses
+        if '|' in category:
+            # If there's a hierarchy, keep everything after the last '|'
+            parts = category.split('|')
+            if len(parts) > 1:
+                # Extract content within parentheses from the last part
+                last_part = parts[-1]
+                parentheses_match = re.search(r'\s*\(([^)]*)\)', last_part)
+                if parentheses_match:
+                    return parentheses_match.group(1)
+                return last_part
+        
+        # For non-hierarchical categories, extract content within parentheses if present
         parentheses_match = re.search(r'\s*\(([^)]*)\)', category)
         if parentheses_match:
             return parentheses_match.group(1)
@@ -435,30 +447,22 @@ def register_callbacks(app):
         # Check if we're zoomed into a parent category
         is_zoomed = bar_zoom and bar_zoom != ''
         
-        for category in categories:
-            # Determine the category type prefix
-            prefix = None
-            for p in type_colors.keys():
-                if category.startswith(p):
-                    prefix = p
-                    break
+        for category, color in zip(categories, colors):
+            # Get prefix based on color
+            prefix = color_to_prefix.get(color)
             
             if prefix:
-                category_text = category[len(prefix):]
-                color = type_colors[prefix]
-                
                 # Format display text based on zoom state
-                if is_zoomed and '|' in category_text:
-                    parts = category_text.split('|')
+                if is_zoomed and '|' in category:
+                    parts = category.split('|')
                     if len(parts) > 1:
                         display_text = '|'.join(parts[1:])
                     else:
                         display_text = parts[0]
-                
                 else:
-                    # Set display_text when not zoomed or no | character
-                    display_text = category_text
-                
+                    display_text = category
+                if not display_text.startswith(prefix):
+                    display_text = prefix + display_text
                 formatted_categories.append(display_text)
                 ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
             else:
@@ -513,7 +517,9 @@ def register_callbacks(app):
                 translated_label = TRANSLATIONS[language]['usage_category'] if prefix == 'U: ' else (
                     TRANSLATIONS[language]['attribute_category'] if prefix == 'A: ' else TRANSLATIONS[language]['performance_category']
                 )
-                legend_items.append(f'<span style="color:{color}; font-weight:bold; margin-right:15px;">▣ {prefix[0]} - {translated_label}</span>')
+                if not translated_label.startswith(prefix):
+                    translated_label = prefix + translated_label
+                legend_items.append(f'<span style="color:{color}; font-weight:bold; margin-right:15px;">▣ {translated_label}</span>')
         
         if legend_items:
             legend_title = TRANSLATIONS[language].get('category_types', 'Category Types')
@@ -889,17 +895,38 @@ def register_callbacks(app):
         formatted_y_labels = [format_category_display(label, language) for label in viz_y_text]
         x_options = get_options(language, x_value, viz_x_text, formatted_x_labels)
         y_options = get_options(language, y_value, viz_y_text, formatted_y_labels)
+
         # Create clean text without percentages for lookups
         if x_value == 'all':
             x_axis_text = formatted_x_labels
         else:
-            formatted_x_value = format_category_display(x_value, language)
-            x_axis_text = [path[len(formatted_x_value)+1:] for path in formatted_x_labels]
+            # For zoomed categories, show only the child categories
+            x_axis_text = []
+            for label in formatted_x_labels:
+                if '|' in label:
+                    parts = label.split('|')
+                    if len(parts) > 1:
+                        x_axis_text.append('|'.join(parts[1:]))
+                    else:
+                        x_axis_text.append(parts[0])
+                else:
+                    x_axis_text.append(label)
+
         if y_value == 'all':
             y_axis_text = formatted_y_labels
         else:
-            formatted_y_value = format_category_display(y_value, language)
-            y_axis_text = [path[len(formatted_y_value)+1:] for path in formatted_y_labels]
+            # For zoomed categories, show only the child categories
+            y_axis_text = []
+            for label in formatted_y_labels:
+                if '|' in label:
+                    parts = label.split('|')
+                    if len(parts) > 1:
+                        y_axis_text.append('|'.join(parts[1:]))
+                    else:
+                        y_axis_text.append(parts[0])
+                else:
+                    y_axis_text.append(label)
+
         # Create the heatmap figure
         fig = create_heatmap(
             viz_matrix, viz_sentiment_matrix, viz_review_matrix,
@@ -1438,7 +1465,7 @@ def register_callbacks(app):
             srcDoc=header_html,
             style={
                 'width': '100%',
-                'height': '60px',
+                'height': '90px',
                 'border': 'none',
                 'borderRadius': '3px',
                 'backgroundColor': 'white',
@@ -2482,15 +2509,21 @@ def create_trend_chart(display_categories, original_categories, time_series_data
         # Create custom data array with both date ranges and sentiments
         custom_data = np.array(list(zip(date_ranges, sentiments)))
         
-        # Format the display name for the legend
+        # Format the display name for the legend with color and prefix
         formatted_category = format_category_display(category, language)
+        if prefix:
+            if not formatted_category.startswith(prefix):
+                formatted_category = prefix + formatted_category
+            legend_name = f'<span style="color:{line_color}; font-weight:bold">{formatted_category}</span>'
+        else:
+            legend_name = f'<span style="color:{line_color}; font-weight:bold">{formatted_category}</span>'
         
         # Add line trace with visibility based on selection
         fig.add_trace(go.Scatter(
             x=dates,
             y=counts,
             mode='lines+markers',
-            name=formatted_category,
+            name=legend_name,
             line=dict(color=line_color, width=2),
             marker=dict(
                 size=10,
@@ -2523,33 +2556,16 @@ def create_trend_chart(display_categories, original_categories, time_series_data
     # Update layout for trend chart
     fig.update_layout(
         title=TRANSLATIONS[language]['trend_chart_title'],
-        xaxis=dict(
-            title=TRANSLATIONS[language]['trend_x_axis'],
-            tickangle=45,
-            tickmode='array',
-            tickvals=time_series_data['dates'],
-            tickformat='%Y-%m',  # Display dates in Year-Month format
-            ticktext=time_series_data['dates']  # Use the same dates (already in YYYY-MM format)
-        ),
-        yaxis=dict(
-            title=TRANSLATIONS[language]['trend_y_axis'],
-            rangemode='tozero',  # Start y-axis at 0
-            # Remove fixed range to allow automatic scaling when toggling lines
-            autorange=True
-        ),
+        xaxis_title=TRANSLATIONS[language]['trend_x_axis'],
+        yaxis_title=TRANSLATIONS[language]['trend_y_axis'],
+        showlegend=True,
         legend=dict(
-            orientation='h',  # Horizontal legend
-            yanchor='bottom',
-            y=1.02,
-            xanchor='right',
-            x=1,
-            title='',  # No legend title
-            font=dict(size=12),
-            itemsizing='constant',  # Make legend markers the same size
-            itemclick='toggle',     # Toggle trace visibility on click
-            itemdoubleclick='toggleothers',  # Double-click to show only this trace
-            bgcolor='rgba(255, 255, 255, 0.8)',  # Semi-transparent background
-            bordercolor='rgba(0, 0, 0, 0.1)',
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=1.05,
+            bgcolor="rgba(255, 255, 255, 0.8)",
+            bordercolor="rgba(0, 0, 0, 0.5)",
             borderwidth=1
         ),
         updatemenus=[
@@ -2568,12 +2584,16 @@ def create_trend_chart(display_categories, original_categories, time_series_data
         ],
         height=400,
         margin=dict(
-            l=60,
-            r=30,
-            t=80,
-            b=80
-        ),
-        hovermode='closest'
+            l=80,
+            r=150,
+            t=100,
+            b=80,
+            autoexpand=True
+        )
     )
+    
+    # Set y-axis range with some padding
+    if max_y_value > 0:
+        fig.update_yaxes(range=[0, max_y_value * 1.1])
     
     return fig
