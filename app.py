@@ -2,6 +2,8 @@ import os
 import dash
 from flask_login import LoginManager
 from dash import html, dcc
+from dash.dependencies import Input, Output, State
+from urllib.parse import parse_qs
 
 from layouts import get_app_layout
 from callbacks import register_callbacks, User
@@ -53,6 +55,35 @@ app.index_string = '''
     </body>
 </html>
 '''
+
+# Add callback to parse URL parameters for language and category selection
+@app.callback(
+    [Output('app-language-state', 'children'),
+     Output('category-state', 'children')],
+    [Input('url', 'search')]
+)
+def update_parameters_from_url(search):
+    """Parse URL parameters for language and category and update state."""
+    # Default values
+    lang = 'zh'  # Default to Chinese
+    category = 'Cables'  # Default category
+    
+    if search:
+        # Parse the query string
+        params = parse_qs(search.lstrip('?'))
+        
+        # Get language parameter
+        if 'lang' in params:
+            temp_lang = params['lang'][0]
+            # Validate the language parameter
+            if temp_lang in ['en', 'zh']:
+                lang = temp_lang
+        
+        # Get category parameter
+        if 'category' in params:
+            category = params['category'][0]
+    
+    return lang, category
 
 # Register all callbacks
 register_callbacks(app)

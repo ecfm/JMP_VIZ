@@ -454,9 +454,18 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
                 return None
 
         # Apply search query filter if provided
-        # Use full_review_text for filtering
-        if query_filter and not query_filter(review_info['full_review_text'].lower()):
-            return None
+        # Use full_review_text for filtering and check product_id
+        if query_filter:
+            review_text = review_info['full_review_text'].lower()
+            product_id = review_info['product_id'].lower()
+            highlight_detail = review_info['highlight_detail_text'].lower() if review_info['highlight_detail_text'] else ""
+            highlight_reason = review_info['highlight_reason_text'].lower() if review_info['highlight_reason_text'] else ""
+            
+            if not (query_filter(review_text) or 
+                    query_filter(product_id) or
+                    query_filter(highlight_detail) or
+                    (highlight_reason and query_filter(highlight_reason))):
+                return None
 
         # Return the processed review dictionary
         return review_info
@@ -578,6 +587,8 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             
             # Create a compiled filter function to avoid re-evaluation
             try:
+                # We don't need to modify the filter expression - our filter function in extract_and_filter_review
+                # will apply the search query to both review_text and product_id
                 filter_code = compile(f"lambda review_text: {filter_expr}", "<string>", "eval")
                 query_filter = eval(filter_code, {"__builtins__": {}})
             except Exception as e:
@@ -957,14 +968,23 @@ def get_category_time_series(categories, display_categories, original_categories
         dict_type = mapping['dict_type']
         prefix = mapping['prefix']
         
+        # Determine if we should filter for a specific category within this category type
+        category_filter = None
+        if zoom_category and zoom_category != 'all':
+            # Check if the zoom category starts with this prefix
+            if zoom_category.startswith(prefix):
+                # Remove the prefix to get the actual path
+                category_filter = zoom_category[len(prefix):]
+            # If zoom_category doesn't start with this prefix, we're looking at a different category type
+            # so we'll skip filtering for this category type
+        
         # Get the dictionary for this category type, applying filters
-        # This should now return dicts with review_info dictionaries
-        category_dict = get_cached_dict(dict_type, zoom_category if zoom_category else 'all',
-                                        search_query, start_date, end_date)
+        category_dict = get_cached_dict(dict_type, category_filter if category_filter else 'all',
+                                       search_query, start_date, end_date)
 
         # Process each category path
         for category_path, sents_dict in category_dict.items():
-            # Get display name similar to bar chart logic
+            # Get display name with prefix
             if zoom_category:
                 if '|' in category_path:
                     display_name = prefix + category_path

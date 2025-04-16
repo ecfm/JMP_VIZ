@@ -14,23 +14,39 @@ def get_login_layout(language='en'):
                     id='username-input',
                     type='text',
                     placeholder=TRANSLATIONS[language]['enter_username'],
-                    style={'width': '100%', 'marginBottom': '10px'}
+                    style={'width': '100%', 'marginBottom': '10px'},
+                    value=''  # Initialize with empty string
                 ),
                 html.Label(TRANSLATIONS[language]['password']),
                 dcc.Input(
                     id='password-input',
                     type='password',
                     placeholder=TRANSLATIONS[language]['enter_password'],
-                    style={'width': '100%', 'marginBottom': '10px'}
+                    style={'width': '100%', 'marginBottom': '20px'},
+                    value=''  # Initialize with empty string
                 ),
-                html.Button(TRANSLATIONS[language]['login'], id='login-button', n_clicks=0),
-                html.Div(id='login-error')
+                html.Button(
+                    TRANSLATIONS[language]['login'], 
+                    id='login-button', 
+                    n_clicks=0,
+                    style={
+                        'backgroundColor': '#4CAF50',
+                        'color': 'white',
+                        'border': 'none',
+                        'padding': '10px 20px',
+                        'cursor': 'pointer',
+                        'width': '100%',
+                        'borderRadius': '4px'
+                    }
+                ),
+                html.Div(id='login-error', style={'color': 'red', 'marginTop': '10px', 'textAlign': 'center'})
             ], style={
                 'width': '300px',
                 'margin': '0 auto',
                 'padding': '20px',
                 'border': '1px solid #ddd',
-                'borderRadius': '5px'
+                'borderRadius': '5px',
+                'backgroundColor': '#f9f9f9'
             })
         ])
     ])
@@ -169,26 +185,16 @@ def get_main_layout(language='zh'):
     
     return html.Div([
         html.Div([
-            # Create a header area with logout and language selector
+            # Create a header area with logout button only
             html.Div([
                 html.Div([
-                    # Single visible language selector
-                    dcc.RadioItems(
-                        id='language-selector',
-                        options=[
-                            {'label': 'English', 'value': 'en'},
-                            {'label': '中文', 'value': 'zh'}
-                        ],
-                        value=language,  # Use the current language value
-                        style={'float': 'left', 'margin': '20px'}
-                    ),
                     # Logout button
                     html.Button(
                         TRANSLATIONS[language]['logout'], 
                         id='logout-button', 
                         style={'float': 'right', 'margin': '20px'}
                     ),
-                ], style={'display': 'flex', 'justifyContent': 'space-between', 'width': '100%'})
+                ], style={'display': 'flex', 'justifyContent': 'flex-end', 'width': '100%'})
             ], style={'marginBottom': '10px', 'borderBottom': '1px solid #ddd', 'paddingBottom': '5px'}),
             
             # Add a div to display total reviews count in a box with border
@@ -292,7 +298,9 @@ def get_main_layout(language='zh'):
                     }
                 )
             ], style={'borderTop': '3px double #ddd'})
-        ])
+        ]),
+        # Hidden div to store language state
+        html.Div(id='language-state', children=language, style={'display': 'none'})
     ])
 
 
@@ -302,14 +310,18 @@ def get_app_layout():
         dcc.Location(id='url', refresh=False),
         # Login content - initially hidden
         html.Div(
-            get_login_layout('zh'),  # Default to English
+            get_login_layout('zh'),  # Default to Chinese 
             id='login-content',
             style={'display': 'none'}
         ),
         # Main content - initially hidden
         html.Div(
-            get_main_layout('zh'),  # Default to English
+            get_main_layout('zh'),  # Default to Chinese
             id='main-content',
             style={'display': 'none'}
-        )
+        ),
+        # Hidden div to store language state at app level
+        html.Div(id='app-language-state', children='zh', style={'display': 'none'}),
+        # Hidden div to store category state at app level
+        html.Div(id='category-state', children='Cables', style={'display': 'none'})
     ]) 

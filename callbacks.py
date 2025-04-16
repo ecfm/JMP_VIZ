@@ -3,7 +3,7 @@ from dash import Input, Output, State, html
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
-from flask_login import login_user, logout_user, UserMixin
+from flask_login import login_user, logout_user, UserMixin, current_user
 import re
 import json
 from datetime import datetime, timedelta
@@ -266,6 +266,14 @@ def format_category_display(category, language):
     Returns:
         Formatted category string
     """
+    # Extract prefix if present (U:, A:, P:)
+    prefix = ""
+    for p in type_colors.keys():
+        if category.startswith(p):
+            prefix = p
+            category = category[len(p):]  # Remove prefix temporarily
+            break
+            
     if language == 'en':
         # For English, handle both hierarchy and parentheses
         if '|' in category:
@@ -276,60 +284,98 @@ def format_category_display(category, language):
                 last_part = parts[-1]
                 parentheses_match = re.search(r'\s*\(([^)]*)\)', last_part)
                 if parentheses_match:
-                    return parentheses_match.group(1)
-                return last_part
-        
-        # For non-hierarchical categories, extract content within parentheses if present
-        parentheses_match = re.search(r'\s*\(([^)]*)\)', category)
-        if parentheses_match:
-            return parentheses_match.group(1)
-        return category
+                    formatted = parentheses_match.group(1)
+                else:
+                    formatted = last_part
+            else:
+                formatted = category
+        else:
+            # For non-hierarchical categories, extract content within parentheses if present
+            parentheses_match = re.search(r'\s*\(([^)]*)\)', category)
+            if parentheses_match:
+                formatted = parentheses_match.group(1)
+            else:
+                formatted = category
     else:
         # For Chinese and other languages, remove content within parentheses
-        return re.sub(r'\s*\([^)]*\)', '', category)
+        formatted = re.sub(r'\s*\([^)]*\)', '', category)
+    
+    # Reapply the prefix if it was present
+    if prefix:
+        return prefix + formatted
+    return formatted
 
 # User class for authentication
 class User(UserMixin):
     def __init__(self, username):
         self.id = username
+        
+    def is_authenticated(self):
+        return True
+        
+    def is_active(self):
+        return True
+        
+    def is_anonymous(self):
+        return False
+        
+    def get_id(self):
+        return self.id
 
 def register_callbacks(app):
     """Register all callbacks with the app."""
     
     @app.callback(
         [Output('url', 'pathname'),
-        Output('login-error', 'children')],
-        [Input('login-button', 'n_clicks'),
-        Input('username-input', 'value'),
-        Input('password-input', 'value')],
+         Output('url', 'search'),
+         Output('login-error', 'children')],
+        [Input('login-button', 'n_clicks')],
+        [State('username-input', 'value'),
+         State('password-input', 'value'),
+         State('app-language-state', 'children'),
+         State('category-state', 'children')],
         prevent_initial_call=True
     )
-    def login_callback(n_clicks, username, password):
-        if n_clicks:
-            if username == VALID_USERNAME and password == VALID_PASSWORD:
-                user = User(username)
-                login_user(user)
-                return '/', ''
-            return '/login', TRANSLATIONS['en']['invalid_credentials']
-        return '/login', ''
+    def login_callback(n_clicks, username, password, language, category):
+        if not n_clicks:
+            raise dash.exceptions.PreventUpdate
+            
+        # Check if username and password are None or empty
+        if not username or not password:
+            return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials']
+            
+        if username == VALID_USERNAME and password == VALID_PASSWORD:
+            user = User(username)
+            login_success = login_user(user)
+            
+            # Return to home page with language and category parameters preserved
+            return '/', f'?lang={language}&category={category}', ''
+        
+        # Return to login page with error and parameters
+        return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials']
 
     @app.callback(
-        Output('url', 'pathname', allow_duplicate=True),
+        [Output('url', 'pathname', allow_duplicate=True),
+         Output('url', 'search', allow_duplicate=True)],
         [Input('logout-button', 'n_clicks')],
-        [State('url', 'pathname')],
+        [State('url', 'pathname'),
+         State('app-language-state', 'children'),
+         State('category-state', 'children')],
         prevent_initial_call=True
     )
-    def logout_callback(n_clicks, pathname):
+    def logout_callback(n_clicks, pathname, language, category):
         if n_clicks:
             logout_user()
-            return '/login'
-        return pathname
+            # Redirect to login page with parameters
+            return '/login', f'?lang={language}&category={category}'
+        # Default case - stay on current page
+        return pathname, f'?lang={language}&category={category}'
 
     # Language-dependent callbacks
     @app.callback(
         [Output('plot-type-label', 'children'),
         Output('plot-type', 'options')],
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_plot_type_labels(language):
         options = [
@@ -361,7 +407,7 @@ def register_callbacks(app):
          Output('bar-zoom-label', 'children'),
          Output('bar-count-label', 'children'),
          Output('bar-category-checklist', 'options')],
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_bar_chart_labels(language):
         options = [
@@ -380,7 +426,7 @@ def register_callbacks(app):
         Output('bar-count-slider', 'max'),
         [Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
-         Input('language-selector', 'value'),
+         Input('app-language-state', 'children'),
          Input('search-button', 'n_clicks'),
          Input('date-filter-slider', 'value')],
         [State('search-input', 'value'),
@@ -409,7 +455,7 @@ def register_callbacks(app):
          Output('x-axis-label', 'children'),
          Output('num-y-features-label', 'children'),
          Output('num-x-features-label', 'children')],
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_axis_labels(language):
         return (
@@ -468,31 +514,22 @@ def register_callbacks(app):
         
         # Create custom x-axis ticktext with colored category labels
         ticktext = []
-        formatted_categories = []
         
         # Check if we're zoomed into a parent category
         is_zoomed = bar_zoom and bar_zoom != ''
         
-        for category, color in zip(categories, colors):
-            # Get prefix based on color
-            prefix = color_to_prefix.get(color)
+        for category in categories:
+            # Determine the color based on the category prefix
+            category_color = None
+            for prefix, color_value in type_colors.items():
+                if category.startswith(prefix):
+                    category_color = color_value
+                    break
             
-            if prefix:
-                # Format display text based on zoom state
-                if is_zoomed and '|' in category:
-                    parts = category.split('|')
-                    if len(parts) > 1:
-                        display_text = '|'.join(parts[1:])
-                    else:
-                        display_text = parts[0]
-                else:
-                    display_text = category
-                if not display_text.startswith(prefix):
-                    display_text = prefix + display_text
-                formatted_categories.append(display_text)
-                ticktext.append(f'<span style="color:{color}; font-weight:bold">{display_text}</span>')
+            # Format display text with colored labels in HTML
+            if category_color:
+                ticktext.append(f'<span style="color:{category_color}; font-weight:bold">{category}</span>')
             else:
-                formatted_categories.append(category)
                 ticktext.append(category)
         
         # Update layout for bar chart
@@ -579,11 +616,28 @@ def register_callbacks(app):
                 current_val = '|'.join(parts[:i+1])
                 display_current_val = format_category_display(current_val, language)
                 prefix = '--' * (i+1)
-                levels.append({'label': f'{prefix} {display_current_val} [L{i+1}] ', 'value': current_val})
-            remained_paths = [{'label': f'{"--" * (len(parts)+1)} {display_path} [L{len(parts)+1}]', 'value': path} for path, display_path in zip(top_paths, top_display_paths)]
+                levels.append({'label': f'{prefix} {display_current_val} [L{i+1}]', 'value': current_val})
+            
+            # Format remaining paths
+            remained_paths = []
+            for path, display_path in zip(top_paths, top_display_paths):
+                prefix = '--' * (len(parts)+1)
+                remained_paths.append({
+                    'label': f'{prefix} {display_path} [L{len(parts)+1}]', 
+                    'value': path
+                })
+                
             return levels + remained_paths
         else:
-            return levels + [{'label': f'-- {display_path} [L1]', 'value': path} for path, display_path in zip(top_paths, top_display_paths)]
+            # Format top-level paths
+            top_level_paths = []
+            for path, display_path in zip(top_paths, top_display_paths):
+                top_level_paths.append({
+                    'label': f'-- {display_path} [L1]',
+                    'value': path
+                })
+                
+            return levels + top_level_paths
 
     def create_heatmap(matrix, sentiment_matrix, review_matrix, x_text, y_text, language, plot_type):
         """Create a heatmap figure based on the provided data."""
@@ -1122,7 +1176,7 @@ def register_callbacks(app):
          Input('y-axis-dropdown', 'value'),
          Input('x-features-slider', 'value'),
          Input('y-features-slider', 'value'),
-         Input('language-selector', 'value'),
+         Input('app-language-state', 'children'),
          Input('search-button', 'n_clicks'),
          Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
@@ -1228,7 +1282,7 @@ def register_callbacks(app):
                 review_count_text = f"{TRANSLATIONS[language].get('total_reviews_filtered', 'Total reviews matching filter')}: {total_reviews}"
             else:
                 review_count_text = f"{TRANSLATIONS[language].get('total_reviews', 'Total reviews')}: {total_reviews}"
-        elif trigger_id == 'language-selector.value':
+        elif trigger_id == 'app-language-state.value':
             # Just update the text without recounting when language changes
             # Get the current text and extract the number
             current_text = dash.callback_context.states.get('total-reviews-count.children')
@@ -1941,7 +1995,7 @@ def register_callbacks(app):
          Output('selected-words-storage', 'children', allow_duplicate=True)],
         [Input('sentiment-filter', 'value'),
          Input('main-figure', 'clickData'),
-         Input('language-selector', 'value')],
+         Input('app-language-state', 'children')],
         [State('plot-type', 'value'),
          State('x-axis-dropdown', 'value'),
          State('y-axis-dropdown', 'value'),
@@ -2011,7 +2065,7 @@ def register_callbacks(app):
         [State('selected-words-storage', 'children'),
          State('sentiment-filter', 'value'),
          State('main-figure', 'clickData'),
-         State('language-selector', 'value'),
+         State('app-language-state', 'children'),
          State('plot-type', 'value'),
          State('x-axis-dropdown', 'value'),
          State('y-axis-dropdown', 'value'),
@@ -2076,7 +2130,7 @@ def register_callbacks(app):
     # Search-related callbacks
     @app.callback(
         Output('search-help-tooltip', 'children'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_search_help_tooltip(language):
         return get_search_examples_html(language)
@@ -2125,7 +2179,7 @@ def register_callbacks(app):
 
     @app.callback(
         Output('search-input', 'placeholder'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_search_placeholder(language):
         return TRANSLATIONS[language]['search_placeholder']
@@ -2143,7 +2197,7 @@ def register_callbacks(app):
     @app.callback(
         Output('search-results-info', 'children'),
         [Input('search-button', 'n_clicks'),
-        Input('language-selector', 'value'),
+        Input('app-language-state', 'children'),
         Input('date-filter-slider', 'value')],
         [State('search-input', 'value'),
         State('plot-type', 'value'),
@@ -2233,7 +2287,7 @@ def register_callbacks(app):
 
     @app.callback(
         Output('sentiment-filter', 'options'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_sentiment_filter_options(language):
         return [
@@ -2247,7 +2301,7 @@ def register_callbacks(app):
         Output('date-range-display', 'children'),
         [Input('date-filter-slider', 'value'),
          Input('date-filter-storage', 'children'),
-         Input('language-selector', 'value')]
+         Input('app-language-state', 'children')]
     )
     def update_date_display(slider_value, date_filter_storage, language):
         if not slider_value or not date_filter_storage:
@@ -2421,7 +2475,7 @@ def register_callbacks(app):
          Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
          Input('bar-count-slider', 'value'),
-         Input('language-selector', 'value'),
+         Input('app-language-state', 'children'),
          Input('search-button', 'n_clicks'),
          Input('date-filter-slider', 'value'),
          Input('time-bucket-dropdown', 'value')],
@@ -2446,7 +2500,7 @@ def register_callbacks(app):
         # Handle empty values with defaults
         if not bar_categories:
             bar_categories = ['usage', 'attribute', 'performance']
-        if bar_zoom_value is None:
+        if bar_zoom_value is None or bar_zoom_value == '':
             bar_zoom_value = 'all'
         if time_bucket is None:
             time_bucket = '3month'
@@ -2466,18 +2520,12 @@ def register_callbacks(app):
             display_categories = display_categories[:bar_count]
             original_categories = original_categories[:bar_count]
             
-        # Initialize time series data
-        time_series_data = {
-            'dates': [],
-            'category_data': {cat: {'counts': [], 'sentiment': []} for cat in display_categories},
-            'time_bucket': time_bucket  # Add time_bucket to the returned data
-        }
-        
         # Get time series data for the trend chart
+        # Note: We pass the original display_categories with prefixes
         time_series_data = get_category_time_series(
             bar_categories, display_categories, original_categories, 
             bar_zoom_value, language, search_query, start_date, end_date, 
-            time_bucket=time_bucket  # Use the selected time bucket
+            time_bucket=time_bucket
         )
         
         # Create the trend chart - initially show all lines
@@ -2485,20 +2533,33 @@ def register_callbacks(app):
                               if cat in time_series_data['category_data'] and 
                                  any(count > 0 for count in time_series_data['category_data'][cat]['counts'])]
         
+        # If we have no trend lines with data, check if there's an issue with missing prefixes
+        if not selected_trend_lines and display_categories:
+            # Create a fallback figure with an informative message
+            fig = go.Figure()
+            fig.add_annotation(
+                x=0.5, y=0.5,
+                text="No time series data available for the selected categories",
+                font=dict(size=16),
+                showarrow=False,
+                xref="paper", yref="paper"
+            )
+            return fig
+            
         fig = create_trend_chart(display_categories, original_categories, time_series_data, language, selected_trend_lines)
         
         return fig
 
     @app.callback(
         Output('time-bucket-label', 'children'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_time_bucket_label(language):
         return TRANSLATIONS[language].get('time_bucket_label', 'Time interval:')
 
     @app.callback(
         Output('trend-line-selector-label', 'children'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_trend_line_selector_label(language):
         return TRANSLATIONS[language].get('trend_line_selector_label', 'Select trend lines to display:')
@@ -2511,7 +2572,7 @@ def register_callbacks(app):
          Input('bar-category-checklist', 'value'),
          Input('bar-zoom-dropdown', 'value'),
          Input('bar-count-slider', 'value'),
-         Input('language-selector', 'value'),
+         Input('app-language-state', 'children'),
          Input('date-filter-slider', 'value')],
         [State('search-input', 'value'),
          State('date-filter-storage', 'children'),
@@ -2580,7 +2641,7 @@ def register_callbacks(app):
 
     @app.callback(
         Output('time-bucket-dropdown', 'options'),
-        [Input('language-selector', 'value')]
+        [Input('app-language-state', 'children')]
     )
     def update_time_bucket_options(language):
         return [
@@ -2615,6 +2676,70 @@ def register_callbacks(app):
             return []
         
         # Default case - should not reach here
+        raise dash.exceptions.PreventUpdate
+
+    # Add URL pathname callback for login vs main content display
+    @app.callback(
+        [Output('login-content', 'style', allow_duplicate=True),
+         Output('main-content', 'style', allow_duplicate=True)],
+        [Input('url', 'pathname')],
+        [State('app-language-state', 'children'),
+         State('category-state', 'children')],
+        prevent_initial_call=True
+    )
+    def display_page(pathname, language, category):
+        """Display login page or main content based on URL pathname and authentication status."""
+        # Check if the user is authenticated
+        from flask_login import current_user
+        
+        # Main logic: show login page unless authenticated and on main page
+        if pathname == '/' and current_user.is_authenticated:
+            return {'display': 'none'}, {'display': 'block'}  # Show main content
+        else:
+            return {'display': 'block'}, {'display': 'none'}  # Show login page
+
+    # Add callback to update login page content based on language
+    @app.callback(
+        Output('login-content', 'children'),
+        [Input('app-language-state', 'children')]
+    )
+    def update_login_content(language):
+        """Update login page content based on the selected language."""
+        from layouts import get_login_layout
+        return get_login_layout(language)
+
+    # Add callback to update main page content based on language
+    @app.callback(
+        Output('main-content', 'children'),
+        [Input('app-language-state', 'children')]
+    )
+    def update_main_content(language):
+        """Update main page content based on the selected language."""
+        from layouts import get_main_layout
+        return get_main_layout(language)
+
+    @app.callback(
+        [Output('url', 'pathname', allow_duplicate=True),
+         Output('url', 'search', allow_duplicate=True)],
+        [Input('url', 'pathname')],
+        [State('url', 'search'),
+         State('app-language-state', 'children'),
+         State('category-state', 'children')],
+        prevent_initial_call=True
+    )
+    def check_auth_and_redirect(pathname, search, language, category):
+        """Check user authentication and redirect if necessary."""
+        from flask_login import current_user
+        
+        # If user is not authenticated and tries to access any page other than login, redirect to login
+        if pathname != '/login' and not current_user.is_authenticated:
+            return '/login', f'?lang={language}&category={category}'
+            
+        # If user is authenticated and tries to access login page, redirect to main page
+        if pathname == '/login' and current_user.is_authenticated:
+            return '/', f'?lang={language}&category={category}'
+            
+        # Otherwise, don't change the URL
         raise dash.exceptions.PreventUpdate
 
 def create_trend_chart(display_categories, original_categories, time_series_data, language, selected_trend_lines=None):
