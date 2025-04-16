@@ -199,7 +199,7 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
         # Calculate font size based on frequency (between 9 and 19)
         # Find the max count to normalize
         max_count = max([c for _, c in word_counts])
-        font_size = 9 + (count / max_count) * 10
+        font_size = 13 + (count / max_count) * 6
         
         # Determine if this word is selected
         is_selected = word in selected_words
