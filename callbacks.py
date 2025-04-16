@@ -20,7 +20,7 @@ from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASS
 # Removed get_review_format import as it's handled differently
 # Make sure get_review_format is removed or adapted if it was used elsewhere
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series, update_raw_dict_map
-from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
+from utils import ratio_to_rgb, get_size_legend_translations, get_hover_translations, get_proportional_size, get_search_examples_html
 
 # Initialize NLTK stopwords
 try:
@@ -664,16 +664,19 @@ def register_callbacks(app):
         for i in range(len(y_text)):
             for j in range(len(x_text)):
                 if matrix[i, j] > 0:
-                    box_width = get_log_width(matrix[i, j], max_mentions, min_mentions)
+                    # Calculate square size based on the value
+                    square_size = get_proportional_size(matrix[i, j], max_mentions, min_mentions)
+                    # Create a square centered at (j,i)
                     fig.add_shape(
                         type="rect",
-                        x0=j-box_width/2, y0=i-0.4, x1=j+box_width/2, y1=i+0.4,
+                        x0=j-square_size/2, y0=i-square_size/2, 
+                        x1=j+square_size/2, y1=i+square_size/2,
                         fillcolor=ratio_to_rgb(sentiment_matrix[i, j]),
                         line_color="rgba(0,0,0,0)",
                     )
         
         # Add legend and examples
-        width_legend_text = get_width_legend_translations(language)['explanation']
+        size_legend_text = get_size_legend_translations(language)['explanation']
         
         # Find a good example box
         if np.any(matrix > 0):
@@ -684,9 +687,10 @@ def register_callbacks(app):
         
         # Constants for example box and explanation
         EXAMPLE_BOX_LEFT = 1.08
-        EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + 0.1
-        EXAMPLE_BOX_BOTTOM = 0.95 
-        EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + 0.06
+        EXAMPLE_BOX_SIZE = 0.1  # Make a square
+        EXAMPLE_BOX_RIGHT = EXAMPLE_BOX_LEFT + EXAMPLE_BOX_SIZE
+        EXAMPLE_BOX_BOTTOM = 0.95
+        EXAMPLE_BOX_TOP = EXAMPLE_BOX_BOTTOM + EXAMPLE_BOX_SIZE
         BRACKET_TOP = EXAMPLE_BOX_TOP + 0.02
         BRACKET_VERTICAL_LENGTH = 0.015
         EXPLANATION_X = EXAMPLE_BOX_LEFT + (EXAMPLE_BOX_RIGHT - EXAMPLE_BOX_LEFT) * 1.5
@@ -697,14 +701,14 @@ def register_callbacks(app):
             xref="paper", yref="paper", 
             x=EXPLANATION_X,
             y=EXPLANATION_Y,
-            text=width_legend_text,
+            text=size_legend_text,
             showarrow=False,
             font=dict(size=13),
             align="right",
             width=220
         )
         
-        # Add the example box
+        # Add the example box (now a square)
         fig.add_shape(
             type="rect",
             xref="paper", yref="paper",

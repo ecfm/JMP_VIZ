@@ -83,14 +83,14 @@ def create_search_box(language='en'):
         ], style={'marginBottom': '20px'})
     ])
     
-def get_width_legend_translations(language):
-    """Return width legend translations for the given language."""
+def get_size_legend_translations(language):
+    """Return size legend translations for the given language."""
     return {
         'en': {
-            'explanation': "Width is proportional to log(#reviews)"
+            'explanation': "Square size is proportional to number of mentions"
         },
         'zh': {
-            'explanation': "宽度与log(评论数量)成正比"
+            'explanation': "方块大小与提及次数成正比"
         }
     }[language]
 
@@ -105,18 +105,22 @@ def get_hover_translations(language):
         'hover_satisfaction': TRANSLATIONS[language]['hover_satisfaction']
     }
 
-def get_log_width(value, max_val, min_val):
-    """Calculate a logarithmic width for visualization."""
+def get_proportional_size(value, max_val, min_val):
+    """Calculate a square size that makes area proportional to the value."""
     import numpy as np
     
     if value == 0:
         return 0
-    # Add 1 to avoid log(1) = 0
-    log_val = np.log(value + 2)
-    log_max = np.log(max_val + 1)
-    log_min = np.log(min_val + 1)
-    # Normalize to 0.8 max width
-    return 0.8 * (value) / (max_val  + 0.000001)
+    
+    # For a square, area = size^2
+    # To make area proportional to value, size should be proportional to sqrt(value)
+    
+    # Add small epsilon to avoid division by zero
+    epsilon = 0.000001
+    
+    # Calculate sqrt(value)/sqrt(max_val) * 0.8
+    # The 0.8 factor is to ensure squares don't overlap too much
+    return 0.8 * np.sqrt(value) / (np.sqrt(max_val) + epsilon)
 
 def get_search_examples_html(language):
     """Return search examples HTML for the given language."""
