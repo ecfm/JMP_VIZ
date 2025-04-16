@@ -3,7 +3,7 @@ from dash import Input, Output, State, html
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
-from flask_login import login_user, logout_user, current_user, UserMixin
+from flask_login import login_user, logout_user, UserMixin
 import re
 import json
 from datetime import datetime, timedelta
@@ -14,12 +14,13 @@ from collections import Counter
 import nltk
 from nltk.corpus import stopwords
 from urllib.parse import parse_qs
+from typing import List, Dict, Optional, Tuple # Added types
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, get_highlight_examples, color_mapping, color_to_prefix, type_colors, get_review_format
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, color_mapping, color_to_prefix, type_colors
+# Removed get_review_format import as it's handled differently
+# Make sure get_review_format is removed or adapted if it was used elsewhere
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series, update_raw_dict_map
-from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html, create_search_box
-from layouts import get_login_layout, get_main_layout
-from url_utils import get_category_from_url
+from utils import ratio_to_rgb, get_width_legend_translations, get_hover_translations, get_log_width, get_search_examples_html
 
 # Initialize NLTK stopwords
 try:
@@ -29,81 +30,105 @@ except LookupError:
 STOPWORDS = set(stopwords.words('english'))
 STOPWORDS.update(['said', 'would', 'also', 'could', 'one', 'like', 'still', 'even', 'get', 'use', 'used'])
 
-def extract_text_from_review(review):
+def extract_text_from_review(review_info: Dict) -> str:
     """
-    Extract plain text from a review HTML string.
-    Remove HTML tags and other non-text content.
+    Extract plain text (title + content) from a review_info dictionary.
     
     Args:
-        review: HTML-formatted review string
+        review_info: Dictionary from extract_review_info
         
     Returns:
-        Plain text content of the review
+        Plain text content of the review (title + content)
     """
-    # Extract text between </span> and the end - this is the review content without the highlights
-    text_match = re.search(r'</span>\s*(.*?)$', review)
-    if text_match:
-        return text_match.group(1)
-    # If no match, try to remove all HTML tags
-    return re.sub(r'<[^>]+>', '', review)
+    if not review_info:
+        return ""
+    # Combine title and content for full text
+    title = review_info.get('review_title', '')
+    content = review_info.get('review_content', '')
+    # Return raw title + content, stripping extra spaces
+    # The full_review_text already has <b> tags, we need the content part
+    return f"{title} {content}".strip()
 
-def extract_highlight_text(review, axis='x'):
+def extract_highlight_text(review_info: Dict, axis='x') -> str:
     """
-    Extract text from highlights for a specific axis.
+    Extract text from highlights (detail or reason) for a specific axis.
     
     Args:
-        review: HTML-formatted review string
-        axis: 'x' or 'y' to specify which axis highlights to extract
+        review_info: Dictionary from extract_review_info
+        axis: 'x' (detail) or 'y' (reason) to specify which highlight text to extract
         
     Returns:
-        List of words from highlights
+        The highlight text (detail or reason)
     """
-    # Look for text within spans that have the specified axis border
-    pattern = f'border: [^}}]*{color_mapping[axis]}[^>]*>([^<]+)</span>'
-    matches = re.findall(pattern, review)
-    return ' '.join(matches) if matches else ''
+    if not review_info:
+        return ""
+    if axis == 'x':
+        return review_info.get('highlight_detail_text', '')
+    elif axis == 'y':
+        return review_info.get('highlight_reason_text', '') or '' # Return empty string if None
+    return ""
 
-def get_frequent_words(reviews, sentiment=None, axis=None, num_words=15):
+def get_all_ngrams_from_review(review_info: Dict) -> List[str]:
+    """Extract all ngram texts from a review_info dictionary."""
+    if not review_info:
+        return []
+    ngrams = []
+    ngrams.extend([ngram['text'] for ngram in review_info.get('highlight_detail_ngrams', [])])
+    ngrams.extend([ngram['text'] for ngram in review_info.get('highlight_reason_ngrams', [])])
+    ngrams.extend([ngram['text'] for ngram in review_info.get('review_ngrams', [])])
+    return [ngram.lower() for ngram in ngrams]
+
+def get_frequent_words(
+    review_dicts: List[Dict],
+    axis: Optional[str] = None,
+    num_words: int = 15
+) -> List[Tuple[str, int]]:
     """
-    Extract the most frequent words from a set of reviews.
+    Extract the most frequent words/ngrams from a list of review dictionaries.
     
     Args:
-        reviews: List of review HTML strings
-        sentiment: Filter reviews by sentiment ('positive', 'negative', or None for all)
-        axis: 'x' or 'y' to specify which axis highlights to extract, or None for full text
-        num_words: Number of top words to return
+        review_dicts: List of review dictionaries from extract_review_info
+        axis: 'x' (detail) or 'y' (reason) to extract highlight text, or None for full text
+        num_words: Number of top words/ngrams to return
         
     Returns:
-        List of (word, count) tuples for the most frequent words
+        List of (word, count) tuples for the most frequent words/ngrams
     """
-    all_text = []
-    
-    # Filter reviews by sentiment if specified
-    if sentiment == 'positive':
-        reviews = [r for r in reviews if 'background-color: #E6F3FF' in r]
-    elif sentiment == 'negative':
-        reviews = [r for r in reviews if 'background-color: #FFE6E6' in r]
-    
-    # Extract text based on whether we want highlight text or full text
-    for review in reviews:
-        if axis:
-            text = extract_highlight_text(review, axis)
+    all_ngrams = []
+    all_words_text = []
+
+    # Remove None entries
+    filtered_reviews = [r for r in review_dicts if r]
+
+    # Extract text and ngrams from the filtered reviews
+    for review_info in filtered_reviews:
+        # Extract ngrams based on axis parameter
+        if axis == 'x':
+            # Only get ngrams from highlight_detail_ngrams for X-axis
+            detail_ngrams = [ngram['text'].lower() for ngram in review_info.get('highlight_detail_ngrams', [])]
+            all_ngrams.extend(detail_ngrams)
+        elif axis == 'y':
+            # Only get ngrams from highlight_reason_ngrams for Y-axis
+            reason_ngrams = [ngram['text'].lower() for ngram in review_info.get('highlight_reason_ngrams', [])]
+            all_ngrams.extend(reason_ngrams)
         else:
-            text = extract_text_from_review(review)
-        all_text.append(text.lower())
+            # For no specific axis, get all ngrams
+            all_ngrams.extend(get_all_ngrams_from_review(review_info))
+
+        # Extract relevant text (highlight or full)
+        if axis:
+            text = extract_highlight_text(review_info, axis)
+        else:
+            text = extract_text_from_review(review_info)
+        all_words_text.append(text.lower())
     
-    # Join all text and tokenize
-    text = ' '.join(all_text)
-    words = re.findall(r'\b[a-z][a-z]+\b', text)
-    
-    # Remove stopwords
-    words = [word for word in words if word not in STOPWORDS]
-    
-    # Count word frequencies
-    word_counts = Counter(words)
-    
-    # Return the most common words with at least 5 occurrences
-    return [(word, count) for word, count in word_counts.most_common(num_words) if count >= 5]
+    # Count ngrams
+    ngram_counts = Counter(all_ngrams)
+    # Return the most common words/ngrams with minimum occurrences (e.g., >= 2)
+    min_occurrences = 2
+    most_common = [(word, count) for word, count in ngram_counts.most_common(num_words * 2) if count >= min_occurrences]
+
+    return most_common[:num_words]
 
 def create_word_frequency_display(word_counts, language, word_type='common', on_click_id=None, selected_words=None, title_word=None):
     """
@@ -171,7 +196,7 @@ def create_word_frequency_display(word_counts, language, word_type='common', on_
     # Create clickable word buttons
     word_buttons = []
     for i, (word, count) in enumerate(word_counts):
-        # Calculate font size based on frequency (between 12 and 24)
+        # Calculate font size based on frequency (between 9 and 19)
         # Find the max count to normalize
         max_count = max([c for _, c in word_counts])
         font_size = 9 + (count / max_count) * 10
@@ -764,14 +789,17 @@ def register_callbacks(app):
         hover_template = (
             f"{hover_translations['hover_x']}: %{{x}}<br>" +
             f"{hover_translations['hover_y']}: %{{y}}<br>" +
-            f"{hover_translations['hover_count']}: %{{text}}<br>" +
-            f"{hover_translations['hover_satisfaction']}: %{{customdata:.2f}}"
+            f"{hover_translations['hover_count']}: %{{customdata[0]}}<br>" + # Use customdata index 0 for count
+            f"{hover_translations['hover_satisfaction']}: %{{customdata[1]:.2f}}" # Use customdata index 1 for sentiment
         )
+        
+        # Combine matrix and sentiment_matrix for customdata
+        custom_data_combined = np.stack((matrix, sentiment_matrix), axis=-1)
         
         fig.update_traces(
             hovertemplate=hover_template,
-            customdata=sentiment_matrix,
-            text=matrix
+            customdata=custom_data_combined, # Pass combined data
+            # text=matrix # Text is now part of customdata
         )
         
         return fig
@@ -864,7 +892,8 @@ def register_callbacks(app):
         top_n_y = min(top_n_y, max_y)
         
         # Get plot data for both visualization and dropdown options
-        matrix, sentiment_matrix, review_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
+        # This now returns review_dict_matrix instead of review_matrix
+        matrix, sentiment_matrix, review_dict_matrix, x_text, x_percentages, y_text, y_percentages, title_key = get_plot_data(
             plot_type, x_value, y_value, max_x, max_y, language, search_query, start_date, end_date
         )
         
@@ -875,19 +904,24 @@ def register_callbacks(app):
             # Create sorted versions of data for visualization
             viz_matrix = matrix[:, x_sorted_indices]
             viz_sentiment_matrix = sentiment_matrix[:, x_sorted_indices]
-            viz_review_matrix = review_matrix[:, x_sorted_indices]
+            # viz_review_matrix = review_matrix[:, x_sorted_indices] # Old
+            # Correct slicing for review_dict_matrix (numpy array of lists/objects)
+            viz_review_dict_matrix = review_dict_matrix[:, x_sorted_indices]
+
             viz_x_text = [x_text[i] for i in x_sorted_indices]
 
             y_sorted_indices = np.argsort(-y_percentages)[:top_n_y]
             viz_matrix = viz_matrix[y_sorted_indices, :]
             viz_sentiment_matrix = viz_sentiment_matrix[y_sorted_indices, :]
-            viz_review_matrix = viz_review_matrix[y_sorted_indices, :]
+            # viz_review_matrix = viz_review_matrix[y_sorted_indices, :] # Old
+            viz_review_dict_matrix = viz_review_dict_matrix[y_sorted_indices, :]
             viz_y_text = [y_text[i] for i in y_sorted_indices]
         else:
             # Handle empty matrix case
             viz_matrix = matrix
             viz_sentiment_matrix = sentiment_matrix
-            viz_review_matrix = review_matrix
+            # viz_review_matrix = review_matrix # Old
+            viz_review_dict_matrix = review_dict_matrix
             viz_x_text = x_text
             viz_y_text = y_text
 
@@ -930,7 +964,7 @@ def register_callbacks(app):
 
         # Create the heatmap figure
         fig = create_heatmap(
-            viz_matrix, viz_sentiment_matrix, viz_review_matrix,
+            viz_matrix, viz_sentiment_matrix, viz_review_dict_matrix, # Pass dict matrix
             x_axis_text, y_axis_text,
             language, plot_type
         )
@@ -1128,6 +1162,10 @@ def register_callbacks(app):
         # Initialize reviews content
         reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
         
+        # Clear reviews if the plot type changes
+        if trigger_id == 'plot-type.value':
+            reviews_content = []
+
         # Handle None values with defaults
         search_query = search_query if search_query else ''
         x_value = x_value or 'all'
@@ -1139,6 +1177,7 @@ def register_callbacks(app):
         if trigger_id == 'search-button.n_clicks':
             x_value = 'all'
             y_value = 'all'
+            bar_zoom_value = 'all' # Reset bar zoom too
         
         # Calculate total reviews count if date changes, search changes, or on initial load
         review_count_text = dash.no_update
@@ -1178,7 +1217,7 @@ def register_callbacks(app):
                             total_reviews += len(val)
             
             # Add unique reviews to total
-            total_reviews += len(unique_review_ids)
+            total_reviews = len(unique_review_ids) # Use unique count as primary
             
             # Format the output message based on language
             if search_query:
@@ -1271,50 +1310,138 @@ def register_callbacks(app):
             )
 
     # Helper functions to reduce duplication
-    def categorize_reviews(reviews):
-        """Sort reviews into positive, negative, and neutral categories"""
+    def categorize_reviews(review_dicts: List[Dict]) -> Tuple[List[Dict], List[Dict], List[Dict]]:
+        """Sort review dictionaries into positive, negative, and neutral based on star rating."""
         positive_reviews = []
         negative_reviews = []
         neutral_reviews = []
-        for review in reviews:
-            if f'<span style="background-color: {color_mapping["+"]}' in review:
-                positive_reviews.append(review)
-            elif f'<span style="background-color: {color_mapping["-"]}' in review:
-                negative_reviews.append(review)
+
+        for review_info in review_dicts:
+            if not review_info: continue
+            stars = review_info.get('star_rating', '').count('★')
+            if stars >= 4:
+                positive_reviews.append(review_info)
+            elif stars <= 2:
+                negative_reviews.append(review_info)
             else:
-                neutral_reviews.append(review)
+                neutral_reviews.append(review_info)
+
         return positive_reviews, negative_reviews, neutral_reviews
 
-    def filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter):
+    def filter_reviews_by_sentiment(all_review_dicts, positive_review_dicts, negative_review_dicts, sentiment_filter):
         """Filter reviews based on sentiment selection"""
         if sentiment_filter == 'show_positive':
-            return positive_reviews
+            return positive_review_dicts # Corrected: Use the parameter name
         elif sentiment_filter == 'show_negative':
-            return negative_reviews
+            return negative_review_dicts # Corrected: Use the parameter name
         else:  # 'show_all'
-            return reviews
+            return all_review_dicts # Corrected: Use the parameter name
 
-    def create_review_display(filtered_reviews, language, plot_type='matrix', x_category=None, y_category=None, selected_words=None):
-        """Create HTML content for reviews display with word frequency analysis"""
-        if not filtered_reviews:
+    def format_review_html(review_info: Dict, selected_words: Optional[List[str]] = None) -> str:
+        """Creates the HTML for a single review with potential ngram highlighting."""
+        if not review_info:
+            return ""
+
+        # Basic info
+        product_id = review_info.get('product_id', '')
+        rating = review_info.get('star_rating', '')
+        date = review_info.get('date', '')
+        # title = review_info.get('review_title', '') # Title is already in full_review_text with <b>
+        # content = review_info.get('review_content', '') # Content is also part of full_review_text
+        full_review_text_raw = review_info.get('full_review_text', '') # Includes <b> tags for title
+        review_ngrams = review_info.get('review_ngrams', [])
+        highlight_detail = review_info.get('highlight_detail_text', '')
+        highlight_detail_ngrams = review_info.get('highlight_detail_ngrams', [])
+        highlight_reason = review_info.get('highlight_reason_text', '')
+        highlight_reason_ngrams = review_info.get('highlight_reason_ngrams', [])
+
+        # --- Helper for Ngram Highlighting ---
+        def apply_ngram_highlights(text: str, ngrams: List[Dict], selected_words_lower: List[str]) -> str:
+            if not selected_words_lower or not ngrams:
+                return text
+
+            # Filter and sort ngrams matching selected words
+            matching_ngrams = sorted(
+                [ngram for ngram in ngrams if ngram['text'].lower() in selected_words_lower],
+                key=lambda x: x['start'] # Sort by start position
+            )
+
+            if not matching_ngrams:
+                return text
+
+            highlighted_text = ""
+            current_pos = 0
+            highlight_tag_open = '<span style="background-color: #FFFF00; font-weight: bold;">' # Bright yellow
+            highlight_tag_close = '</span>'
+
+            for ngram in matching_ngrams:
+                start, end = ngram['start'], ngram['end']
+                # Add text before the current ngram
+                if start > current_pos:
+                    highlighted_text += text[current_pos:start]
+                # Add the highlighted ngram itself, checking bounds
+                if start < end <= len(text):
+                    highlighted_text += highlight_tag_open + text[start:end] + highlight_tag_close
+                # Update current position, handling potential overlaps (take the furthest end)
+                current_pos = max(current_pos, end)
+
+            # Add any remaining text after the last ngram
+            if current_pos < len(text):
+                highlighted_text += text[current_pos:]
+
+            return highlighted_text
+
+        # Prepare selected words list (lowercase)
+        selected_words_lower = [w.lower() for w in selected_words] if selected_words else []
+
+        # --- Highlight Ngrams in Full Review Text ---
+        highlighted_full_review = apply_ngram_highlights(full_review_text_raw, review_ngrams, selected_words_lower)
+
+        # --- Create Highlight Spans (Detail/Reason) ---
+        def create_highlight_span(text, ngrams, axis_color, sentiment_color, selected_words_lower):
+            highlighted_inner_text = apply_ngram_highlights(text, ngrams, selected_words_lower)
+            return f'<span style="background-color: {sentiment_color}; border: 4px solid {axis_color}; color: black; padding: 2px;">{highlighted_inner_text}</span>'
+
+        # Determine sentiment color based on rating
+        stars_count = rating.count('★')
+        sent_color = color_mapping.get('+') if stars_count >= 4 else (color_mapping.get('-') if stars_count <= 2 else color_mapping.get('?'))
+
+        highlight_spans = []
+        if highlight_detail:
+            highlight_spans.append(create_highlight_span(highlight_detail, highlight_detail_ngrams, color_mapping['x'], sent_color, selected_words_lower))
+        if highlight_reason:
+            highlight_spans.append(create_highlight_span(highlight_reason, highlight_reason_ngrams, color_mapping['y'], sent_color, selected_words_lower))
+
+        # --- Assemble Final HTML ---
+        # Ensure spaces between components
+        parts = [part for part in [
+            ' '.join(highlight_spans),
+            product_id,
+            rating,
+            f"[{date}]",
+            highlighted_full_review # This already contains title + content
+        ] if part] # Filter out empty parts
+
+        return " ".join(parts)
+
+
+    def create_review_display(filtered_review_dicts: List[Dict], language, plot_type='matrix', x_category=None, y_category=None, selected_words=None):
+        """Create HTML content for reviews display using review dictionaries."""
+        if not filtered_review_dicts:
             return [html.P(TRANSLATIONS[language]['no_reviews'])]
             
         # Initialize containers for word frequency display
         word_freq_components = []
         
         # Create word frequency analysis if there are enough reviews
-        if len(filtered_reviews) > 10:
-            # Get high frequency words from all reviews
-            common_words = get_frequent_words(filtered_reviews, num_words=30)
+        if len(filtered_review_dicts) >= 5: # Lower threshold for showing words
+            # Get frequent words from all reviews
+            all_reviews_words = get_frequent_words(filtered_review_dicts, num_words=25)
             
-            # Get positive and negative words separately
-            positive_words = get_frequent_words(filtered_reviews, sentiment='positive', num_words=25)
-            negative_words = get_frequent_words(filtered_reviews, sentiment='negative', num_words=25)
-            
-            # For matrix view, also get X and Y axis highlights
+            # For matrix view, get X and Y axis highlights
             if plot_type == 'matrix':
-                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=25)
-                y_highlight_words = get_frequent_words(filtered_reviews, axis='y', num_words=25)
+                x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=25)
+                y_highlight_words = get_frequent_words(filtered_review_dicts, axis='y', num_words=25)
                 
                 # Create word cloud displays for X and Y axis
                 if x_highlight_words:
@@ -1325,7 +1452,7 @@ def register_callbacks(app):
                             'common',
                             on_click_id='x-axis-words-container',
                             selected_words=selected_words,
-                            title_word=x_category
+                            title_word=format_category_display(x_category, language) # Format title
                         )
                     )
                 
@@ -1337,12 +1464,13 @@ def register_callbacks(app):
                             'common',
                             on_click_id='y-axis-words-container',
                             selected_words=selected_words,
-                            title_word=y_category
+                            title_word=format_category_display(y_category, language) # Format title
                         )
                     )
             else:
                 # For bar chart, get only X axis highlights
-                x_highlight_words = get_frequent_words(filtered_reviews, axis='x', num_words=25)
+                # Use the detail highlight (axis='x')
+                x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=25)
                 if x_highlight_words:
                     word_freq_components.append(
                         create_word_frequency_display(
@@ -1351,30 +1479,20 @@ def register_callbacks(app):
                             'common',
                             on_click_id='x-axis-words-container',
                             selected_words=selected_words,
-                            title_word=x_category
+                            title_word=format_category_display(x_category, language) # Format title
                         )
                     )
             
-            # Create positive and negative word cloud displays
-            if positive_words:
+            # Add frequent words from all reviews
+            if all_reviews_words:
                 word_freq_components.append(
                     create_word_frequency_display(
-                        positive_words, 
+                        all_reviews_words, 
                         language, 
-                        'positive',
-                        on_click_id='positive-words-container',
-                        selected_words=selected_words
-                    )
-                )
-            
-            if negative_words:
-                word_freq_components.append(
-                    create_word_frequency_display(
-                        negative_words, 
-                        language, 
-                        'negative',
-                        on_click_id='negative-words-container',
-                        selected_words=selected_words
+                        'common',
+                        on_click_id='all-reviews-words-container',
+                        selected_words=selected_words,
+                        title_word=TRANSLATIONS[language]['all_reviews'] # Title for all reviews
                     )
                 )
                 
@@ -1419,34 +1537,74 @@ def register_callbacks(app):
             })
             word_freq_components.append(selected_display)
         
-        # Filter reviews by selected words if needed
+        # Filter reviews by selected words if needed (already done before calling this function?)
+        # No, the filtering should happen *here* based on the selected words passed in.
         if selected_words and len(selected_words) > 0:
-            # Keep only reviews containing at least one of the selected words
-            filtered_reviews = [
-                review for review in filtered_reviews 
-                if any(word.lower() in review.lower() for word in selected_words)
-            ]
-            
-            # If no reviews match, add a message
-            if not filtered_reviews:
-                return [
-                    html.Div(word_freq_components),
-                    html.P(TRANSLATIONS[language]['no_reviews'])
-                ]
-        
+            word_filtered_review_dicts = []
+            lower_selected_words = [w.lower() for w in selected_words]
+
+            for review_info in filtered_review_dicts:
+                if not review_info: continue
+
+                # Check ngrams first
+                all_review_ngrams_lower = [n['text'].lower() for n in review_info.get('review_ngrams', [])]
+                detail_ngrams_lower = [n['text'].lower() for n in review_info.get('highlight_detail_ngrams', [])]
+                reason_ngrams_lower = [n['text'].lower() for n in review_info.get('highlight_reason_ngrams', [])]
+
+                found_in_ngram = False
+                for word in lower_selected_words:
+                    if word in all_review_ngrams_lower or word in detail_ngrams_lower or word in reason_ngrams_lower:
+                        found_in_ngram = True
+                        break
+
+                if found_in_ngram:
+                    word_filtered_review_dicts.append(review_info)
+                    continue # Go to next review if found in ngram
+
+                # If not found in ngrams, check text fields (less precise)
+                # This part might be redundant if frequent words are primarily ngrams
+                # Let's keep it as a fallback for now.
+                full_text_lower = review_info.get('full_review_text', '').lower()
+                detail_text_lower = review_info.get('highlight_detail_text', '').lower()
+                reason_text_lower = (review_info.get('highlight_reason_text', '') or '').lower()
+
+                found_in_text = False
+                for word in lower_selected_words:
+                    if word in full_text_lower or word in detail_text_lower or word in reason_text_lower:
+                        found_in_text = True
+                        break
+
+                if found_in_text:
+                    word_filtered_review_dicts.append(review_info)
+
+            final_review_dicts_to_display = word_filtered_review_dicts
+
+            # If no reviews match after word filtering, add a message
+            if not final_review_dicts_to_display:
+                return (
+                    word_freq_components +
+                    [html.P(TRANSLATIONS[language]['no_reviews_matching_words'])]
+                )
+        else:
+            # If no words selected, display all originally passed reviews
+            final_review_dicts_to_display = filtered_review_dicts
+
         # Create HTML for reviews
         reviews_html = []
-        for idx, review in enumerate(filtered_reviews):
+        for idx, review_info in enumerate(final_review_dicts_to_display):
+            review_html_line = format_review_html(review_info, selected_words) # Pass selected words for highlighting
             reviews_html.append(f"""
                 <div class="review-container">
-                    <span>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
-                    {review}
+                    <span style='color: #555; font-size: 0.9em;'>{TRANSLATIONS[language]['review']} {idx + 1}: </span>
+                    {review_html_line}
                 </div>
             """)
         
         html_content = f"""
+        <!DOCTYPE html>
         <html>
         <head>
+            <meta charset="UTF-8">
             <style>
                 body {{
                     margin: 0;
@@ -1457,9 +1615,18 @@ def register_callbacks(app):
                     margin: 0;
                     padding: 3px;
                     border-bottom: 1px solid #eee;
+                    word-wrap: break-word; /* Ensure long words/IDs wrap */
+                    overflow-wrap: break-word;
                 }}
                 .review-container:last-child {{
                     border-bottom: none;
+                }}
+                b {{ /* Style for title tag */
+                    font-weight: bold;
+                 }}
+                 /* Style for selected ngram highlights */
+                 span[style*="background-color: #FFFF00"] {{
+                    padding: 1px 0; /* Add slight padding for visual separation */
                 }}
             </style>
         </head>
@@ -1472,7 +1639,10 @@ def register_callbacks(app):
         # Combine word frequency components with reviews iframe
         result = []
         # Add header HTML after word frequency components
-        header_html = create_header_html(language, plot_type, x_category, y_category)
+        # Format categories before passing to header
+        formatted_x = format_category_display(x_category, language) if x_category else None
+        formatted_y = format_category_display(y_category, language) if y_category else None
+        header_html = create_header_html(language, plot_type, formatted_x, formatted_y)
         result.append(html.Iframe(
             srcDoc=header_html,
             style={
@@ -1485,15 +1655,16 @@ def register_callbacks(app):
             }
         ))
         if word_freq_components:
-            result.append(html.Div(word_freq_components))
+            # Wrap word frequency components in a div for better layout control
+            result.append(html.Div(word_freq_components, style={'padding': '10px', 'backgroundColor': '#f8f9fa', 'borderRadius': '5px', 'marginBottom': '10px'}))
         
         # Add the reviews in an iframe
         result.append(html.Iframe(
             srcDoc=html_content,
             style={
                 'width': '100%',
-                'height': '630px',
-                'border': 'none',
+                'height': '630px', # Adjust height as needed
+                'border': '1px solid #ddd', # Add subtle border
                 'borderRadius': '3px',
                 'backgroundColor': 'white'
             }
@@ -1558,8 +1729,8 @@ def register_callbacks(app):
             'alignItems': 'center'
         }
 
-    def update_reviews_with_filters(click_data, sentiment_filter, language, plot_type, 
-                                  x_value, y_value, top_n_x, top_n_y, search_query, 
+    def update_reviews_with_filters(click_data, sentiment_filter, language, plot_type,
+                                  x_value, y_value, top_n_x, top_n_y, search_query,
                                   bar_categories, bar_zoom, bar_count, start_date, end_date, selected_words=None):
         """Helper function to update reviews display with sentiment and word filtering"""
         if not click_data:
@@ -1568,110 +1739,134 @@ def register_callbacks(app):
         search_query = search_query if search_query else ''
         selected_words = selected_words if selected_words else []
         
+        # Handle date filter
+        if not isinstance(start_date, str) and not isinstance(end_date, str):
+            start_date = None
+            end_date = None
+        
+        # Logic for bar chart
         if plot_type == 'bar_chart':
-            # Handle bar chart selection
-            point = click_data['points'][0]
-            clicked_category = point['x']
-            
-            # Get bar chart data
+            # Get data for bar chart
             if not bar_categories:
-                bar_categories = ['usage', 'attribute', 'performance']
-            
-            # Handle empty string as None
+                return dash.no_update, None, None, None
+                
             if bar_zoom == '':
                 bar_zoom = None
-                
-            display_categories, original_categories, counts, sentiment_ratios, review_data, colors, title_key = get_bar_chart_data(
+
+            # review_data is now a list of lists of review dictionaries
+            display_categories, original_categories, counts, sentiment_ratios, review_data_outer, colors, title_key = get_bar_chart_data(
                 bar_categories, bar_zoom, language, search_query, start_date, end_date
             )
             
-            # Apply bar count limit
             if bar_count > 0 and bar_count < len(display_categories):
                 display_categories = display_categories[:bar_count]
                 original_categories = original_categories[:bar_count]
                 counts = counts[:bar_count]
                 sentiment_ratios = sentiment_ratios[:bar_count]
-                review_data = review_data[:bar_count]
+                review_data_outer = review_data_outer[:bar_count]
                 colors = colors[:bar_count]
             
-            # Create formatted category names mapping
-            formatted_to_original = {}
-            
-            # Check if we're zoomed into a parent category
-            is_zoomed = bar_zoom and bar_zoom != ''
-            
-            for i, category in enumerate(display_categories):
-                # Determine the category type prefix
+            # Process click data - accepting any valid curveNumber
+            if 'points' in click_data and len(click_data['points']) > 0 and 'label' in click_data['points'][0]:
+                clicked_label = click_data['points'][0]['label']
+                
+                # Create mapping between displayed category and internal index
+                formatted_to_original = {}
+                
+                # Use proper category formatting to match displayed label
                 prefix = None
-                for p in type_colors.keys():
-                    if category.startswith(p):
-                        prefix = p
+                is_zoomed = bar_zoom and bar_zoom != 'all'
+                
+                # Check for category prefix
+                for cat_prefix in ['U: ', 'A: ', 'P: ']:
+                    if clicked_label.startswith(cat_prefix):
+                        prefix = cat_prefix
                         break
-                    
-                if prefix:
-                    category_text = category[len(prefix):]
-                    
-                    # Format based on zoom state
-                    if is_zoomed and '|' in category_text:
-                        parts = category_text.split('|')
-                        if len(parts) > 1:
-                            display_text = '|'.join(parts[1:])
-                        else:
-                            display_text = parts[0]
-                        display_text = format_category_display(display_text, language)
-                            
-                        formatted_to_original[display_text] = i
-                        
-                        for part in parts[1:]:
-                            part = part.strip()
-                            if part:
-                                formatted_part = format_category_display(part, language)
-                                formatted_to_original[formatted_part] = i
-                        
-                        full_formatted = format_category_display(category, language)
-                        formatted_to_original[full_formatted] = i
+                
+                # Map all displayed categories to their indices
+                for i, category in enumerate(display_categories):
+                    # Special case for zoomed categories
+                    if is_zoomed and '|' in category:
+                        parts = category.split('|')
+                        display_text = '|'.join(parts[1:])
                     else:
-                        display_text = prefix + category_text
-                        formatted = format_category_display(display_text, language)
-                        formatted_to_original[formatted] = i
+                        display_text = category
+                        display_text = format_category_display(display_text, language)
+
+                    formatted_to_original[display_text] = i
+
+                    # Also map intermediate parts if hierarchical and zoomed
+                    if is_zoomed and '|' in category:
+                        parts = category.split('|')
+                        for k in range(1, len(parts)):
+                            sub_cat_display = format_category_display('|'.join(parts[k:]), language)
+                            if sub_cat_display not in formatted_to_original:
+                                formatted_to_original[sub_cat_display] = i
+                    else:
+                        # Map the full formatted category name as well
+                        full_formatted_category_name = format_category_display(category, language)
+                        if full_formatted_category_name not in formatted_to_original:
+                             formatted_to_original[full_formatted_category_name] = i
+                
+                # Try finding the index based on raw category name first
+                idx = None
+                
+                # Direct match first
+                if clicked_label in display_categories:
+                    idx = display_categories.index(clicked_label)
                 else:
-                    formatted = format_category_display(category, language)
-                    formatted_to_original[formatted] = i
-            
-            try:
-                # Find the index of clicked category
-                idx = formatted_to_original.get(clicked_category)
-                if idx is None:
-                    try:
-                        idx = display_categories.index(clicked_category)
-                    except ValueError:
-                        for i, orig_cat in enumerate(original_categories):
-                            if orig_cat == clicked_category:
+                    # Try finding by formatted category name
+                    for formatted_cat, index in formatted_to_original.items():
+                        # Try to match with and without the prefix
+                        if formatted_cat == clicked_label or (prefix and formatted_cat == clicked_label[len(prefix):]):
+                            idx = index
+                            break
+                
+                    # If still not found, try raw string match with display categories
+                    if idx is None:
+                        for i, cat in enumerate(display_categories):
+                            if cat == clicked_label or (prefix and cat[len(prefix):] == clicked_label[len(prefix):]):
                                 idx = i
                                 break
-                
+
                 if idx is None:
-                    return dash.no_update, None, None, None
+                    # Try direct index from pointNumber as last resort
+                    try:
+                        point_number = click_data['points'][0]['pointNumber']
+                        if 0 <= point_number < len(display_categories):
+                            idx = point_number
+                        else:
+                            return dash.no_update, None, None, None
+                    except (KeyError, IndexError):
+                        return dash.no_update, None, None, None
+
+                # Get the list of review dictionaries for the clicked bar
+                review_dicts = review_data_outer[idx]
                 
-                reviews = review_data[idx]
-                
+                # Check if these are already the right format or if we need to extract 'review_info'
+                if review_dicts and isinstance(review_dicts[0], dict) and 'sentiment' in review_dicts[0] and 'review_info' in review_dicts[0]:
+                    # Extract only the review_info part
+                    review_infos = [item['review_info'] for item in review_dicts if 'review_info' in item]
+                else:
+                    # Already in the right format
+                    review_infos = review_dicts
+
                 # Apply sentiment filtering
-                positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(reviews)
-                filtered_reviews = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter)
-                
+                positive_reviews, negative_reviews, neutral_reviews = categorize_reviews(review_infos)
+                filtered_reviews = filter_reviews_by_sentiment(review_infos, positive_reviews, negative_reviews, sentiment_filter)
+
                 # Create updated review display with word filtering
                 reviews_display = create_review_display(
-                    filtered_reviews, 
-                    language, 
+                    filtered_reviews,
+                    language,
                     plot_type='bar_chart',
-                    x_category=display_categories[idx],
+                    x_category=display_categories[idx], # Pass the category name for the header
                     selected_words=selected_words
                 )
                 
-                return reviews_display, positive_reviews, negative_reviews, display_categories[idx]
-                
-            except (ValueError, IndexError) as e:
-                print(f"Error processing bar chart click data: {str(e)}")
+                # Return updated reviews display and sentiment counts 
+                return reviews_display, positive_reviews, negative_reviews, sentiment_filter
+            else:
                 return dash.no_update, None, None, None
         else:
             # Handle matrix view selection

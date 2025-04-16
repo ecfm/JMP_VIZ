@@ -3,11 +3,10 @@ import os
 import re
 import numpy as np
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, List, Tuple, Optional
 
 from config import (
     get_result_dir, 
-    color_mapping, 
     path_dict_cache, 
     plot_data_cache
 )
@@ -111,112 +110,194 @@ def filter_dict(path_to_sents_dict, category):
     else:
         key_part_num = len(category.split('|'))+1
     filtered_dict = defaultdict(dict)
-    for path, sents_dict in path_to_sents_dict.items():
+    for path, data_dict in path_to_sents_dict.items():
         if category == 'all' or path.startswith(category):
             key = '|'.join(path.split('|')[:key_part_num])
-            filtered_dict[key] = merge_values(filtered_dict[key], sents_dict)
+            filtered_dict[key] = merge_values(filtered_dict[key], data_dict)
     return filtered_dict
 
+def parse_ngrams(ngram_str: Optional[str]) -> List[Dict[str, any]]:
+    """Parse ngram string like 'ngram1<pos1:pos2>|ngram2<pos3:pos4>'"""
+    ngrams = []
+    if not ngram_str:
+        return ngrams
+    items = ngram_str.split('|')
+    for item in items:
+        if item:
+            match = re.search(r'([^<]+)<(\d+):(\d+)>', item)
+            if match:
+                ngrams.append({
+                    'text': match.group(1),
+                    'start': int(match.group(2)),
+                    'end': int(match.group(3))
+                })
+    return ngrams
 
-def extract_review_info(review):
-    """
-    Extract review text, highlight information, and date in a single pass.
-    
-    Args:
-        review: Full review string in the format "highlight|||review_text"
-        
-    Returns:
-        Tuple of (review_text, highlight_detail, highlight_reason, date)
-        Where:
-          - review_text: The main review text
-          - highlight_detail: The extracted highlight detail
-          - highlight_reason: The extracted highlight reason or None
-          - date: The extracted date in format YYYY-MM-DD or None
-    """
-    # Extract highlight information
-    highlight, review_text = review.split('|||')
-    if '<<<' in highlight:
-        highlight_detail, highlight_reason = highlight.split('<<<')
+def extract_text_and_ngrams(text_with_ngrams: str) -> Tuple[str, List[Dict[str, any]]]:
+    """Separate text and ngrams from a string like 'some text###ngram<1:5>'"""
+    if '###' in text_with_ngrams:
+        text, ngram_part = text_with_ngrams.split('###', 1)
+        ngrams = parse_ngrams(ngram_part)
+        return text.strip(), ngrams
     else:
-        highlight_detail, highlight_reason = highlight, None
-    
-    # Extract date
-    date_match = re.search(r'\[(\d{4}-\d{2}-\d{2})\]', review_text)
-    date = date_match.group(1) if date_match else None
-    
-    return review_text, highlight_detail, highlight_reason, date
+        return text_with_ngrams.strip(), []
 
-def reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True):
-    """Convert reviews to HTML format with highlighting."""
-    review_htmls = []
-    pos_count = 0
-    for review_text, highlights in review_to_highlight_dict.items():
-        highlight_htmls = []
-        pos_count_list = []
-        detail_to_sent = {}
-        reason_to_sent = {}
-        for sent, highlight_detail, highlight_reason in highlights:
-            if sent == '+':
-                pos_count_list.append(1)
-            elif sent == '-':
-                pos_count_list.append(0)
-            else:
-                # print(f"Warning: {sent} is not a valid sentiment for {highlight_detail}|||{review_text}")
-                pos_count_list.append(0.5)
-                sent = '?'
-            detail_to_sent[highlight_detail] = sent
-            if highlight_reason and display_reason:
-                reason_to_sent[highlight_reason] = sent
-        highlight_htmls.extend([f'<span style="background-color: {color_mapping[sent]}; border: 4px solid {color_mapping[detail_axis]}; color: black; padding: 2px;">{highlight_detail}</span>' for highlight_detail in detail_to_sent.keys()])
-        if display_reason:
-            highlight_htmls.extend([f'<span style="background-color: {color_mapping[sent]}; border: 4px solid {color_mapping["y"]}; color: black; padding: 2px;">{highlight_reason}</span>' for highlight_reason in reason_to_sent.keys()])
-        review_htmls.append(f"{' '.join(highlight_htmls)} {review_text}")
-        pos_count += sum(pos_count_list)/len(pos_count_list)
-    return review_htmls, pos_count
+def extract_review_info(review_string: str) -> Optional[Dict]:
+    """
+    Extract structured information from the new review format.
+
+    Args:
+        review_string: Full review string in the new format.
+
+    Returns:
+        Dictionary containing extracted parts or None if format is invalid.
+        Keys: 'highlight_detail_text', 'highlight_detail_ngrams',
+              'highlight_reason_text', 'highlight_reason_ngrams',
+              'product_id', 'star_rating', 'date', 'review_title',
+              'review_content', 'review_ngrams', 'full_review_text', 'raw_review'
+    """
+    try:
+        # Split highlight from the rest
+        highlight_part, rest_part = review_string.split('|||', 1)
+
+        # Process highlight part (detail and optional reason)
+        highlight_detail_text = ""
+        highlight_detail_ngrams = []
+        highlight_reason_text = None
+        highlight_reason_ngrams = []
+
+        if '<<<' in highlight_part:
+            detail_part, reason_part = highlight_part.split('<<<', 1)
+            highlight_detail_text, highlight_detail_ngrams = extract_text_and_ngrams(detail_part)
+            # Reason text might be quoted, remove quotes if present
+            if reason_part.startswith('"') and reason_part.endswith('"'):
+                reason_part = reason_part[1:-1]
+            highlight_reason_text, highlight_reason_ngrams = extract_text_and_ngrams(reason_part)
+        else:
+            highlight_detail_text, highlight_detail_ngrams = extract_text_and_ngrams(highlight_part)
+
+        # Process the rest of the string (review text and review ngrams)
+        review_text_part, *review_ngram_part_list = rest_part.split('###', 1)
+        review_ngrams = parse_ngrams(review_ngram_part_list[0]) if review_ngram_part_list else []
+
+        # Extract product_id, rating, date, and full text from review_text_part
+        # Example: "B0CXYZABC ★★★☆☆ [2023-10-26] <b>Title</b> Content"
+        # Match product ID (non-space chars at start)
+        match = re.match(r'(\S+)\s+(.*)', review_text_part.strip())
+        if not match:
+            # print(f"Warning: Could not parse product ID from: {review_text_part[:50]}...")
+            return None
+        product_id = match.group(1)
+        remaining_text = match.group(2)
+
+        # Match star rating (★ symbols)
+        rating_match = re.match(r'([★☆]+)\s+(.*)', remaining_text)
+        if not rating_match:
+             # print(f"Warning: Could not parse star rating from: {remaining_text[:50]}...")
+            return None
+        star_rating = rating_match.group(1)
+        remaining_text = rating_match.group(2)
+
+        # Match date
+        date_match = re.match(r'\[(\d{4}-\d{2}-\d{2})\]\s+(.*)', remaining_text, re.DOTALL)
+        if not date_match:
+            # print(f"Warning: Could not parse date from: {remaining_text[:50]}...")
+            return None
+        date = date_match.group(1)
+        full_review_text = date_match.group(2).strip() # This is "<b>Title</b> Content"
+
+        # Extract title and content
+        title_match = re.search(r'<b>(.*?)</b>(.*)', full_review_text, re.DOTALL)
+        if title_match:
+            review_title = title_match.group(1).strip()
+            review_content = title_match.group(2).strip()
+        else:
+            # Assume no title, content is the whole text
+            review_title = ""
+            review_content = full_review_text # Keep potential leading/trailing spaces if no title tag
+
+        return {
+            'highlight_detail_text': highlight_detail_text,
+            'highlight_detail_ngrams': highlight_detail_ngrams,
+            'highlight_reason_text': highlight_reason_text,
+            'highlight_reason_ngrams': highlight_reason_ngrams,
+            'product_id': product_id,
+            'star_rating': star_rating,
+            'date': date,
+            'review_title': review_title,
+            'review_content': review_content,
+            'review_ngrams': review_ngrams,
+            'full_review_text': full_review_text,
+            'raw_review': review_string # Keep the original string
+        }
+
+    except Exception:
+        # print(f"Error parsing review string: {review_string[:100]}... Error: {e}")
+        return None
 
 def create_correlation_matrix(x_path_to_sents_dict, y_path_to_ids_dict, y_path_to_sents_dict):
-    """Create correlation matrix between x and y categories."""
-    matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
-    sentiment_matrix = np.zeros((len(y_path_to_ids_dict), len(x_path_to_sents_dict)))
-    review_matrix = np.empty((len(y_path_to_ids_dict), len(x_path_to_sents_dict)), dtype=object)
-    
-    # Initialize each cell with its own empty list
-    for i in range(review_matrix.shape[0]):
-        for j in range(review_matrix.shape[1]):
-            review_matrix[i, j] = []
-    
-    for i, ((path1, y_ids), y_sents_dict) in enumerate(zip(y_path_to_ids_dict.items(), y_path_to_sents_dict.values())):
-        for j, (path2, x_sents_dict) in enumerate(x_path_to_sents_dict.items()):
-            x_sent_ids = set()
-            review_to_highlight_dict = defaultdict(list)
-            
-            # First collect all reviews and sentiments for this x category
-            for sent, reason_rids in x_sents_dict.items():
-                x_sent_ids.update(reason_rids.keys())
-                for rid, reviews in reason_rids.items():
-                    if rid in y_ids:  # Co-mention case
-                        # Check if reviews is None before iterating
-                        if reviews is None:
-                            continue
-                        for review in reviews:
-                            # Check if this is a pre-processed review or raw string
-                            if isinstance(review, tuple) and len(review) == 5:
-                                # Already processed: (review_text, highlight, reason, date, raw_review)
-                                review_text, highlight_detail, highlight_reason, _, _ = review
-                            else:
-                                # Raw string, extract info
-                                review_text, highlight_detail, highlight_reason, _ = extract_review_info(review)
-                            
-                            review_to_highlight_dict[review_text].append((sent, highlight_detail, highlight_reason))
-            review_with_highlight, pos_count = reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True)
-            review_matrix[i, j] = review_with_highlight
-            sentiment_matrix[i, j] = pos_count
-            # Update counts and sentiment
-            matrix[i, j] = len(review_with_highlight)
-            if matrix[i, j] > 0:
-                sentiment_matrix[i, j] = pos_count / matrix[i, j]
-    
-    return matrix, sentiment_matrix, review_matrix
+    """Create correlation matrix between x and y categories using review dictionaries."""
+    # Determine matrix dimensions
+    num_y_cats = len(y_path_to_ids_dict)
+    num_x_cats = len(x_path_to_sents_dict)
+
+    # Initialize matrices
+    matrix = np.zeros((num_y_cats, num_x_cats))
+    sentiment_matrix = np.zeros((num_y_cats, num_x_cats))
+    # Use dtype=object for storing lists of dictionaries
+    review_dict_matrix = np.empty((num_y_cats, num_x_cats), dtype=object)
+
+    # Initialize each cell in review_dict_matrix with an empty list
+    for i in range(num_y_cats):
+        for j in range(num_x_cats):
+            review_dict_matrix[i, j] = []
+
+    # Create a mapping from y_path to its index for quick lookup
+    y_path_to_index = {path: i for i, path in enumerate(y_path_to_ids_dict.keys())}
+
+    # Iterate through X categories (paths and their sentiment/review data)
+    for j, (x_path, x_sents_data) in enumerate(x_path_to_sents_dict.items()):
+        # Iterate through sentiments/reasons within the X category data
+        for sent, reason_rids_or_reviews in x_sents_data.items():
+            # Check if the value is a dictionary {rid: [review_dict]} or list [review_dict]
+            if isinstance(reason_rids_or_reviews, dict):
+                # Structure: {rid: [review_dict, ...]}
+                for rid, review_dicts_list in reason_rids_or_reviews.items():
+                    # Find corresponding Y categories that mention this rid
+                    for y_path, y_ids in y_path_to_ids_dict.items():
+                        if rid in y_ids:
+                            # Get the index for the Y category
+                            i = y_path_to_index.get(y_path)
+                            if i is not None:
+                                # Process each review dictionary for this co-occurrence
+                                if review_dicts_list:
+                                    for review_info in review_dicts_list:
+                                        if review_info: # Ensure review_info is not None
+                                            # Append review dictionary to the cell
+                                            review_dict_matrix[i, j].append(review_info)
+                                            # Increment total count
+                                            matrix[i, j] += 1
+                                            # Check sentiment for positive count
+                                            stars = review_info.get('star_rating', '').count('★')
+                                            if stars >= 4:
+                                                sentiment_matrix[i, j] += 1 # Sum positive counts first
+            # TODO: Handle case where reason_rids_or_reviews is just a list of review dicts?
+            # This might occur if the structure simplifies, but filter_dict_by_query seems
+            # to preserve the rid structure. Add handling if necessary based on observed data.
+            elif isinstance(reason_rids_or_reviews, list):
+                 print(f"Warning: Unexpected list structure found for {x_path} -> {sent} in create_correlation_matrix. Add handling if needed.")
+
+    # Final pass to calculate sentiment ratio
+    for i in range(num_y_cats):
+        for j in range(num_x_cats):
+            total_count = matrix[i, j]
+            if total_count > 0:
+                # Calculate ratio from summed positive counts
+                sentiment_matrix[i, j] = sentiment_matrix[i, j] / total_count
+            else:
+                sentiment_matrix[i, j] = 0.5 # Default to neutral if no reviews
+
+    return matrix, sentiment_matrix, review_dict_matrix
 
 @custom_cached(cache=path_dict_cache)
 def get_cached_dict(plot_type: str, category: str, search_query: str = '', start_date: str = None, end_date: str = None, return_both: bool = False) -> Dict:
@@ -274,7 +355,7 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
         )
         title_key = 'perf_attr_title'
 
-    matrix, sentiment_matrix, review_matrix = create_correlation_matrix(
+    matrix, sentiment_matrix, review_dict_matrix = create_correlation_matrix(
         x_path_to_sents_dict, 
         y_path_to_ids_dict,
         y_path_to_sents_dict
@@ -303,61 +384,97 @@ def get_plot_data(plot_type, x_category='all', y_category='all', top_n_x=2, top_
     # Extract relevant submatrices
     matrix = matrix[top_y_indices, :][:, top_x_indices]
     sentiment_matrix = sentiment_matrix[top_y_indices, :][:, top_x_indices]
-    review_matrix = review_matrix[top_y_indices, :][:, top_x_indices]
+    review_dict_matrix = review_dict_matrix[top_y_indices, :][:, top_x_indices] # Slice dict matrix
     
-    return matrix, sentiment_matrix, review_matrix, top_x_paths, x_percentages, top_y_paths, y_percentages, title_key
+    return matrix, sentiment_matrix, review_dict_matrix, top_x_paths, x_percentages, top_y_paths, y_percentages, title_key
 
 def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date: str = None, end_date: str = None) -> Dict:
     """
-    Filter path_to_sents_dict by removing reviews that don't match the query or date range
-    
-    Extracts all review information (text, highlight, reason, date) during filtering to
-    avoid re-parsing reviews later.
+    Filter path_to_sents_dict by removing reviews that don't match the query or date range.
+    Stores processed review dictionaries instead of raw strings.
     """
     if (not search_query or not search_query.strip()) and start_date is None and end_date is None:
-        return path_to_sents_dict
-    
+        # If no filter, still parse reviews to ensure consistent output format
+        processed_dict = {}
+        for path, sents_dict in path_to_sents_dict.items():
+            processed_sents = {}
+            if isinstance(sents_dict, list): # Handle IDs dict case? No, only sents dicts are passed here now.
+                 processed_dict[path] = sents_dict # Pass IDs through directly
+                 continue
+
+            for sent, val in sents_dict.items():
+                if isinstance(val, dict): # rid -> reviews map
+                    processed_rids = {}
+                    for rid, reviews in val.items():
+                        processed_reviews = []
+                        if reviews:
+                            for review_str in reviews:
+                                review_info = extract_review_info(review_str)
+                                if review_info:
+                                    processed_reviews.append(review_info)
+                        if processed_reviews:
+                             processed_rids[rid] = processed_reviews
+                    if processed_rids:
+                        processed_sents[sent] = processed_rids
+                elif isinstance(val, list): # list of reviews
+                    processed_reviews = []
+                    if val:
+                        for review_str in val:
+                             review_info = extract_review_info(review_str)
+                             if review_info:
+                                 processed_reviews.append(review_info)
+                    if processed_reviews:
+                         processed_sents[sent] = processed_reviews
+            if processed_sents:
+                processed_dict[path] = processed_sents
+        return processed_dict
+
     # Function to extract and filter review information
-    def extract_and_filter_review(review, query_filter=None):
+    def extract_and_filter_review(review_string, query_filter=None):
         """
-        Extract info from a review and apply filters
-        
+        Extract info from a review string and apply filters
+
         Args:
-            review: The review to process
+            review_string: The raw review string to process
             query_filter: Optional function to filter by query text
-            
+
         Returns:
-            Processed review tuple or None if filtered out
+            Processed review dictionary or None if filtered out
         """
         # Extract all review information
-        review_text, highlight, reason, date = extract_review_info(review)
-        
+        review_info = extract_review_info(review_string)
+
+        if not review_info:
+            return None
+
         # Apply date filter
+        date = review_info['date']
         if start_date is not None or end_date is not None:
             if date is None or (start_date and date < start_date) or (end_date and date > end_date):
                 return None
-        
+
         # Apply search query filter if provided
-        if query_filter and not query_filter(review_text.lower()):
+        # Use full_review_text for filtering
+        if query_filter and not query_filter(review_info['full_review_text'].lower()):
             return None
-        
-        # Return the processed review with all extracted info
-        return (review_text, highlight, reason, date, review)
-    
+
+        # Return the processed review dictionary
+        return review_info
+
     # Function to process a list of reviews
-    def process_reviews(reviews, query_filter=None):
-        """Process reviews: extract info and apply filters"""
-        if reviews is None:
+    def process_reviews(reviews_list, query_filter=None):
+        """Process review strings: extract info and apply filters"""
+        if reviews_list is None:
             return []
-        
-        processed_reviews = []
-        for review in reviews:
-            processed_review = extract_and_filter_review(review, query_filter)
+
+        processed_review_dicts = []
+        for review_str in reviews_list:
+            processed_review = extract_and_filter_review(review_str, query_filter)
             if processed_review:  # Only keep reviews that pass filters
-                processed_reviews.append(processed_review)
-        
-        return processed_reviews
-    
+                processed_review_dicts.append(processed_review)
+
+        return processed_review_dicts
+
     # Create query filter function if search query is provided
     query_filter = None
     if search_query and search_query.strip():
@@ -465,41 +582,39 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
                 query_filter = eval(filter_code, {"__builtins__": {}})
             except Exception as e:
                 print(f"Search query error: {str(e)}")
-                print(f"Filter expression was: {filter_expr}")
-                raise
+                print(f"Filter expression was: {filter_expr if 'filter_expr' in locals() else 'not created'}")
+                query_filter = None # Fall back to just date filtering
             
         except Exception as e:
             print(f"Search query error: {str(e)}")
             print(f"Filter expression was: {filter_expr if 'filter_expr' in locals() else 'not created'}")
-            query_filter = None  # Fall back to just date filtering
+            query_filter = None # Fall back to just date filtering
     
     # Now apply the filter to the dictionary structure
     filtered_dict = {}
     for path, sents_dict in path_to_sents_dict.items():
-        # Handle case where value is a list (ids_dict case)
+        # Handle case where value is a list (ids_dict case) - Should not happen if only sents dicts are passed
         if isinstance(sents_dict, list):
-            # For ids_dict, we keep the path if any associated reviews match
-            # We'll need to look up the reviews in the corresponding sents_dict
-            filtered_dict[path] = sents_dict
-            continue
-            
+             filtered_dict[path] = sents_dict # Pass IDs through directly? Or should IDs be filtered too? Assume pass through for now.
+             continue
+
         # Handle case where value is a dict (sents_dict case)
         filtered_sents = {}
         for sent, val in sents_dict.items():
             if isinstance(val, dict):
                 rid_reviews_dict = val
                 filtered_rids = {}
-                for rid, reviews in rid_reviews_dict.items():
-                    processed_reviews = process_reviews(reviews, query_filter)
-                    if processed_reviews:  # Only keep if there are matching reviews
-                        filtered_rids[rid] = processed_reviews
+                for rid, reviews_list in rid_reviews_dict.items():
+                    processed_review_dicts = process_reviews(reviews_list, query_filter) # Process list of strings
+                    if processed_review_dicts:  # Only keep if there are matching reviews
+                        filtered_rids[rid] = processed_review_dicts # Store list of dicts
                 if filtered_rids:  # Only keep sentiment if there are matching reviews
                     filtered_sents[sent] = filtered_rids
             elif isinstance(val, list):
-                reviews = val
-                processed_reviews = process_reviews(reviews, query_filter)
-                if processed_reviews:
-                    filtered_sents[sent] = processed_reviews
+                reviews_list = val
+                processed_review_dicts = process_reviews(reviews_list, query_filter) # Process list of strings
+                if processed_review_dicts:
+                    filtered_sents[sent] = processed_review_dicts # Store list of dicts
 
         if filtered_sents:  # Only keep path if there are matching reviews
             filtered_dict[path] = filtered_sents
@@ -597,42 +712,36 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
     }
     
     # Helper function to process a single review and add it to the results
-    def process_review(review, sent, total_reviews, positive_reviews, review_highlights):
+    def process_review(review_dict, # Now takes a dict
+                       total_reviews, positive_reviews, review_highlights):
         """
-        Process a single review and update the tracking collections
-        
+        Process a single review dictionary and update the tracking collections
+
         Args:
-            review: The review to process
-            sent: The sentiment value
-            total_reviews: Set to track unique reviews
-            positive_reviews: Set to track positive reviews
-            review_highlights: List to collect review highlights
+            review_dict: The review dictionary from extract_review_info
+            total_reviews: Set to track unique reviews (using full_review_text)
+            positive_reviews: Set to track positive reviews (using full_review_text)
+            review_highlights: List to collect review dictionaries
         """
-        # Check if this is a pre-processed review or raw string
-        if isinstance(review, tuple) and len(review) == 5:
-            # Already processed: (review_text, highlight, reason, date, raw_review)
-            review_text, highlight, reason, _, raw_review = review
-        else:
-            # Raw string, extract info
-            review_text, highlight, reason, _ = extract_review_info(review)
-            raw_review = review
-            
-        total_reviews.add(review_text)
-        
-        # Check if positive review
-        if '+' in highlight:
-            positive_reviews.add(review_text)
-            
-        # Add to highlight list with context
-        review_to_highlight_dict = defaultdict(list)
-        review_to_highlight_dict[review_text].append((sent, highlight, reason))
-        review_with_highlight, review_pos_count = reviews_to_htmls(review_to_highlight_dict, detail_axis='x', display_reason=True)
-        review_highlights.extend(review_with_highlight)
-        
-        # Add sentiment value to positive_reviews if positive (for proper sentiment calculation)
-        if sent == '+':
-            positive_reviews.add(review_text)
-    # TODO: fix the review_highlights by merging the same reviews from different categories
+        if not review_dict: # Skip if parsing failed
+            return
+
+        review_text_key = review_dict['full_review_text'] # Use full text as key
+        total_reviews.add(review_text_key)
+
+        # Determine sentiment from star rating
+        stars = review_dict['star_rating'].count('★')
+        is_positive = stars >= 4
+
+        # Add review dictionary to highlights list
+        # We also need sentiment info here for the caller function
+        review_highlights.append({'sentiment': '+' if is_positive else ('-' if stars <=2 else '?'),
+                                  'review_info': review_dict})
+
+        # Track positive reviews
+        if is_positive:
+            positive_reviews.add(review_text_key)
+
     # Process each selected category type
     for category_type in categories:
         if category_type not in category_mapping:
@@ -682,50 +791,51 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
                     display_name = prefix + category_path
                 
             # Count total reviews and positive reviews
-            total_reviews = set()
-            positive_reviews = set()
-            review_highlights = []
-            
+            unique_reviews_text = set() # Track unique review texts
+            positive_reviews_text = set() # Track unique positive review texts
+            category_review_dicts_with_sentiment = [] # Collect dicts for this category
+
             # Process all reviews for this category
-            for sent, reason_rids in sents_dict.items():
-                # Check if reason_rids is a dictionary or a list
+            for sent, reason_rids in sents_dict.items(): # 'sent' key might be obsolete now
+                # Check if reason_rids is a dictionary or a list of review dicts
                 if isinstance(reason_rids, dict):
-                    # It's a dictionary with rid -> reviews mapping
-                    for rid, reviews in reason_rids.items():
-                        if reviews is None:
-                            continue
-                        for review in reviews:
-                            process_review(review, sent, total_reviews, positive_reviews, review_highlights)
+                    # It's a dictionary with rid -> list of review dicts
+                    for rid, review_dicts in reason_rids.items():
+                        if review_dicts is None: continue
+                        for review_dict in review_dicts:
+                            process_review(review_dict, unique_reviews_text, positive_reviews_text, category_review_dicts_with_sentiment)
                 elif isinstance(reason_rids, list):
-                    # It's a list of reviews directly
-                    if reason_rids is None:
-                        continue
-                    for review in reason_rids:
-                        process_review(review, sent, total_reviews, positive_reviews, review_highlights)
-            
+                    # It's a list of review dicts directly
+                    if reason_rids is None: continue
+                    for review_dict in reason_rids:
+                        process_review(review_dict, unique_reviews_text, positive_reviews_text, category_review_dicts_with_sentiment)
+
             # Only include categories with reviews
-            if total_reviews:
-                count = len(total_reviews)
-                sentiment_ratio = len(positive_reviews) / count if count > 0 else 0
-                
-                # Check if category already exists in result dictionary (for aggregation)
+            if unique_reviews_text:
+                count = len(unique_reviews_text)
+                sentiment_ratio = len(positive_reviews_text) / count if count > 0 else 0.5 # Use 0.5 for neutral
+
+                # Aggregate review dictionaries if category already exists
                 if display_name in result_dict:
                     # If exists, add to count and update sentiment ratio
                     existing_count = result_dict[display_name]['count']
                     existing_pos_count = result_dict[display_name]['sentiment_ratio'] * existing_count
+
                     new_total_count = existing_count + count
-                    new_pos_count = existing_pos_count + len(positive_reviews)
-                    
+                    # Estimate new positive count based on ratio of new reviews
+                    new_pos_reviews_from_current = count * sentiment_ratio
+                    new_pos_count = existing_pos_count + new_pos_reviews_from_current
+
                     result_dict[display_name]['count'] = new_total_count
-                    result_dict[display_name]['sentiment_ratio'] = new_pos_count / new_total_count
-                    result_dict[display_name]['reviews'].extend(review_highlights)
+                    result_dict[display_name]['sentiment_ratio'] = new_pos_count / new_total_count if new_total_count > 0 else 0.5
+                    result_dict[display_name]['reviews'].extend(category_review_dicts_with_sentiment) # Append list of dicts
                 else:
                     # If not exists, add as new category
                     result_dict[display_name] = {
                         'original_category': prefix + original_category,
                         'count': count,
                         'sentiment_ratio': sentiment_ratio,
-                        'reviews': review_highlights,
+                        'reviews': category_review_dicts_with_sentiment, # Store list of dicts
                         'color': color
                     }
     
@@ -747,7 +857,7 @@ def get_bar_chart_data(categories, zoom_category=None, language='en', search_que
         original_categories.append(item['original_category'])
         counts.append(item['count'])
         sentiment_ratios.append(item['sentiment_ratio'])
-        review_data.append(item['reviews'])
+        review_data.append(item['reviews']) # review_data is now list of lists of dicts
         colors.append(item['color'])
     
     return display_categories, original_categories, counts, sentiment_ratios, review_data, colors, 'bar_chart_title'
@@ -758,57 +868,43 @@ def get_review_date_range():
     max_date = None
 
     # Process all review dictionaries to find date range
-    for dict_type in ['use_sents', 'attr_perf_sents']:
+    # Assuming raw_dict_map holds the original structure with raw strings
+    for dict_type in ['use_sents', 'attr_perf_sents', 'perf_sents', 'attr_sents']:
+        if dict_type not in raw_dict_map: continue
         path_to_sents_dict = raw_dict_map[dict_type]
-        
+
         for path, sents_dict in path_to_sents_dict.items():
             for sent, val in sents_dict.items():
-                if isinstance(val, dict):
-                    # It's a dictionary with rid -> reviews mapping
+                reviews_list = []
+                if isinstance(val, dict): # rid -> reviews map
                     for rid, reviews in val.items():
-                        if reviews is None:
-                            continue
-                        for review in reviews:
-                            _, _, _, date = extract_review_info(review)
-                            if date:
-                                if min_date is None or date < min_date:
-                                    min_date = date
-                                if max_date is None or date > max_date:
-                                    max_date = date
-                elif isinstance(val, list):
-                    # It's a list of reviews directly
-                    if val is None:
-                        continue
-                    for review in val:
-                        _, _, _, date = extract_review_info(review)
-                        if date:
-                            if min_date is None or date < min_date:
-                                min_date = date
-                            if max_date is None or date > max_date:
-                                max_date = date
-    
+                        if reviews: reviews_list.extend(reviews)
+                elif isinstance(val, list): # list of reviews
+                    if val: reviews_list.extend(val)
+
+                for review_str in reviews_list:
+                    # Need to parse just the date quickly
+                    date_match = re.search(r'\[(\d{4}-\d{2}-\d{2})\]', review_str)
+                    date = date_match.group(1) if date_match else None
+                    # # Alternative: Use full parsing (slower)
+                    # review_info = extract_review_info(review_str)
+                    # date = review_info['date'] if review_info else None
+
+                    if date:
+                        if min_date is None or date < min_date:
+                            min_date = date
+                        if max_date is None or date > max_date:
+                            max_date = date
+
     return min_date, max_date
 
 @custom_cached(cache=plot_data_cache)
-def get_category_time_series(categories, display_categories, original_categories, zoom_category=None, 
-                             language='en', search_query='', start_date=None, end_date=None, 
+def get_category_time_series(categories, display_categories, original_categories, zoom_category=None,
+                             language='en', search_query='', start_date=None, end_date=None,
                              time_bucket='month'):
     """
     Get time series data for categories to display trend line chart.
-    
-    Args:
-        categories: List of category types to include (usage, attribute, performance)
-        display_categories: List of category names displayed in the bar chart
-        original_categories: List of original category values (with prefixes)
-        zoom_category: Optional category to zoom in on
-        language: Language for translations
-        search_query: Optional search query to filter results
-        start_date: Optional start date to filter reviews
-        end_date: Optional end date to filter reviews
-        time_bucket: How to group time data ('day', 'week', 'month', 'year', '3month', '6month')
-    
-    Returns:
-        Dictionary with dates and count/sentiment data for each category
+    Uses review dictionaries now.
     """
     from datetime import datetime
     import pandas as pd
@@ -861,19 +957,11 @@ def get_category_time_series(categories, display_categories, original_categories
         dict_type = mapping['dict_type']
         prefix = mapping['prefix']
         
-        # Get the dictionary for this category type
-        if zoom_category:
-            # If zooming in on a category, only include subcategories of that category
-            if zoom_category.startswith(mapping['prefix']):
-                category_path = zoom_category[len(mapping['prefix']):]
-                category_dict = get_cached_dict(dict_type, category_path, search_query, start_date, end_date)
-            else:
-                # Skip if zooming into a different category type
-                continue
-        else:
-            # Otherwise get all categories
-            category_dict = get_cached_dict(dict_type, 'all', search_query, start_date, end_date)
-        
+        # Get the dictionary for this category type, applying filters
+        # This should now return dicts with review_info dictionaries
+        category_dict = get_cached_dict(dict_type, zoom_category if zoom_category else 'all',
+                                        search_query, start_date, end_date)
+
         # Process each category path
         for category_path, sents_dict in category_dict.items():
             # Get display name similar to bar chart logic
@@ -894,67 +982,44 @@ def get_category_time_series(categories, display_categories, original_categories
                 continue
                 
             # Process reviews for this category to collect date information
-            for sent, reason_rids in sents_dict.items():
+            for sent, reason_rids in sents_dict.items(): # sent key might be irrelevant
+                review_dicts_list = []
                 if isinstance(reason_rids, dict):
-                    # Dictionary with rid -> reviews mapping
-                    for rid, reviews in reason_rids.items():
-                        if reviews is None:
-                            continue
-                        for review in reviews:
-                            # Check if this is a pre-processed review or raw string
-                            if isinstance(review, tuple) and len(review) == 5:
-                                # Already processed: (review_text, highlight, reason, date, raw_review)
-                                _, highlight, _, date, _ = review
-                            else:
-                                # Raw string, extract info
-                                _, highlight, _, date = extract_review_info(review)
-                                
-                            if date:
-                                # Initialize date entry if needed
-                                if date not in date_category_reviews:
-                                    date_category_reviews[date] = {}
-                                    
-                                # Initialize category for this date if needed
-                                if display_name not in date_category_reviews[date]:
-                                    date_category_reviews[date][display_name] = {
-                                        'count': 0,
-                                        'positive': 0
-                                    }
-                                    
-                                # Count review and track sentiment
-                                date_category_reviews[date][display_name]['count'] += 1
-                                if '+' == sent:
-                                    date_category_reviews[date][display_name]['positive'] += 1
+                    # Dictionary with rid -> list of review dicts
+                    for rid, review_dicts in reason_rids.items():
+                        if review_dicts: review_dicts_list.extend(review_dicts)
                 elif isinstance(reason_rids, list):
-                    # List of reviews directly
-                    if reason_rids is None:
-                        continue
-                    for review in reason_rids:
-                            # Check if this is a pre-processed review or raw string
-                            if isinstance(review, tuple) and len(review) == 5:
-                                # Already processed: (review_text, highlight, reason, date, raw_review)
-                                _, highlight, _, date, _ = review
-                            else:
-                                # Raw string, extract info
-                                _, highlight, _, date = extract_review_info(review)
-                                
-                            if date:
-                                # Initialize date entry if needed
-                                if date not in date_category_reviews:
-                                    date_category_reviews[date] = {}
-                                    
-                                # Initialize category for this date if needed
-                                if display_name not in date_category_reviews[date]:
-                                    date_category_reviews[date][display_name] = {
-                                        'count': 0,
-                                        'positive': 0
-                                    }
-                                    
-                                # Count review and track sentiment
-                                date_category_reviews[date][display_name]['count'] += 1
-                                if '+' == sent:
-                                    date_category_reviews[date][display_name]['positive'] += 1
-    
+                    # List of review dicts directly
+                    if reason_rids: review_dicts_list.extend(reason_rids)
+
+                for review_info in review_dicts_list:
+                    if not review_info: continue # Skip if parsing failed
+
+                    date = review_info['date']
+                    if date:
+                        # Initialize date entry if needed
+                        if date not in date_category_reviews:
+                            date_category_reviews[date] = {}
+
+                        # Initialize category for this date if needed
+                        if display_name not in date_category_reviews[date]:
+                            date_category_reviews[date][display_name] = {
+                                'count': 0,
+                                'positive': 0,
+                                'total_sentiment_score': 0 # For weighted average
+                            }
+
+                        # Count review and track sentiment
+                        stars = review_info['star_rating'].count('★')
+                        is_positive = stars >= 4
+                        sentiment_score = 1.0 if is_positive else (0.0 if stars <= 2 else 0.5)
+
+                        date_category_reviews[date][display_name]['count'] += 1
+                        if is_positive:
+                            date_category_reviews[date][display_name]['positive'] += 1
+                        date_category_reviews[date][display_name]['total_sentiment_score'] += sentiment_score
+
+
     # Convert the collected data to pandas DataFrame for easier manipulation
     date_entries = []
     
@@ -962,12 +1027,12 @@ def get_category_time_series(categories, display_categories, original_categories
         date_obj = datetime.strptime(date_str, date_format)
         
         for category, data in categories.items():
-            # Set a default sentiment value of 0.5 (neutral) since we don't have reliable 
             date_entries.append({
                 'date': date_obj,
                 'category': category,
                 'count': data['count'],
-                'sentiment': data['positive'] / data['count']
+                # Calculate average sentiment for this specific day/category entry
+                'sentiment': data['total_sentiment_score'] / data['count'] if data['count'] > 0 else 0.5
             })
     
     if not date_entries:
@@ -1004,15 +1069,28 @@ def get_category_time_series(categories, display_categories, original_categories
     df['date_str'] = df['date_group'].dt.start_time.dt.strftime('%Y-%m')
     
     # For sentiment, we need to calculate the weighted average based on count
-    # to ensure that times with more reviews have more influence on the sentiment
-    grouped = df.groupby(['date_str', 'category']).agg({
-        'count': 'sum',
-        'sentiment': lambda x: sum(a * b for a, b in zip(x, df.loc[x.index, 'count'])) / sum(df.loc[x.index, 'count']) if sum(df.loc[x.index, 'count']) > 0 else 0.5
-    }).reset_index()
-    
+    # Group first, then calculate weighted average
+    grouped_agg = df.groupby(['date_str', 'category']).agg(
+        total_count=('count', 'sum'),
+        # We need individual sentiments and counts to calculate weighted average
+    ).reset_index()
+
+    # Calculate weighted sentiment for each group
+    sentiment_map = {}
+    for name, group in df.groupby(['date_str', 'category']):
+        weighted_sum = (group['sentiment'] * group['count']).sum()
+        total_count = group['count'].sum()
+        avg_sentiment = weighted_sum / total_count if total_count > 0 else 0.5
+        sentiment_map[name] = avg_sentiment
+
+    # Add weighted sentiment back to the aggregated dataframe
+    grouped_agg['sentiment'] = grouped_agg.apply(lambda row: sentiment_map.get((row['date_str'], row['category']), 0.5), axis=1)
+    grouped_agg = grouped_agg.rename(columns={'total_count': 'count'})
+
+
     # Sort by date
-    grouped = grouped.sort_values('date_str')
-    
+    grouped = grouped_agg.sort_values('date_str')
+
     # Prepare return structure
     all_dates = sorted(grouped['date_str'].unique())
     time_series_data['dates'] = all_dates
