@@ -71,20 +71,6 @@ def get_main_layout(language='zh'):
                     value=['usage', 'attribute', 'performance'],
                     inline=True
                 ),
-                html.Div([
-                    html.Button(
-                        TRANSLATIONS[language]['select_all'],
-                        id='select-all-button',
-                        n_clicks=0,
-                        style={'marginRight': '10px', 'fontSize': '0.8em'}
-                    ),
-                    html.Button(
-                        TRANSLATIONS[language]['unselect_all'],
-                        id='unselect-all-button',
-                        n_clicks=0,
-                        style={'fontSize': '0.8em'}
-                    )
-                ], style={'display': 'inline-block', 'marginLeft': '20px'})
             ], style={'marginBottom': '10px'}),
             html.Label(id='bar-zoom-label'),
             dcc.Dropdown(
@@ -156,18 +142,30 @@ def get_main_layout(language='zh'):
         id='date-filter-controls',
         children=[
             html.Div([
-                html.Label(TRANSLATIONS[language]['date_filter_label'], style={'marginBottom': '5px'}),
-                # Add visible display for selected date range
-                html.Div(id='date-range-display', style={
+                html.Div([
+                    html.Div(id='date-range-display', style={
+                        'fontSize': '1.1em',
+                        'color': '#333',
+                        'fontWeight': 'bold',
+                        'textAlign': 'center',
+                        'backgroundColor': '#f0f0f0',
+                        'padding': '8px',
+                        'borderRadius': '4px',
+                        'flex': '1'
+                    }),
+                    html.Button(
+                        TRANSLATIONS[language]['logout'], 
+                        id='logout-button', 
+                        style={'margin': '5px 0 5px 10px'}
+                    )
+                ], style={
                     'marginTop': '10px',
-                    'fontSize': '1.1em',
-                    'color': '#333',
-                    'fontWeight': 'bold',
-                    'textAlign': 'center',
-                    'backgroundColor': '#f0f0f0',
-                    'padding': '8px',
-                    'borderRadius': '4px'
-                })
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'justifyContent': 'space-between'
+                }),
+                # Use dcc.Store to store total reviews count instead of a hidden span
+                dcc.Store(id='total-reviews-count', storage_type='memory')
             ]),
             dcc.RangeSlider(
                 id='date-filter-slider',
@@ -185,39 +183,12 @@ def get_main_layout(language='zh'):
     
     return html.Div([
         html.Div([
-            # Create a header area with logout button only
-            html.Div([
-                html.Div([
-                    # Logout button
-                    html.Button(
-                        TRANSLATIONS[language]['logout'], 
-                        id='logout-button', 
-                        style={'float': 'right', 'margin': '20px'}
-                    ),
-                ], style={'display': 'flex', 'justifyContent': 'flex-end', 'width': '100%'})
-            ], style={'marginBottom': '10px', 'borderBottom': '1px solid #ddd', 'paddingBottom': '5px'}),
-            
-            # Add a div to display total reviews count in a box with border
-            html.Div([
-                html.H4(id='total-reviews-count', children='', style={
-                    'margin': '5px 0',
-                    'padding': '10px',
-                    'textAlign': 'center',
-                    'fontWeight': 'bold'
-                })
-            ], style={
-                'margin': '10px 0',
-                'border': '2px solid #ddd',
-                'borderRadius': '5px',
-                'backgroundColor': '#f9f9f9',
-                'boxShadow': '0 1px 3px rgba(0,0,0,0.1)'
-            }),
             # Add date filter controls before the search box
             date_filter_controls,
             # Move the search box below the date filter
             create_search_box(language),
             html.Div([
-                html.Label(id='plot-type-label'),
+                html.Label(id='plot-type-label', style={'marginRight': '10px', 'display': 'inline-block'}),
                 dcc.RadioItems(
                     id='plot-type',
                     options=[
@@ -226,12 +197,10 @@ def get_main_layout(language='zh'):
                         {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
                     ],
                     value='bar_chart',
-                    labelStyle={'display': 'inline-block', 'margin-right': '10px'}
+                    labelStyle={'display': 'inline-block', 'margin-right': '10px'},
+                    style={'display': 'inline-block'}
                 ),
             ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),
-            
-            # Bar chart controls section
-            bar_chart_controls,
             
             # Matrix view controls section (with sliders)
             matrix_view_controls,
@@ -241,19 +210,41 @@ def get_main_layout(language='zh'):
             # Add trend chart for bar chart view
             html.Div([
                 html.Div([
-                    html.Label(id='time-bucket-label', children='Time interval:'),
-                    dcc.Dropdown(
-                        id='time-bucket-dropdown',
-                        options=[
-                            {'label': 'Month', 'value': 'month'},
-                            {'label': '3 Months', 'value': '3month'},
-                            {'label': '6 Months', 'value': '6month'},
-                            {'label': 'Year', 'value': 'year'}
-                        ],
-                        value='3month',
-                        style={'width': '200px', 'display': 'inline-block'},
-                        clearable=False
-                    )
+                    # Time interval and category selection in a single row
+                    html.Div([
+                        # Left side - Time interval control
+                        html.Div([
+                            html.Label(id='time-bucket-label', children='Time interval:', style={'marginRight': '10px', 'display': 'inline-block'}),
+                            dcc.Dropdown(
+                                id='time-bucket-dropdown',
+                                options=[
+                                    {'label': 'Month', 'value': 'month'},
+                                    {'label': '3 Months', 'value': '3month'},
+                                    {'label': '6 Months', 'value': '6month'},
+                                    {'label': 'Year', 'value': 'year'}
+                                ],
+                                value='3month',
+                                style={'width': '150px', 'display': 'inline-block'},
+                                clearable=False
+                            )
+                        ], style={'display': 'flex', 'alignItems': 'center', 'marginRight': '20px'}),
+                        
+                        # Right side - Category selection
+                        html.Div([
+                            html.Label(id='bar-category-label', style={'marginRight': '10px', 'display': 'inline-block'}),
+                            dcc.Checklist(
+                                id='bar-category-checklist',
+                                options=[
+                                    {'label': TRANSLATIONS[language]['usage_category'], 'value': 'usage'},
+                                    {'label': TRANSLATIONS[language]['attribute_category'], 'value': 'attribute'},
+                                    {'label': TRANSLATIONS[language]['performance_category'], 'value': 'performance'}
+                                ],
+                                value=['usage', 'attribute', 'performance'],
+                                inline=True,
+                                style={'display': 'inline-block'}
+                            ),
+                        ], style={'display': 'flex', 'alignItems': 'center', 'flexGrow': '1'})
+                    ], style={'display': 'flex', 'flexWrap': 'wrap', 'alignItems': 'center', 'width': '100%'})
                 ], style={'marginBottom': '10px'}),
                 dcc.Graph(
                     id='trend-chart', 
@@ -263,6 +254,32 @@ def get_main_layout(language='zh'):
             id='trend-chart-container',
             style={'display': 'none'}  # Initially hidden, shown only for bar chart
             ),
+            
+            # Remaining bar chart controls
+            html.Div([
+                html.Label(id='bar-zoom-label'),
+                dcc.Dropdown(
+                    id='bar-zoom-dropdown',
+                    options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
+                    value='all',
+                    placeholder="Select a category to zoom"
+                ),
+                html.Div([
+                    html.Label(id='bar-count-label', children=TRANSLATIONS[language]['num_x_features'], style={'marginTop': '10px'}),
+                    dcc.Slider(
+                        id='bar-count-slider',
+                        min=1,
+                        max=50,  # Initial max that will be updated dynamically
+                        value=10,
+                        step=1,
+                        marks=None,
+                        tooltip={"placement": "bottom", "always_visible": True}
+                    ),
+                ], style={'marginTop': '5px'})
+            ], 
+            id='bar-chart-controls',
+            style={'display': 'none', 'marginBottom': '10px'}),  # Initially hidden
+            
             dcc.Graph(
                 id='main-figure', 
                 style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px'}

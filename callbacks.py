@@ -1170,7 +1170,7 @@ def register_callbacks(app):
          Output('date-filter-slider', 'max'),
          Output('date-filter-slider', 'value'),
          Output('date-filter-slider', 'marks'),
-         Output('total-reviews-count', 'children')],
+         Output('total-reviews-count', 'data')],
         [Input('plot-type', 'value'),
          Input('x-axis-dropdown', 'value'),
          Input('y-axis-dropdown', 'value'),
@@ -1285,12 +1285,12 @@ def register_callbacks(app):
         elif trigger_id == 'app-language-state.value':
             # Just update the text without recounting when language changes
             # Get the current text and extract the number
-            current_text = dash.callback_context.states.get('total-reviews-count.children')
+            current_count = dash.callback_context.states.get('total-reviews-count.data')
             
-            # If we have current text with a number, reuse it with the new language
-            if current_text and ':' in current_text:
+            # If we have a current count, reuse it with the new language
+            if current_count:
                 try:
-                    total_reviews = int(current_text.split(':')[1].strip())
+                    total_reviews = int(current_count)
                     if search_query:
                         review_count_text = f"{TRANSLATIONS[language].get('total_reviews_filtered', 'Total reviews matching filter')}: {total_reviews}"
                     else:
@@ -1330,7 +1330,7 @@ def register_callbacks(app):
                 slider_max,             # date-filter-slider max
                 slider_value,           # date-filter-slider value
                 slider_marks,           # date-filter-slider marks
-                review_count_text       # total-reviews-count
+                total_reviews if should_update_count else dash.no_update  # total-reviews-count: store the count value only
             )
         else:
             # Check if axis dropdowns triggered the callback and reset corresponding top_n values
@@ -1364,7 +1364,7 @@ def register_callbacks(app):
                 slider_max,             # date-filter-slider max
                 slider_value,           # date-filter-slider value
                 slider_marks,           # date-filter-slider marks
-                review_count_text       # total-reviews-count
+                total_reviews if should_update_count else dash.no_update  # total-reviews-count: store the count value only
             )
 
     # Helper functions to reduce duplication
@@ -2035,6 +2035,10 @@ def register_callbacks(app):
         
         # Get selected words
         selected_words = json.loads(selected_words_json) if selected_words_json else []
+        # If the callback was triggered by clicking on the bar chart, clear selected words
+        if dash.callback_context.triggered and str(dash.callback_context.triggered[0]['prop_id']).startswith('main-figure'):
+            selected_words = []
+            selected_words_json = json.dumps(selected_words)
         
         try:
             # Update reviews with current filters
@@ -2301,9 +2305,10 @@ def register_callbacks(app):
         Output('date-range-display', 'children'),
         [Input('date-filter-slider', 'value'),
          Input('date-filter-storage', 'children'),
-         Input('app-language-state', 'children')]
+         Input('app-language-state', 'children'),
+         Input('total-reviews-count', 'data')]
     )
-    def update_date_display(slider_value, date_filter_storage, language):
+    def update_date_display(slider_value, date_filter_storage, language, total_reviews):
         if not slider_value or not date_filter_storage:
             return ""
             
@@ -2355,7 +2360,7 @@ def register_callbacks(app):
                         value=end_date_display,
                         style={'width': '80px', 'textAlign': 'center', 'color': '#2196F3', 'fontWeight': 'bold'}
                     ),
-                    html.Span(f" ({month_diff+1} {month_label})"),
+                    html.Span(f" ({month_diff+1} {month_label}, {TRANSLATIONS[language].get('total_reviews', 'Total reviews')}: {total_reviews})"),
                     
                 ], style={'marginTop': '5px'})
             ])
@@ -2651,33 +2656,6 @@ def register_callbacks(app):
             {'label': TRANSLATIONS[language].get('year', 'Year'), 'value': 'year'}
         ]
 
-    @app.callback(
-        Output('bar-category-checklist', 'value'),
-        [Input('select-all-button', 'n_clicks'),
-         Input('unselect-all-button', 'n_clicks')],
-        [State('bar-category-checklist', 'options')]
-    )
-    def update_category_selection(select_all_clicks, unselect_all_clicks, available_options):
-        """Handle Select All and Unselect All button clicks"""
-        ctx = dash.callback_context
-        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-        
-        # Don't update on initial load
-        if not trigger_id:
-            raise dash.exceptions.PreventUpdate
-        
-        # Get all possible category values
-        all_categories = [option['value'] for option in available_options]
-        
-        # Return the appropriate selection based on which button was clicked
-        if 'select-all-button' in trigger_id:
-            return all_categories
-        elif 'unselect-all-button' in trigger_id:
-            return []
-        
-        # Default case - should not reach here
-        raise dash.exceptions.PreventUpdate
-
     # Add URL pathname callback for login vs main content display
     @app.callback(
         [Output('login-content', 'style', allow_duplicate=True),
@@ -2908,8 +2886,8 @@ def create_trend_chart(display_categories, original_categories, time_series_data
             dict(
                 type="buttons",
                 direction="right",
-                x=0.05,
-                y=1.11,
+                x=1.05,
+                y=1.05,
                 buttons=[select_all_button, unselect_all_button],
                 pad={"r": 10, "t": 10},
                 showactive=False,
