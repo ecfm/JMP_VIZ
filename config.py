@@ -99,8 +99,10 @@ TRANSLATIONS = {
         'login': 'Login',
         'username': 'Username',
         'password': 'Password',
+        'real_name': 'Name',
         'enter_username': 'Enter username',
         'enter_password': 'Enter password',
+        'enter_real_name': 'Enter your name',
         'invalid_credentials': 'Invalid credentials',
         'logout': 'Logout',
         'plot_type': 'Plot Type:',
@@ -183,10 +185,12 @@ TRANSLATIONS = {
     },
     'zh': {
         'login': '登录',
-        'username': '用户名',
+        'username': '账户',
         'password': '密码',
+        'real_name': '姓名',
         'enter_username': '请输入用户名',
         'enter_password': '请输入密码',
+        'enter_real_name': '输入您的姓名',
         'invalid_credentials': '用户名或密码错误',
         'logout': '退出登录',
         'plot_type': '图表类型：',
@@ -270,24 +274,24 @@ TRANSLATIONS = {
 }
 
 # Instead of static values, we'll make these callable functions
-TRANSLATIONS['en']['get_bar_chart_review_format'] = lambda x_category=None: get_review_format('en', 'bar_chart', x_category)
-TRANSLATIONS['en']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('en', 'matrix', x_category, y_category)
-TRANSLATIONS['zh']['get_bar_chart_review_format'] = lambda x_category=None: get_review_format('zh', 'bar_chart', x_category)
-TRANSLATIONS['zh']['get_matrix_review_format'] = lambda x_category=None, y_category=None: get_review_format('zh', 'matrix', x_category, y_category)
+TRANSLATIONS['en']['get_bar_chart_review_format'] = lambda x_cat=None: get_review_format('en', 'bar_chart', x_cat)
+TRANSLATIONS['en']['get_matrix_review_format'] = lambda x_cat=None, y_cat=None: get_review_format('en', 'matrix', x_cat, y_cat)
+TRANSLATIONS['zh']['get_bar_chart_review_format'] = lambda x_cat=None: get_review_format('zh', 'bar_chart', x_cat)
+TRANSLATIONS['zh']['get_matrix_review_format'] = lambda x_cat=None, y_cat=None: get_review_format('zh', 'matrix', x_cat, y_cat)
 
 # Axis category names translations
 AXIS_CATEGORY_NAMES = {
     'en': {
-        'use': 'Uses',
+        'use': 'Usage',
         'perf': 'Performance',
         'attr': 'Attributes',
-        'attr_perf': 'Attributes/Performance'
+        'attr_perf': 'Attributes & Performance'
     },
     'zh': {
         'use': '用途',
         'perf': '性能',
         'attr': '属性',
-        'attr_perf': '属性/性能'
+        'attr_perf': '属性与性能'
     }
 }
 

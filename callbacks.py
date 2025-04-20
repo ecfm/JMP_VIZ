@@ -11,24 +11,14 @@ import pandas as pd
 from dateutil.relativedelta import relativedelta
 from dash import dcc
 from collections import Counter
-import nltk
-from nltk.corpus import stopwords
 from urllib.parse import parse_qs
 from typing import List, Dict, Optional, Tuple # Added types
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, color_mapping, color_to_prefix, type_colors
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, VALID_USERNAME, VALID_PASSWORD, color_mapping, type_colors
 # Removed get_review_format import as it's handled differently
 # Make sure get_review_format is removed or adapted if it was used elsewhere
 from data import get_cached_dict, normalize_search_query, get_bar_chart_data, get_plot_data, get_review_date_range, get_category_time_series, update_raw_dict_map
 from utils import ratio_to_rgb, get_size_legend_translations, get_hover_translations, get_proportional_size, get_search_examples_html
-
-# Initialize NLTK stopwords
-try:
-    nltk.data.find('corpora/stopwords')
-except LookupError:
-    nltk.download('stopwords')
-STOPWORDS = set(stopwords.words('english'))
-STOPWORDS.update(['said', 'would', 'also', 'could', 'one', 'like', 'still', 'even', 'get', 'use', 'used'])
 
 def extract_text_from_review(review_info: Dict) -> str:
     """
@@ -328,31 +318,33 @@ def register_callbacks(app):
     @app.callback(
         [Output('url', 'pathname'),
          Output('url', 'search'),
-         Output('login-error', 'children')],
+         Output('login-error', 'children'),
+         Output('user-real-name-state', 'data')], # Changed children to data
         [Input('login-button', 'n_clicks')],
         [State('username-input', 'value'),
          State('password-input', 'value'),
+         State('real-name-input', 'value'), # Added state for real name input
          State('app-language-state', 'children'),
          State('category-state', 'children')],
         prevent_initial_call=True
     )
-    def login_callback(n_clicks, username, password, language, category):
+    def login_callback(n_clicks, username, password, real_name, language, category): # Added real_name
         if not n_clicks:
             raise dash.exceptions.PreventUpdate
             
         # Check if username and password are None or empty
         if not username or not password:
-            return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials']
+            return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials'], dash.no_update # No update for name
             
         if username == VALID_USERNAME and password == VALID_PASSWORD:
             user = User(username)
             login_success = login_user(user)
             
-            # Return to home page with language and category parameters preserved
-            return '/', f'?lang={language}&category={category}', ''
+            # Return to home page with language and category parameters preserved, store real name
+            return '/', f'?lang={language}&category={category}', '', real_name # Return real_name
         
         # Return to login page with error and parameters
-        return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials']
+        return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials'], dash.no_update # No update for name
 
     @app.callback(
         [Output('url', 'pathname', allow_duplicate=True),
@@ -2661,14 +2653,15 @@ def register_callbacks(app):
         [Output('login-content', 'style', allow_duplicate=True),
          Output('main-content', 'style', allow_duplicate=True)],
         [Input('url', 'pathname')],
-        [State('app-language-state', 'children'),
-         State('category-state', 'children')],
+        [State('url', 'search'),
+         State('app-language-state', 'children'),
+         State('category-state', 'children'),
+         State('user-real-name-state', 'data')], # Changed children to data
         prevent_initial_call=True
     )
-    def display_page(pathname, language, category):
+    def display_page(pathname, search, language, category, user_real_name): # Added user_real_name
         """Display login page or main content based on URL pathname and authentication status."""
         # Check if the user is authenticated
-        from flask_login import current_user
         
         # Main logic: show login page unless authenticated and on main page
         if pathname == '/' and current_user.is_authenticated:
@@ -2702,12 +2695,12 @@ def register_callbacks(app):
         [Input('url', 'pathname')],
         [State('url', 'search'),
          State('app-language-state', 'children'),
-         State('category-state', 'children')],
+         State('category-state', 'children'),
+         State('user-real-name-state', 'data')], # Changed children to data
         prevent_initial_call=True
     )
-    def check_auth_and_redirect(pathname, search, language, category):
+    def check_auth_and_redirect(pathname, search, language, category, user_real_name): # Added user_real_name
         """Check user authentication and redirect if necessary."""
-        from flask_login import current_user
         
         # If user is not authenticated and tries to access any page other than login, redirect to login
         if pathname != '/login' and not current_user.is_authenticated:
@@ -2716,6 +2709,11 @@ def register_callbacks(app):
         # If user is authenticated and tries to access login page, redirect to main page
         if pathname == '/login' and current_user.is_authenticated:
             return '/', f'?lang={language}&category={category}'
+        
+        # If user is authenticated but real name is missing, force logout and redirect to login
+        if pathname != '/login' and current_user.is_authenticated and not user_real_name:
+            logout_user()
+            return '/login', f'?lang={language}&category={category}'
             
         # Otherwise, don't change the URL
         raise dash.exceptions.PreventUpdate

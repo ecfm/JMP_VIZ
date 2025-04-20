@@ -22,6 +22,14 @@ def get_login_layout(language='en'):
                     id='password-input',
                     type='password',
                     placeholder=TRANSLATIONS[language]['enter_password'],
+                    style={'width': '100%', 'marginBottom': '10px'}, # Adjusted margin
+                    value=''  # Initialize with empty string
+                ),
+                html.Label(TRANSLATIONS[language]['real_name']), # Added label for real name
+                dcc.Input(                                       # Added input for real name
+                    id='real-name-input',                        # New ID
+                    type='text',
+                    placeholder=TRANSLATIONS[language]['enter_real_name'], # New placeholder
                     style={'width': '100%', 'marginBottom': '20px'},
                     value=''  # Initialize with empty string
                 ),
@@ -340,5 +348,7 @@ def get_app_layout():
         # Hidden div to store language state at app level
         html.Div(id='app-language-state', children='zh', style={'display': 'none'}),
         # Hidden div to store category state at app level
-        html.Div(id='category-state', children='Cables', style={'display': 'none'})
+        html.Div(id='category-state', children='Cables', style={'display': 'none'}),
+        # Hidden div to store user's real name
+        dcc.Store(id='user-real-name-state', storage_type='session') # Added store for real name
     ]) 
