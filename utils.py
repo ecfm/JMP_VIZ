@@ -2,13 +2,47 @@ import plotly.colors
 import plotly.express as px
 from dash import html, dcc
 import re
-from config import type_colors
+from config import type_colors, TRANSLATIONS
+import numpy as np
 
 def ratio_to_rgb(ratio):
     """Convert a ratio value (0-1) to an RGB color."""
     ratio = max(0.00001, min(ratio, 0.99999))
     rgba = plotly.colors.sample_colorscale(px.colors.diverging.RdBu, ratio)[0]
     return rgba
+
+def get_options(language, value, top_paths, top_display_paths):
+    """Generate dropdown options for category selection."""
+    levels = [{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}]
+    if value != 'all':
+        display_parts = [format_category_display(value, language)]
+        parts = value.split('|')
+        for i, part in enumerate(parts):
+            current_val = '|'.join(parts[:i+1])
+            display_current_val = format_category_display(current_val, language)
+            prefix = '--' * (i+1)
+            levels.append({'label': f'{prefix} {display_current_val} [L{i+1}]', 'value': current_val})
+        
+        # Format remaining paths
+        remained_paths = []
+        for path, display_path in zip(top_paths, top_display_paths):
+            prefix = '--' * (len(parts)+1)
+            remained_paths.append({
+                'label': f'{prefix} {display_path} [L{len(parts)+1}]', 
+                'value': path
+            })
+            
+        return levels + remained_paths
+    else:
+        # Format top-level paths
+        top_level_paths = []
+        for path, display_path in zip(top_paths, top_display_paths):
+            top_level_paths.append({
+                'label': f'-- {display_path} [L1]',
+                'value': path
+            })
+            
+        return levels + top_level_paths
 
 def format_category_display(category, language):
     """
@@ -162,8 +196,6 @@ def get_hover_translations(language):
 
 def get_proportional_size(value, max_val, min_val):
     """Calculate a square size that makes area proportional to the value."""
-    import numpy as np
-    
     if value == 0:
         return 0
     
@@ -175,18 +207,4 @@ def get_proportional_size(value, max_val, min_val):
     
     # Calculate sqrt(value)/sqrt(max_val) * 0.8
     # The 0.8 factor is to ensure squares don't overlap too much
-    return 0.8 * np.sqrt(value) / (np.sqrt(max_val) + epsilon)
-
-def get_search_examples_html(language):
-    """Return search examples HTML for the given language."""
-    from config import SEARCH_EXAMPLES
-    
-    return [
-        html.P(
-            line, 
-            style={
-                'marginBottom': '4px',
-                'fontStyle': 'italic' if 'syntax' in line.lower() or '语法' in line else 'normal'
-            }
-        ) for line in SEARCH_EXAMPLES[language]
-    ] 
+    return 0.8 * np.sqrt(value) / (np.sqrt(max_val) + epsilon) 

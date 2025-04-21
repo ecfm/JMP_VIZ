@@ -632,53 +632,6 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             
     return filtered_dict
 
-def normalize_search_query(query: str) -> str:
-    """Normalize search query for display by quoting terms and using readable operators"""
-    if not query or not query.strip():
-        return ""
-        
-    query = query.strip()
-    
-    # First handle parentheses spacing
-    query = re.sub(r'\(\s*', '(', query)
-    query = re.sub(r'\s*\)', ')', query)
-    
-    # Preserve existing quoted terms
-    quoted_sections = {}
-    quote_pattern = re.compile(r'"([^"]+)"')
-    quoted_matches = quote_pattern.findall(query)
-    
-    for i, match in enumerate(quoted_matches):
-        placeholder = f"QUOTED_{i}"
-        quoted_sections[placeholder] = match
-        query = query.replace(f'"{match}"', placeholder)
-    
-    # Split into tokens while preserving operators and parentheses
-    tokens = re.findall(r'\(|\)|QUOTED_\d+|\w+|&|\|', query)
-    
-    # Process tokens
-    normalized = []
-    for token in tokens:
-        if token in ('&', '|'):
-            # Replace operators
-            normalized.append('and' if token == '&' else 'or')
-        elif token in ('(', ')'):
-            # Keep parentheses as-is
-            normalized.append(token)
-        elif token.startswith('QUOTED_'):
-            # Restore quoted term
-            normalized.append(f'"{quoted_sections[token]}"')
-        elif ' ' in token:
-            # Quote multi-word terms
-            normalized.append(f'"{token}"')
-        else:
-            # Quote single terms
-            normalized.append(f'"{token}"')
-    
-    # Join with proper spacing
-    return ' '.join(normalized)
-
-# Use our custom caching decorator instead of the built-in @cached
 @custom_cached(cache=plot_data_cache)
 def get_bar_chart_data(categories, zoom_category=None, language='en', search_query='', start_date=None, end_date=None):
     """
@@ -1132,3 +1085,10 @@ def get_category_time_series(categories, display_categories, original_categories
         time_series_data['category_data'][category]['sentiment'] = sentiments
     
     return time_series_data 
+
+def get_data_cache():
+    return {
+        'raw_dict_map': raw_dict_map,
+        'plot_data_cache': plot_data_cache,
+        'path_dict_cache': path_dict_cache
+    } 
