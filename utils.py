@@ -1,12 +1,67 @@
 import plotly.colors
 import plotly.express as px
 from dash import html, dcc
+import re
+from config import type_colors
 
 def ratio_to_rgb(ratio):
     """Convert a ratio value (0-1) to an RGB color."""
     ratio = max(0.00001, min(ratio, 0.99999))
     rgba = plotly.colors.sample_colorscale(px.colors.diverging.RdBu, ratio)[0]
     return rgba
+
+def format_category_display(category, language):
+    """
+    Format category display text based on language.
+    For Chinese (zh): Remove content within parentheses
+    For English (en): Extract and keep only content within parentheses, handle hierarchy
+    For other languages: Remove content within parentheses
+    
+    Args:
+        category: The category string to format
+        language: The current language setting
+        
+    Returns:
+        Formatted category string
+    """
+    # Extract prefix if present (U:, A:, P:)
+    prefix = ""
+    for p in type_colors.keys():
+        if category.startswith(p):
+            prefix = p
+            category = category[len(p):]  # Remove prefix temporarily
+            break
+            
+    if language == 'en':
+        # For English, handle both hierarchy and parentheses
+        if '|' in category:
+            # If there's a hierarchy, keep everything after the last '|'
+            parts = category.split('|')
+            if len(parts) > 1:
+                # Extract content within parentheses from the last part
+                last_part = parts[-1]
+                parentheses_match = re.search(r'\s*\(([^)]*)\)', last_part)
+                if parentheses_match:
+                    formatted = parentheses_match.group(1)
+                else:
+                    formatted = last_part
+            else:
+                formatted = category
+        else:
+            # For non-hierarchical categories, extract content within parentheses if present
+            parentheses_match = re.search(r'\s*\(([^)]*)\)', category)
+            if parentheses_match:
+                formatted = parentheses_match.group(1)
+            else:
+                formatted = category
+    else:
+        # For Chinese and other languages, remove content within parentheses
+        formatted = re.sub(r'\s*\([^)]*\)', '', category)
+    
+    # Reapply the prefix if it was present
+    if prefix:
+        return prefix + formatted
+    return formatted
 
 def create_search_box(language='en'):
     """Create a search box component with the given language."""
