@@ -1,0 +1,1 @@
+[{"id": "1", "username": "admin", "password_hash": "scrypt:32768:8:1$q3CtHI8YoPPufWea$5487e1c701a92414c3b9f915b8a85a37f1ec12af64ea0cb22857f384173c3c8472865325e1bf034a7f7a2895ea837378dea2f4ba4e744b14c054be7133d1e6a7", "email": "admin@example.com", "role": "admin"}]

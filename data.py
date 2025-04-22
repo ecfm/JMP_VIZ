@@ -4,12 +4,18 @@ import re
 import numpy as np
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
+import logging
+from datetime import datetime
+from functools import lru_cache
 
 from config import (
     get_result_dir, 
     path_dict_cache, 
-    plot_data_cache
+    plot_data_cache,
+    TRANSLATIONS
 )
+from utils import format_category_display
+from logging_config import log_error, log_app_event
 
 # Caching functions (moved up to fix linter errors)
 def make_hashable(obj):
@@ -461,10 +467,15 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             highlight_detail = review_info['highlight_detail_text'].lower() if review_info['highlight_detail_text'] else ""
             highlight_reason = review_info['highlight_reason_text'].lower() if review_info['highlight_reason_text'] else ""
             
-            if not (query_filter(review_text) or 
-                    query_filter(product_id) or
-                    query_filter(highlight_detail) or
-                    (highlight_reason and query_filter(highlight_reason))):
+            try:
+                # Combine all text fields for searching
+                combined_search_text = f"{review_text} {product_id} {highlight_detail} {highlight_reason}"
+                filter_result = query_filter(combined_search_text)
+                
+                if not filter_result:
+                    return None
+            except Exception as e:
+                log_error(f"Error evaluating filter for product_id {product_id}: {str(e)}")
                 return None
 
         # Return the processed review dictionary
@@ -490,26 +501,46 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
         try:
             # Convert operators and clean up query
             query = search_query.lower().strip()
+            log_app_event(f"Processing search query: '{search_query}'")
             
-            # Add spaces around parentheses to ensure proper tokenization
+            # First, protect any product IDs in parentheses
+            # Match groups of alphanumeric characters inside parentheses
+            protected_groups = []
+            def replace_product_group(match):
+                group_text = match.group(1)
+                placeholder = f"__GROUP_{len(protected_groups)}__"
+                protected_groups.append(group_text)
+                return placeholder
+            
+            # Replace groups of product IDs in parentheses with placeholders
+            query_before = query
+            query = re.sub(r'\(([A-Za-z0-9\s]+)\)', replace_product_group, query)
+            
+            # Check if any replacements were made
+            if query == query_before and '(' in query:
+                log_error(f"Parentheses detected but no product groups matched in query: '{search_query}'")
+            
+            # Now continue with regular processing
+            # Add spaces around remaining parentheses for tokenization
             query = re.sub(r'\(', ' ( ', query)
             query = re.sub(r'\)', ' ) ', query)
             query = re.sub(r'\s+', ' ', query).strip()
             
+            # Replace operators with their Python equivalents
             query = re.sub(r'\s*&\s*', ' and ', query)
             query = re.sub(r'\s*\|\s*', ' or ', query)
             
             # Parse terms in quotes as single terms
             quoted_terms = re.findall(r'"([^"]+)"', query)
             for term in quoted_terms:
-                # Replace the quoted term with a placeholder that won't be split
+                # Replace the quoted term with a placeholder
                 placeholder = f"__QUOTED_{term.replace(' ', '_')}__"
                 query = query.replace(f'"{term}"', placeholder)
             
             # Split by spaces but preserve parentheses and operators
-            tokens = re.findall(r'__QUOTED_[^_]+__|[()]|\band\b|\bor\b|\S+', query)
+            tokens = re.findall(r'__GROUP_\d+__|__QUOTED_[^_]+__|[()]|\band\b|\bor\b|\S+', query)
             
-            # Convert terms to regex patterns
+            # Convert terms to expressions
             terms = []
             current_terms = []
             paren_groups = []
@@ -556,12 +587,35 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
                         current_terms = []
                     terms.append(token)
                 else:
-                    # Handle quoted terms and regular terms
-                    if token.startswith('__QUOTED_') and token.endswith('__'):
+                    # Handle special placeholders
+                    if token.startswith('__GROUP_') and token.endswith('__'):
+                        # This is a group of product IDs
+                        group_idx = int(token[8:-2])
+                        if group_idx < len(protected_groups):
+                            product_ids = protected_groups[group_idx].split()
+                        
+                            # Create a search term for each product ID in the group
+                            product_terms = []
+                            for product_id in product_ids:
+                                # Search in combined text
+                                product_term = f"'{product_id}' in search_text"
+                                product_terms.append(product_term)
+                        
+                            # Join with OR (any product ID in the group matches)
+                            group_expr = f"({' or '.join(product_terms)})"
+                            current_terms.append(group_expr)
+                        else:
+                            log_error(f"Invalid group index {group_idx}, have {len(protected_groups)} groups")
+                    elif token.startswith('__QUOTED_') and token.endswith('__'):
+                        # This is a quoted phrase
                         clean_term = token[9:-2].replace('_', ' ')
-                        current_terms.append(f"'{clean_term}' in review_text")
+                        # Check in combined text
+                        term_expr = f"'{clean_term}' in search_text"
+                        current_terms.append(term_expr)
                     else:
-                        current_terms.append(f"'{token}' in review_text")
+                        # Regular term - check in combined text
+                        term_expr = f"'{token}' in search_text"
+                        current_terms.append(term_expr)
             
             # Handle any remaining terms
             if current_terms:
@@ -572,6 +626,7 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             
             # Check for unmatched opening parentheses
             if paren_groups:
+                log_error(f"Unmatched opening parentheses in query: '{search_query}'")
                 raise ValueError("Unmatched opening parenthesis")
             
             # Create the filter expression
@@ -583,22 +638,24 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
             
             # Validate the expression is not empty
             if not filter_expr.strip():
+                log_error("Empty search expression")
                 raise ValueError("Empty search expression")
             
             # Create a compiled filter function to avoid re-evaluation
             try:
-                # We don't need to modify the filter expression - our filter function in extract_and_filter_review
-                # will apply the search query to both review_text and product_id
-                filter_code = compile(f"lambda review_text: {filter_expr}", "<string>", "eval")
+                # Use search_text as parameter name
+                filter_code = compile(f"lambda search_text: {filter_expr}", "<string>", "eval")
                 query_filter = eval(filter_code, {"__builtins__": {}})
+                log_app_event(f"Successfully compiled filter function for query: '{search_query}'")
             except Exception as e:
-                print(f"Search query error: {str(e)}")
-                print(f"Filter expression was: {filter_expr if 'filter_expr' in locals() else 'not created'}")
+                log_error(f"Failed to compile filter function: {str(e)}")
+                log_error(f"Filter expression was: {filter_expr}")
                 query_filter = None # Fall back to just date filtering
             
         except Exception as e:
-            print(f"Search query error: {str(e)}")
-            print(f"Filter expression was: {filter_expr if 'filter_expr' in locals() else 'not created'}")
+            log_error(f"Search query parsing error: {str(e)}")
+            if 'filter_expr' in locals():
+                log_error(f"Filter expression was: {filter_expr}")
             query_filter = None # Fall back to just date filtering
     
     # Now apply the filter to the dictionary structure
@@ -629,7 +686,8 @@ def filter_dict_by_query(path_to_sents_dict: Dict, search_query: str, start_date
 
         if filtered_sents:  # Only keep path if there are matching reviews
             filtered_dict[path] = filtered_sents
-            
+    
+    log_app_event(f"Filtering complete for query '{search_query}'. Found {len(filtered_dict)} matching paths.")
     return filtered_dict
 
 @custom_cached(cache=plot_data_cache)
@@ -870,7 +928,6 @@ def get_category_time_series(categories, display_categories, original_categories
     Get time series data for categories to display trend line chart.
     Uses review dictionaries now.
     """
-    from datetime import datetime
     import pandas as pd
         
     # Default to month if invalid bucket size provided

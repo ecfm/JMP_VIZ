@@ -789,7 +789,7 @@ def update_reviews_with_filters(click_data, sentiment_filter, language, plot_typ
         else:
             return dash.no_update, None, None, None
     else:
-        # Handle matrix view selection
+        # Handle matrix view and other matrix-like plot types (use_attr_perf, perf_attr)
         point = click_data['points'][0]
         clicked_x = point['x']
         clicked_y = point['y']
@@ -835,7 +835,7 @@ def update_reviews_with_filters(click_data, sentiment_filter, language, plot_typ
                 reviews_display = create_review_display(
                     filtered_reviews, 
                     language, 
-                    plot_type='matrix',
+                    plot_type='matrix',  # Use 'matrix' for the display format
                     x_category=x_text[j],
                     y_category=y_text[i],
                     selected_words=selected_words

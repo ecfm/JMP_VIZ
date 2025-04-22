@@ -20,44 +20,27 @@ def get_search_examples_html(language):
 
 def normalize_search_query(query: str) -> str:
     """
-    Normalize the search query for consistent processing.
-    - Lowercase the query.
-    - Split by logical operators (AND, OR, NOT) while preserving them.
-    - Remove extra whitespace around terms and operators.
-    - Reconstruct the query.
+    Normalize the search query for consistent processing and display.
+    - Preserve boolean operators (&, |) and parentheses.
     - Handle quoted phrases correctly.
+    - Remove excess whitespace but maintain the logical structure.
     """
     if not query:
         return ""
 
-    # Regex to split by AND, OR, NOT, keeping delimiters, and also capturing quoted phrases
-    # It captures:
-    # 1. Quoted phrases ("...")
-    # 2. Logical operators (AND, OR, NOT) surrounded by spaces (or start/end of string)
-    # 3. Individual words/terms
-    # 4. Parentheses (added capturing group)
-    pattern = r'("[^"]+")|\b(AND|OR|NOT)\b|\b([^\s"()]+)\b|([()])'
+    # Clean up the query for display purposes, but preserve logical operators
+    # First, ensure spaces around operators & and | for tokenization, but don't replace them
+    display_query = query
+    display_query = re.sub(r'([&|()])', r' \1 ', display_query)
+    display_query = re.sub(r'\s+', ' ', display_query).strip()
     
-    tokens = re.findall(pattern, query, re.IGNORECASE)
+    # Handle quoted phrases
+    quoted_phrases = re.findall(r'"([^"]+)"', display_query)
+    for phrase in quoted_phrases:
+        # Ensure quoted phrases remain exactly as they are
+        display_query = display_query.replace(f'"{phrase}"', f'"{phrase}"')
     
-    processed_tokens = []
-    for quoted, operator, word, parenthesis in tokens:
-        if quoted:
-            # Keep quoted phrases as is, but maybe lowercase content inside?
-            # For now, keep as is to preserve potential case sensitivity if needed later
-            processed_tokens.append(quoted)
-        elif operator:
-            # Uppercase operators
-            processed_tokens.append(operator.upper())
-        elif word:
-            # Lowercase individual words
-            processed_tokens.append(word.lower())
-        elif parenthesis:
-             # Keep parentheses
-            processed_tokens.append(parenthesis)
-
-    # Reconstruct the query, ensuring single spaces between tokens
-    return ' '.join(token for token in processed_tokens if token)
+    return display_query
 
 
 def logic_toggle_search_help(n_clicks, current_style):

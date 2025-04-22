@@ -22,51 +22,7 @@ from search import (
     logic_toggle_search_help,
     logic_update_search_results_info
 )
-
-log_formatter = logging.Formatter('{"timestamp": "%(asctime)s", "level": "%(levelname)s", "user": "%(user)s", "path": "%(path)s", "action": "%(action)s", "context": %(context)s}')
-log_handler = logging.FileHandler('user_actions.log', encoding='utf-8')
-log_handler.setFormatter(log_formatter)
-
-logger = logging.getLogger('user_actions')
-logger.setLevel(logging.INFO)
-# Avoid adding handler if it already exists (e.g., during hot reloading)
-if not logger.handlers:
-    logger.addHandler(log_handler)
-logger.propagate = False # Prevent duplicate logging if root logger is configured
-
-def log_user_action(real_name, pathname, action, context_dict):
-    """Helper function to log user actions in JSON format."""
-    user = real_name if real_name else "Unknown"
-    path = pathname if pathname else "Unknown"
-    # Ensure context is serializable and handle potential issues
-    try:
-        # Convert complex objects like clickData to string representations if necessary
-        serializable_context = {}
-        for key, value in context_dict.items():
-            if isinstance(value, (dict, list)) and key == 'clickData': # Be specific about complex data
-                 serializable_context[key] = str(value) # Simple string representation for complex data
-            else:
-                 serializable_context[key] = value
-
-        context_str = json.dumps(serializable_context, ensure_ascii=False, default=str)
-    except Exception as e:
-        # Log the error internally if context serialization fails
-        print(f"Error serializing context for logging: {e}")
-        context_str = json.dumps({"error": "Context not fully serializable", "detail": str(e)}, ensure_ascii=False)
-
-    # Use LogRecord attributes directly
-    record = logger.makeRecord(
-        name=logger.name,
-        level=logging.INFO,
-        fn="",
-        lno=0,
-        msg="", # Message is built by the formatter
-        args=[],
-        exc_info=None,
-        func="",
-        extra={'user': user, 'path': path, 'action': action, 'context': context_str} # Pass context as string
-    )
-    logger.handle(record)
+from logging_config import log_user_action as log_user, log_error, log_app_event
 
 # User class for authentication
 class User(UserMixin):
@@ -84,6 +40,14 @@ class User(UserMixin):
         
     def get_id(self):
         return self.id
+
+def log_user_action(real_name, pathname, action, context_dict):
+    """Helper function to log user actions in JSON format."""
+    try:
+        # Use the new logging system
+        log_user(real_name, pathname, action, context_dict)
+    except Exception as e:
+        log_error(f"Failed to log user action: {action}", exc_info=True)
 
 def register_callbacks(app):
     """Register all callbacks with the app."""
@@ -222,7 +186,7 @@ def register_callbacks(app):
         )
             
         # Return the count of categories or a minimum value if there are fewer categories
-        return max(len(display_categories), 1)
+        return min(max(len(display_categories), 1), 30)
 
     @app.callback(
         [Output('y-axis-label', 'children'),
@@ -259,7 +223,9 @@ def register_callbacks(app):
          Output('date-filter-slider', 'max'),
          Output('date-filter-slider', 'value'),
          Output('date-filter-slider', 'marks'),
-         Output('total-reviews-count', 'data')],
+         Output('total-reviews-count', 'data'),
+         Output('selected-words-storage', 'children'),  # Add output to reset word selection
+         Output('sentiment-filter', 'value', allow_duplicate=True)],  # Add allow_duplicate=True
         [Input('plot-type', 'value'),
          Input('x-axis-dropdown', 'value'),
          Input('y-axis-dropdown', 'value'),
@@ -275,7 +241,8 @@ def register_callbacks(app):
          Input('url', 'search')],  # Add URL search parameter as input
         [State('search-input', 'value'),
          State('date-filter-storage', 'children'),
-         State('user-real-name-state', 'data')] # Add user real name state
+         State('user-real-name-state', 'data')], # Add user real name state
+        prevent_initial_call=True
     )
     def update_visualization_and_controls(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
                    bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search, search_query, date_filter_storage, user_real_name): # Add user_real_name
@@ -311,10 +278,26 @@ def register_callbacks(app):
         # Initialize reviews content
         reviews_content = [] if trigger_id == 'search-button.n_clicks' else dash.no_update
         
-        # Clear reviews if the plot type changes
-        if trigger_id == 'plot-type.value':
+        # Clear reviews if the plot type changes, or if zoom/axis settings change
+        should_clear_reviews = (
+            trigger_id == 'plot-type.value' or 
+            trigger_id == 'bar-zoom-dropdown.value' or
+            trigger_id == 'x-axis-dropdown.value' or
+            trigger_id == 'y-axis-dropdown.value' or
+            trigger_id == 'x-features-slider.value' or
+            trigger_id == 'y-features-slider.value'
+        )
+        
+        if should_clear_reviews:
             reviews_content = []
+            
+        # Handle special case for plot type changes - log and reset reviews
+        if trigger_id == 'plot-type.value':
             log_user_action(user_real_name, pathname, 'change_plot_type', {'plot_type': plot_type})
+        
+        # Reset for sentiment filter and word selection when changing visualization settings
+        reset_sentiment_filter = 'show_all' if should_clear_reviews else dash.no_update
+        reset_word_selection = '[]' if should_clear_reviews else dash.no_update
         
         # Handle None values with defaults
         search_query = search_query if search_query else ''
@@ -436,8 +419,8 @@ def register_callbacks(app):
                 [],                     # y-axis-dropdown options
                 x_value,                # x-axis-dropdown value
                 y_value,                # y-axis-dropdown value
-                10,                     # x-features-slider max
-                10,                     # y-features-slider max
+                30,                     # x-features-slider max
+                30,                     # y-features-slider max
                 top_n_x,                # x-features-slider value
                 top_n_y,                # y-features-slider value
                 bar_count,              # bar-count-slider value
@@ -448,7 +431,9 @@ def register_callbacks(app):
                 slider_max,             # date-filter-slider max
                 slider_value,           # date-filter-slider value
                 slider_marks,           # date-filter-slider marks
-                total_reviews if should_update_count else dash.no_update  # total-reviews-count: store the count value only
+                total_reviews if should_update_count else dash.no_update,  # total-reviews-count
+                reset_word_selection,   # reset selected words
+                reset_sentiment_filter  # reset sentiment filter
             )
         else:
             # Check if axis dropdowns triggered the callback and reset corresponding top_n values
@@ -470,8 +455,8 @@ def register_callbacks(app):
                 y_options,              # y-axis-dropdown options
                 x_value,                # x-axis-dropdown value
                 y_value,                # y-axis-dropdown value
-                max_x,                  # x-features-slider max
-                max_y,                  # y-features-slider max
+                min(max(max_x, 1), 30),                  # x-features-slider max
+                min(max(max_y, 1), 30),                  # y-features-slider max
                 top_n_x,                # x-features-slider value
                 top_n_y,                # y-features-slider value
                 dash.no_update,         # bar-count-slider value
@@ -482,13 +467,15 @@ def register_callbacks(app):
                 slider_max,             # date-filter-slider max
                 slider_value,           # date-filter-slider value
                 slider_marks,           # date-filter-slider marks
-                total_reviews if should_update_count else dash.no_update  # total-reviews-count: store the count value only
+                total_reviews if should_update_count else dash.no_update,  # total-reviews-count
+                reset_word_selection,   # reset selected words
+                reset_sentiment_filter  # reset sentiment filter
             )
 
-    # Reviews update callback
+    # Reviews update callback - modify to reset filters on click
     @app.callback(
         [Output('reviews-content', 'children', allow_duplicate=True),
-         Output('sentiment-filter', 'value'),
+         Output('sentiment-filter', 'value', allow_duplicate=True),
          Output('sentiment-filter', 'style'),
          Output('review-counts', 'children'),
          Output('selected-words-storage', 'children', allow_duplicate=True)],
@@ -533,8 +520,8 @@ def register_callbacks(app):
         sentiment_filter_output = sentiment_filter # Keep incoming filter value initially
         filter_style_output = {'display': 'none'} # Default to hidden
         count_display_output = '' # Default to empty
-        selected_words = json.loads(selected_words_json) if selected_words_json else []
-        selected_words_output = selected_words_json # Keep incoming selection initially
+        selected_words = []  # Always reset selected words on a new click
+        selected_words_output = '[]'  # Always reset word selection on a new click
 
         # --- Determine Trigger and Setup Logging ---
         ctx = dash.callback_context
@@ -543,6 +530,9 @@ def register_callbacks(app):
         log_context = {}
         if trigger_id and 'main-figure.clickData' in trigger_id:
             if click_data:
+                # Reset sentiment filter on any new click
+                sentiment_filter_output = 'show_all'
+                
                 log_action = 'select_graph_element'
                 log_context = {
                     'click_data': str(click_data),
@@ -557,9 +547,6 @@ def register_callbacks(app):
                      log_context.update({'bar_categories': bar_categories, 'bar_zoom': bar_zoom, 'bar_count': bar_count})
                 else:
                      log_context.update({'x_axis': x_value, 'y_axis': y_value, 'top_n_x': top_n_x, 'top_n_y': top_n_y})
-                # Reset words on new click
-                selected_words = []
-                selected_words_output = '[]' # Update the output state too
             else:
                  raise dash.exceptions.PreventUpdate # Invalid click data
 
@@ -574,6 +561,9 @@ def register_callbacks(app):
                 'start_date': start_date,
                 'end_date': end_date
             }
+            # Don't reset words when only changing sentiment filter
+            selected_words = json.loads(selected_words_json) if selected_words_json else []
+            selected_words_output = selected_words_json  # Keep existing word selection
         # --- End Logging Setup ---
 
         # --- Determine if Processing is Needed ---
@@ -609,8 +599,10 @@ def register_callbacks(app):
 
                     if click_data and 'points' in click_data and len(click_data['points']) > 0 and 'customdata' in click_data['points'][0]:
                         clicked_custom_data = click_data['points'][0]['customdata']
-                        if isinstance(clicked_custom_data, list) and len(clicked_custom_data) == 3:
-                            clicked_original_category = clicked_custom_data[2]
+                        if isinstance(clicked_custom_data, list) and len(clicked_custom_data) >= 3:
+                            # customdata = [count, sentiment_ratio, original_category, display_category]
+                            clicked_original_category = clicked_custom_data[2]  # Get original category at index 2
+                            
                             try:
                                 # Find the index in the *untruncated* list
                                 idx_in_all = original_categories_all.index(clicked_original_category)
@@ -626,22 +618,20 @@ def register_callbacks(app):
                                 positive_reviews, negative_reviews, _ = categorize_reviews(review_infos)
                                 filtered_reviews_for_display = filter_reviews_by_sentiment(review_infos, positive_reviews, negative_reviews, sentiment_filter_output)
 
-                                # Find the display category corresponding to the original category
-                                clicked_display_category = clicked_original_category # Fallback
+                                # Use display category from customdata if available (index 3), otherwise use original category
+                                clicked_display_category = clicked_custom_data[3] if len(clicked_custom_data) >= 4 else clicked_original_category
+                                
+                                # If we still need to find a formatted display category from the available categories
                                 if display_categories_displayed:
-                                    # This relies on the fact that get_bar_chart_data preserves order
-                                    # and truncation happens at the end.
-                                    # A more robust approach might store display name in customdata too.
-                                     try:
-                                         # Find index in the full list to map to the truncated display list
-                                         display_idx = original_categories_all.index(clicked_original_category)
-                                         if display_idx < len(display_categories_displayed):
-                                             clicked_display_category = display_categories_displayed[display_idx]
-                                         else:
-                                              # The clicked category might not be in the truncated display list if bar_count changed
-                                              print(f"Warning: Clicked category '{clicked_original_category}' not found in truncated display list.")
-                                     except ValueError:
-                                         print(f"Warning: Could not find original category '{clicked_original_category}' to map to display category.")
+                                    try:
+                                        # Find index in the full list to map to the truncated display list
+                                        display_idx = original_categories_all.index(clicked_original_category)
+                                        if display_idx < len(display_categories_displayed):
+                                            clicked_display_category = display_categories_displayed[display_idx]
+                                        # else: The clicked category might not be in the truncated display list if bar_count changed
+                                    except ValueError:
+                                        # Fallback to the direct display category if we can't map it
+                                        pass
 
                                 # --- Update Outputs on Success --- #
                                 positive_reviews_output = positive_reviews
@@ -652,21 +642,14 @@ def register_callbacks(app):
                                 )
                                 # filter_style_output = get_filter_style() # Set later based on success
                             except (ValueError, IndexError) as e:
-                                print(f"Error finding/processing clicked bar data: {e}")
                                 # Keep outputs as None/default
+                                pass
                         else:
-                            print(f"Error: Unexpected customdata format in bar chart click: {clicked_custom_data}")
                             # Keep outputs as None/default
-                    elif process_sentiment_change:
-                        # Handle sentiment change when a bar was previously clicked
-                        # We need the original category from the last click to refilter
-                        # This requires storing the clicked category info somewhere (e.g., in a dcc.Store)
-                        # For now, this path might not work correctly without that stored state.
-                        print("Sentiment filter changed for bar chart, but re-filtering logic needs improvement (requires storing last clicked category).")
-                        # Keep outputs as None/default - Or attempt to use existing selected_words_json source if possible?
+                            pass
 
                 # --- Matrix Logic ---
-                elif plot_type == 'matrix':
+                elif plot_type in ['use_attr_perf', 'perf_attr']:
                     if click_data and 'points' in click_data and len(click_data['points']) > 0:
                         point = click_data['points'][0]
                         clicked_x = point['x']
@@ -702,30 +685,28 @@ def register_callbacks(app):
                                 )
                                 # filter_style_output = get_filter_style() # Set later based on success
                             else:
-                                 print(f"Could not map matrix click: x='{clicked_x}', y='{clicked_y}'")
-                                 # Keep outputs as None/default
+                                # Simply keep outputs as None/default
+                                pass
                         except Exception as e:
-                            print(f"Error processing matrix click data: {str(e)}")
-                            # Keep outputs as None/default
+                            # Expected in some cases, no need to log anything
+                            pass
                     elif process_sentiment_change:
-                        print("Sentiment filter changed, but click_data is missing or invalid for matrix.")
-                        # Keep outputs as None/default
+                        # When sentiment filter changes but there's no click_data, this is normal behavior
+                        pass
+                    else:
+                        # Unexpected plot type condition - shouldn't normally happen
+                        pass
                 else:
-                    print(f"Warning: Unexpected plot_type '{plot_type}' in update_reviews_with_sentiment_filter")
-                    # Keep outputs as None/default
+                    # Unexpected plot type condition - shouldn't normally happen
+                    pass
 
                 # Log action if one was identified (regardless of plot type processing result)
                 if log_action:
                     log_user_action(user_real_name, pathname, log_action, log_context)
 
             except Exception as e:
-                print(f"Error in update_reviews_with_sentiment_filter main logic: {str(e)}")
-                # --- Reset Outputs on Error --- #
-                reviews_content_output = html.Div(f"Error loading reviews: {str(e)}", style={'color': 'red', 'padding': '20px'})
-                positive_reviews_output = None
-                negative_reviews_output = None
-                # count_display_output = '' # Already default
-                # filter_style_output = {'display': 'none'} # Already default
+                # Keep outputs as None/default
+                pass
         # --- End Main Processing Block ---
 
         # --- Final Output Generation --- #
@@ -771,13 +752,13 @@ def register_callbacks(app):
                                         search_query, bar_categories, bar_zoom, bar_count, date_filter_storage,
                                         user_real_name, pathname): # Added states
         """Update the displayed reviews based on word selection"""
-        # --- Get User Info for Logging ---
-        # Note: Still unable to easily get real_name/pathname here without adding State
-        # --- End User Info ---
-
         # Check which input triggered the callback
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None # Define trigger_id here
+
+        # If there's no click data, prevent update - we can't filter without a selection
+        if not click_data:
+            raise dash.exceptions.PreventUpdate
 
         # Convert selected_words_json to list
         selected_words = json.loads(selected_words_json) if selected_words_json else []
@@ -821,12 +802,8 @@ def register_callbacks(app):
                             'sentiment_filter': sentiment_filter,
                             'language': language
                         }
-                else:
-                     print(f"Unexpected trigger_id type: {type(trigger_id)}, value: {trigger_id}")
-
-            except (json.JSONDecodeError, AttributeError, IndexError, TypeError) as e:
-                 print(f"Error parsing trigger_id for word button: {trigger_id}, Error: {e}")
-                 pass # Ignore if parsing fails
+            except (json.JSONDecodeError, AttributeError, IndexError, TypeError):
+                pass # Ignore if parsing fails
 
         # If no user trigger identified, do nothing
         if not log_action:
@@ -848,7 +825,6 @@ def register_callbacks(app):
              print(f"Error in update_reviews_with_filters during word selection: {e}")
              # Fallback or re-raise depending on desired behavior
              raise dash.exceptions.PreventUpdate # Prevent update if review filtering fails
-
 
         # Log the action
         log_user_action(user_real_name, pathname, log_action, log_context)

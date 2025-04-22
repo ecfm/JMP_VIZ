@@ -92,7 +92,7 @@ def get_main_layout(language='zh'):
                 dcc.Slider(
                     id='bar-count-slider',
                     min=1,
-                    max=50,  # Initial max that will be updated dynamically
+                    max=30,  # Initial max that will be updated dynamically
                     value=10,
                     step=1,
                     marks=None,
@@ -106,42 +106,58 @@ def get_main_layout(language='zh'):
     # Create matrix view controls (sliders and dropdowns)
     matrix_view_controls = html.Div([
         html.Div([
-            html.Label(id='y-axis-label'),
-            dcc.Dropdown(
-                id='y-axis-dropdown',
-                options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
-                value='all',
-                placeholder="Select a category for Y-axis"
-            ),
-            html.Label(id='num-y-features-label', style={'marginTop': '10px'}),
-            dcc.Slider(
-                id='y-features-slider',
-                min=1,
-                max=20,
-                value=10,
-                step=1,
-                marks=None,
-                tooltip={"placement": "bottom", "always_visible": True}
-            ),
+            html.Div([
+                html.Label(id='y-axis-label', style={'marginRight': '10px', 'display': 'inline-block'}),
+                dcc.Dropdown(
+                    id='y-axis-dropdown',
+                    options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
+                    value='all',
+                    placeholder="Select a category for Y-axis",
+                    style={'width': '80%', 'display': 'inline-block'}
+                )
+            ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '10px'}),
+            html.Div([
+                html.Label(id='num-y-features-label', style={'marginRight': '10px', 'width': '30%'}),
+                html.Div(
+                    dcc.Slider(
+                        id='y-features-slider',
+                        min=1,
+                        max=30,
+                        value=10,
+                        step=1,
+                        marks=None,
+                        tooltip={"placement": "bottom", "always_visible": True}
+                    ),
+                    style={'width': '70%'}
+                )
+            ], style={'display': 'flex', 'alignItems': 'center', 'marginTop': '10px'})
         ], style={'width': '48%', 'display': 'inline-block'}),
         html.Div([
-            html.Label(id='x-axis-label'),
-            dcc.Dropdown(
-                id='x-axis-dropdown',
-                options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
-                value='all',
-                placeholder="Select a category for X-axis"
-            ),
-            html.Label(id='num-x-features-label', style={'marginTop': '10px'}),
-            dcc.Slider(
-                id='x-features-slider',
-                min=1,
-                max=20,
-                value=10,
-                step=1,
-                marks=None,
-                tooltip={"placement": "bottom", "always_visible": True}
-            ),
+            html.Div([
+                html.Label(id='x-axis-label', style={'marginRight': '10px', 'display': 'inline-block'}),
+                dcc.Dropdown(
+                    id='x-axis-dropdown',
+                    options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
+                    value='all',
+                    placeholder="Select a category for X-axis",
+                    style={'width': '80%', 'display': 'inline-block'}
+                )
+            ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '10px'}),
+            html.Div([
+                html.Label(id='num-x-features-label', style={'marginRight': '10px', 'width': '30%'}),
+                html.Div(
+                    dcc.Slider(
+                        id='x-features-slider',
+                        min=1,
+                        max=30,
+                        value=10,
+                        step=1,
+                        marks=None,
+                        tooltip={"placement": "bottom", "always_visible": True}
+                    ),
+                    style={'width': '70%'}
+                )
+            ], style={'display': 'flex', 'alignItems': 'center', 'marginTop': '10px'})
         ], style={'width': '48%', 'float': 'right', 'display': 'inline-block'})
     ], id='matrix-view-controls', style={'display': 'block'})  # Initially visible
     
@@ -215,9 +231,9 @@ def get_main_layout(language='zh'):
             # Add trend chart for bar chart view
             html.Div([
                 html.Div([
-                    # Time interval and category selection in a single row
+                    # All controls in a single row
                     html.Div([
-                        # Left side - Time interval control
+                        # First section - Time interval control
                         html.Div([
                             html.Label(id='time-bucket-label', children='Time interval:', style={'marginRight': '10px', 'display': 'inline-block'}),
                             dcc.Dropdown(
@@ -229,12 +245,12 @@ def get_main_layout(language='zh'):
                                     {'label': 'Year', 'value': 'year'}
                                 ],
                                 value='3month',
-                                style={'width': '150px', 'display': 'inline-block'},
+                                style={'width': '120px', 'display': 'inline-block'},
                                 clearable=False
                             )
-                        ], style={'display': 'flex', 'alignItems': 'center', 'marginRight': '20px'}),
+                        ], style={'display': 'flex', 'alignItems': 'center', 'marginRight': '15px'}),
                         
-                        # Right side - Category selection
+                        # Second section - Category selection
                         html.Div([
                             html.Label(id='bar-category-label', style={'marginRight': '10px', 'display': 'inline-block'}),
                             dcc.Checklist(
@@ -248,9 +264,39 @@ def get_main_layout(language='zh'):
                                 inline=True,
                                 style={'display': 'inline-block'}
                             ),
-                        ], style={'display': 'flex', 'alignItems': 'center', 'flexGrow': '1'})
-                    ], style={'display': 'flex', 'flexWrap': 'wrap', 'alignItems': 'center', 'width': '100%'})
-                ], style={'marginBottom': '10px'}),
+                        ], style={'display': 'flex', 'alignItems': 'center', 'marginRight': '15px'}),
+                        
+                        # Third section - Zoom dropdown
+                        html.Div([
+                            html.Label(id='bar-zoom-label', style={'marginRight': '10px', 'display': 'inline-block'}),
+                            dcc.Dropdown(
+                                id='bar-zoom-dropdown',
+                                options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
+                                value='all',
+                                placeholder="Select a category to zoom",
+                                style={'width': '350px', 'display': 'inline-block'}
+                            )
+                        ], style={'display': 'flex', 'alignItems': 'center', 'marginRight': '15px'}),
+                        
+                        # Fourth section - Count slider
+                        html.Div([
+                            html.Label(id='bar-count-label', children=TRANSLATIONS[language]['num_x_features'], 
+                                      style={'marginRight': '10px', 'display': 'inline-block'}),
+                            html.Div(
+                                dcc.Slider(
+                                    id='bar-count-slider',
+                                    min=1,
+                                    max=30,
+                                    value=10,
+                                    step=1,
+                                    marks=None,
+                                    tooltip={"placement": "bottom", "always_visible": True}
+                                ),
+                                style={'width': '400px'}
+                            )
+                        ], style={'display': 'flex', 'alignItems': 'center'})
+                    ], style={'display': 'flex', 'flexWrap': 'wrap', 'alignItems': 'center', 'width': '100%', 'marginBottom': '10px'})
+                ]),
                 dcc.Graph(
                     id='trend-chart', 
                     style={'border': '1px solid #ddd', 'borderRadius': '5px', 'padding': '10px', 'marginBottom': '20px'}
@@ -260,30 +306,8 @@ def get_main_layout(language='zh'):
             style={'display': 'none'}  # Initially hidden, shown only for bar chart
             ),
             
-            # Remaining bar chart controls
-            html.Div([
-                html.Label(id='bar-zoom-label'),
-                dcc.Dropdown(
-                    id='bar-zoom-dropdown',
-                    options=[{'label': TRANSLATIONS[language]['all_level_0'], 'value': 'all'}],
-                    value='all',
-                    placeholder="Select a category to zoom"
-                ),
-                html.Div([
-                    html.Label(id='bar-count-label', children=TRANSLATIONS[language]['num_x_features'], style={'marginTop': '10px'}),
-                    dcc.Slider(
-                        id='bar-count-slider',
-                        min=1,
-                        max=50,  # Initial max that will be updated dynamically
-                        value=10,
-                        step=1,
-                        marks=None,
-                        tooltip={"placement": "bottom", "always_visible": True}
-                    ),
-                ], style={'marginTop': '5px'})
-            ], 
-            id='bar-chart-controls',
-            style={'display': 'none', 'marginBottom': '10px'}),  # Initially hidden
+            # Add an empty div with id='bar-chart-controls' to maintain compatibility with existing callbacks
+            html.Div(id='bar-chart-controls', style={'display': 'none'}),
             
             dcc.Graph(
                 id='main-figure', 

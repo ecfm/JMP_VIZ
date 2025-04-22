@@ -1,3 +1,6 @@
 __pycache__
 .DS_Store
-log/*
+# Ignore all files in logs directory
+logs/*
+# But keep the directory itself
+!logs/.gitkeep
