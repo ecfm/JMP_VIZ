@@ -195,20 +195,17 @@ def get_main_layout(language='zh'):
             date_filter_controls,
             # Move the search box below the date filter
             create_search_box(language),
-            html.Div([
-                html.Label(id='plot-type-label', style={'marginRight': '10px', 'display': 'inline-block'}),
-                dcc.RadioItems(
-                    id='plot-type',
-                    options=[
-                        {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'},
-                        {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
-                        {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
-                    ],
-                    value='bar_chart',
-                    labelStyle={'display': 'inline-block', 'margin-right': '10px'},
-                    style={'display': 'inline-block'}
-                ),
-            ], style={'width': '100%', 'display': 'inline-block', 'margin-bottom': '10px'}),
+            # Remove the plot-type-label and replace RadioItems with Tabs
+            dcc.Tabs(
+                id='plot-type',
+                value='bar_chart', # Default value
+                children=[
+                    dcc.Tab(label=TRANSLATIONS[language]['bar_chart'], value='bar_chart'),
+                    dcc.Tab(label=TRANSLATIONS[language]['use_vs_attr_perf'], value='use_attr_perf'),
+                    dcc.Tab(label=TRANSLATIONS[language]['perf_vs_attr'], value='perf_attr')
+                ],
+                style={'width': '100%', 'marginBottom': '10px'} # Style as needed
+            ),
             
             # Matrix view controls section (with sliders)
             matrix_view_controls,

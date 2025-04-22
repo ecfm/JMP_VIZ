@@ -1,21 +1,72 @@
 import dash
-from dash import Input, Output, State, html
+from dash import Input, Output, State, html, dcc
 from flask_login import login_user, logout_user, UserMixin, current_user
 import json
 from urllib.parse import parse_qs
+import logging
+from datetime import datetime
 
 from config import TRANSLATIONS, VALID_USERNAME, VALID_PASSWORD
-from data import get_cached_dict, get_bar_chart_data, update_raw_dict_map
+from data import get_cached_dict, get_bar_chart_data, update_raw_dict_map, get_plot_data
 from trend_chart import update_trend_chart_data, get_trend_line_options, get_time_bucket_options
 from bar_chart import process_bar_chart_data
 from matrix_chart import process_matrix_data
-from review_display import create_count_display, get_filter_style, update_reviews_with_filters
+from utils import format_category_display
+from review_display import (
+    create_count_display, get_filter_style, update_reviews_with_filters,
+    create_review_display, categorize_reviews, filter_reviews_by_sentiment
+)
 from date_filter import handle_date_filter, update_date_from_input, update_date_display
 from search import (
     get_search_examples_html,
     logic_toggle_search_help,
     logic_update_search_results_info
 )
+
+log_formatter = logging.Formatter('{"timestamp": "%(asctime)s", "level": "%(levelname)s", "user": "%(user)s", "path": "%(path)s", "action": "%(action)s", "context": %(context)s}')
+log_handler = logging.FileHandler('user_actions.log', encoding='utf-8')
+log_handler.setFormatter(log_formatter)
+
+logger = logging.getLogger('user_actions')
+logger.setLevel(logging.INFO)
+# Avoid adding handler if it already exists (e.g., during hot reloading)
+if not logger.handlers:
+    logger.addHandler(log_handler)
+logger.propagate = False # Prevent duplicate logging if root logger is configured
+
+def log_user_action(real_name, pathname, action, context_dict):
+    """Helper function to log user actions in JSON format."""
+    user = real_name if real_name else "Unknown"
+    path = pathname if pathname else "Unknown"
+    # Ensure context is serializable and handle potential issues
+    try:
+        # Convert complex objects like clickData to string representations if necessary
+        serializable_context = {}
+        for key, value in context_dict.items():
+            if isinstance(value, (dict, list)) and key == 'clickData': # Be specific about complex data
+                 serializable_context[key] = str(value) # Simple string representation for complex data
+            else:
+                 serializable_context[key] = value
+
+        context_str = json.dumps(serializable_context, ensure_ascii=False, default=str)
+    except Exception as e:
+        # Log the error internally if context serialization fails
+        print(f"Error serializing context for logging: {e}")
+        context_str = json.dumps({"error": "Context not fully serializable", "detail": str(e)}, ensure_ascii=False)
+
+    # Use LogRecord attributes directly
+    record = logger.makeRecord(
+        name=logger.name,
+        level=logging.INFO,
+        fn="",
+        lno=0,
+        msg="", # Message is built by the formatter
+        args=[],
+        exc_info=None,
+        func="",
+        extra={'user': user, 'path': path, 'action': action, 'context': context_str} # Pass context as string
+    )
+    logger.handle(record)
 
 # User class for authentication
 class User(UserMixin):
@@ -62,9 +113,14 @@ def register_callbacks(app):
             user = User(username)
             login_success = login_user(user)
             
+            # Log successful login
+            log_user_action(real_name, '/login', 'login_success', {'username': username})
+            
             # Return to home page with language and category parameters preserved, store real name
             return '/', f'?lang={language}&category={category}', '', real_name # Return real_name
         
+        # Log failed login attempt
+        log_user_action(real_name, '/login', 'login_fail', {'username': username})
         # Return to login page with error and parameters
         return '/login', f'?lang={language}&category={category}', TRANSLATIONS[language]['invalid_credentials'], dash.no_update # No update for name
 
@@ -74,11 +130,14 @@ def register_callbacks(app):
         [Input('logout-button', 'n_clicks')],
         [State('url', 'pathname'),
          State('app-language-state', 'children'),
-         State('category-state', 'children')],
+         State('category-state', 'children'),
+         State('user-real-name-state', 'data')], # Added real name state
         prevent_initial_call=True
     )
-    def logout_callback(n_clicks, pathname, language, category):
+    def logout_callback(n_clicks, pathname, language, category, real_name): # Added real_name
         if n_clicks:
+            # Log logout action before logging out
+            log_user_action(real_name, pathname, 'logout', {})
             logout_user()
             # Redirect to login page with parameters
             return '/login', f'?lang={language}&category={category}'
@@ -87,17 +146,18 @@ def register_callbacks(app):
 
     # Language-dependent callbacks
     @app.callback(
-        [Output('plot-type-label', 'children'),
-        Output('plot-type', 'options')],
+        Output('plot-type', 'children'),
         [Input('app-language-state', 'children')]
     )
     def update_plot_type_labels(language):
-        options = [
-            {'label': TRANSLATIONS[language]['bar_chart'], 'value': 'bar_chart'},
-            {'label': TRANSLATIONS[language]['use_vs_attr_perf'], 'value': 'use_attr_perf'},
-            {'label': TRANSLATIONS[language]['perf_vs_attr'], 'value': 'perf_attr'}
+        # Create a list of dcc.Tab components with translated labels
+        tabs = [
+            dcc.Tab(label=TRANSLATIONS[language]['bar_chart'], value='bar_chart'),
+            dcc.Tab(label=TRANSLATIONS[language]['use_vs_attr_perf'], value='use_attr_perf'),
+            dcc.Tab(label=TRANSLATIONS[language]['perf_vs_attr'], value='perf_attr')
         ]
-        return TRANSLATIONS[language]['plot_type'], options
+        # Return the list of tabs for the 'children' property
+        return tabs
 
     @app.callback(
         [Output('bar-chart-controls', 'style'),
@@ -214,10 +274,11 @@ def register_callbacks(app):
          Input('url', 'pathname'),
          Input('url', 'search')],  # Add URL search parameter as input
         [State('search-input', 'value'),
-         State('date-filter-storage', 'children')]
+         State('date-filter-storage', 'children'),
+         State('user-real-name-state', 'data')] # Add user real name state
     )
     def update_visualization_and_controls(plot_type, x_value, y_value, top_n_x, top_n_y, language, n_clicks, 
-                   bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search, search_query, date_filter_storage):
+                   bar_categories, bar_zoom_value, bar_count, date_slider_value, pathname, search, search_query, date_filter_storage, user_real_name): # Add user_real_name
         """
         Unified callback to update both the graph visualization and UI controls.
         This eliminates redundant calculations by using helper functions for specific plot types.
@@ -235,6 +296,7 @@ def register_callbacks(app):
         # Check which input triggered the callback
         ctx = dash.callback_context
         trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        triggered_by_user = trigger_id and trigger_id not in ['url.pathname', 'url.search', 'app-language-state.children']
         
         # Handle date filter logic
         updated_date_storage, slider_min, slider_max, slider_value, slider_marks = handle_date_filter(
@@ -252,7 +314,8 @@ def register_callbacks(app):
         # Clear reviews if the plot type changes
         if trigger_id == 'plot-type.value':
             reviews_content = []
-
+            log_user_action(user_real_name, pathname, 'change_plot_type', {'plot_type': plot_type})
+        
         # Handle None values with defaults
         search_query = search_query if search_query else ''
         x_value = x_value or 'all'
@@ -265,6 +328,7 @@ def register_callbacks(app):
             x_value = 'all'
             y_value = 'all'
             bar_zoom_value = 'all' # Reset bar zoom too
+            log_user_action(user_real_name, pathname, 'search', {'query': search_query, 'start_date': start_date, 'end_date': end_date})
         
         # Calculate total reviews count if date changes, search changes, or on initial load
         review_count_text = dash.no_update
@@ -328,6 +392,31 @@ def register_callbacks(app):
                     # If parsing fails, leave as no_update
                     pass
         
+        # Log other user-triggered updates
+        if triggered_by_user and trigger_id != 'plot-type.value' and trigger_id != 'search-button.n_clicks':
+             log_context = {
+                 'trigger_id': trigger_id,
+                 'plot_type': plot_type,
+                 'language': language,
+                 'search_query': search_query,
+                 'start_date': start_date,
+                 'end_date': end_date,
+             }
+             if plot_type == 'bar_chart':
+                 log_context.update({
+                     'bar_categories': bar_categories,
+                     'bar_zoom': bar_zoom_value,
+                     'bar_count': bar_count
+                 })
+             else:
+                 log_context.update({
+                     'x_axis': x_value,
+                     'y_axis': y_value,
+                     'top_n_x': top_n_x,
+                     'top_n_y': top_n_y
+                 })
+             log_user_action(user_real_name, pathname, 'update_visualization', log_context)
+
         # Process data based on plot type
         if plot_type == 'bar_chart':
             # Check if bar_zoom triggered the callback and reset bar_count if it did
@@ -416,57 +505,241 @@ def register_callbacks(app):
          State('bar-zoom-dropdown', 'value'),
          State('bar-count-slider', 'value'),
          State('date-filter-storage', 'children'),
-         State('selected-words-storage', 'children')],
+         State('selected-words-storage', 'children'),
+         State('user-real-name-state', 'data'), # Added state
+         State('url', 'pathname')], # Added state
         prevent_initial_call=True
     )
     def update_reviews_with_sentiment_filter(sentiment_filter, click_data, language, 
                                         plot_type, x_value, y_value, top_n_x, top_n_y, 
                                         search_query, bar_categories, bar_zoom, bar_count, 
-                                        date_filter_storage, selected_words_json):
-    
+                                        date_filter_storage, selected_words_json, user_real_name, pathname): # Added states
+        # --- Get User Info for Logging ---
+        # Unfortunately, we can't easily get user_real_name here without adding another State,
+        # which might overly complicate this callback. We'll log without it for now,
+        # or assume it can be correlated later via timestamp/session.
+        # A better approach might involve storing real_name in the session/user object directly.
+        # --- End User Info ---
+
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
         end_date = date_range.get("end_date")
         
-        # Default responses
-        hide_style = {'display': 'none'}
-        show_style = get_filter_style()
-        
-        # Initialize review styles and variables
-        reviews_content = html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})])
-        count_display = ''
-        
-        # Initialize review counts
-        if click_data is None:
-            return reviews_content, 'show_all', hide_style, count_display, '[]'
-        
-        # Get selected words
+        # --- Initialize Outputs to Safe Defaults ---
+        reviews_content_output = html.Div([html.Div(TRANSLATIONS[language]['no_reviews'], style={'padding': '20px', 'textAlign': 'center'})])
+        positive_reviews_output = None
+        negative_reviews_output = None
+        sentiment_filter_output = sentiment_filter # Keep incoming filter value initially
+        filter_style_output = {'display': 'none'} # Default to hidden
+        count_display_output = '' # Default to empty
         selected_words = json.loads(selected_words_json) if selected_words_json else []
-        # If the callback was triggered by clicking on the bar chart, clear selected words
-        if dash.callback_context.triggered and str(dash.callback_context.triggered[0]['prop_id']).startswith('main-figure'):
-            selected_words = []
-            selected_words_json = json.dumps(selected_words)
-        
-        try:
-            # Update reviews with current filters
-            result = update_reviews_with_filters(
-                click_data, sentiment_filter, language, plot_type, x_value, y_value, 
-                top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count, 
-                start_date, end_date, selected_words
-            )
-            
-            if result is not None and len(result) == 4:
-                reviews_content, pos_reviews, neg_reviews, _ = result
-                
-                # Create count display if we have review counts
-                if pos_reviews is not None and neg_reviews is not None:
-                    count_display = create_count_display(pos_reviews, neg_reviews, sentiment_filter, language)
-        except Exception as e:
-            print(f"Error in update_reviews_with_sentiment_filter: {str(e)}")
-            # Keep default values in case of error
-        
-        return reviews_content, sentiment_filter, show_style, count_display, selected_words_json
+        selected_words_output = selected_words_json # Keep incoming selection initially
+
+        # --- Determine Trigger and Setup Logging ---
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        log_action = None
+        log_context = {}
+        if trigger_id and 'main-figure.clickData' in trigger_id:
+            if click_data:
+                log_action = 'select_graph_element'
+                log_context = {
+                    'click_data': str(click_data),
+                    'plot_type': plot_type,
+                    'current_sentiment_filter': sentiment_filter,
+                    'language': language,
+                    'search_query': search_query,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                }
+                if plot_type == 'bar_chart':
+                     log_context.update({'bar_categories': bar_categories, 'bar_zoom': bar_zoom, 'bar_count': bar_count})
+                else:
+                     log_context.update({'x_axis': x_value, 'y_axis': y_value, 'top_n_x': top_n_x, 'top_n_y': top_n_y})
+                # Reset words on new click
+                selected_words = []
+                selected_words_output = '[]' # Update the output state too
+            else:
+                 raise dash.exceptions.PreventUpdate # Invalid click data
+
+        elif trigger_id and 'sentiment-filter.value' in trigger_id:
+            log_action = 'filter_reviews_by_sentiment'
+            log_context = {
+                'click_data_source': str(click_data),
+                'new_sentiment_filter': sentiment_filter,
+                'selected_words': selected_words,
+                'language': language,
+                'search_query': search_query,
+                'start_date': start_date,
+                'end_date': end_date
+            }
+        # --- End Logging Setup ---
+
+        # --- Determine if Processing is Needed ---
+        process_click = trigger_id and 'main-figure.clickData' in trigger_id and click_data
+        process_sentiment_change = trigger_id and 'sentiment-filter.value' in trigger_id
+
+        # --- Early Exits for Non-User Actions ---
+        if not process_click and not process_sentiment_change and not (trigger_id and 'app-language-state.children' in trigger_id):
+             return reviews_content_output, sentiment_filter_output, filter_style_output, count_display_output, selected_words_output
+        if (trigger_id and 'app-language-state.children' in trigger_id) and not process_click and not process_sentiment_change:
+             return reviews_content_output, sentiment_filter_output, filter_style_output, count_display_output, selected_words_output
+        # --- End Early Exits ---
+
+        # --- Main Processing Block ---
+        if process_click or process_sentiment_change:
+            try:
+                # --- Bar Chart Logic ---
+                if plot_type == 'bar_chart':
+                    if not bar_categories: raise ValueError("Bar categories missing.")
+                    current_bar_zoom = bar_zoom if bar_zoom and bar_zoom != 'all' else 'all'
+                    # Fetch the *full* data corresponding to the current filters, *before* bar_count truncation
+                    _, original_categories_all, _, _, review_data_all, _, _ = get_bar_chart_data(
+                        bar_categories, current_bar_zoom, language, search_query, start_date, end_date
+                    )
+                    # Also get the currently displayed categories for context (truncated)
+                    display_categories_displayed = []
+                    if bar_count > 0 and bar_count <= len(original_categories_all):
+                         display_categories, _, _, _, _, _, _ = get_bar_chart_data(
+                             bar_categories, current_bar_zoom, language, search_query, start_date, end_date
+                         )
+                         display_categories_displayed = display_categories[:bar_count]
+
+
+                    if click_data and 'points' in click_data and len(click_data['points']) > 0 and 'customdata' in click_data['points'][0]:
+                        clicked_custom_data = click_data['points'][0]['customdata']
+                        if isinstance(clicked_custom_data, list) and len(clicked_custom_data) == 3:
+                            clicked_original_category = clicked_custom_data[2]
+                            try:
+                                # Find the index in the *untruncated* list
+                                idx_in_all = original_categories_all.index(clicked_original_category)
+                                review_dicts = review_data_all[idx_in_all]
+
+                                # Extract review_infos
+                                if review_dicts and isinstance(review_dicts[0], dict) and 'review_info' in review_dicts[0]:
+                                    review_infos = [item['review_info'] for item in review_dicts if 'review_info' in item]
+                                else:
+                                    review_infos = review_dicts # Assuming review_dicts is already the list of review infos
+
+                                # Get positive/negative reviews
+                                positive_reviews, negative_reviews, _ = categorize_reviews(review_infos)
+                                filtered_reviews_for_display = filter_reviews_by_sentiment(review_infos, positive_reviews, negative_reviews, sentiment_filter_output)
+
+                                # Find the display category corresponding to the original category
+                                clicked_display_category = clicked_original_category # Fallback
+                                if display_categories_displayed:
+                                    # This relies on the fact that get_bar_chart_data preserves order
+                                    # and truncation happens at the end.
+                                    # A more robust approach might store display name in customdata too.
+                                     try:
+                                         # Find index in the full list to map to the truncated display list
+                                         display_idx = original_categories_all.index(clicked_original_category)
+                                         if display_idx < len(display_categories_displayed):
+                                             clicked_display_category = display_categories_displayed[display_idx]
+                                         else:
+                                              # The clicked category might not be in the truncated display list if bar_count changed
+                                              print(f"Warning: Clicked category '{clicked_original_category}' not found in truncated display list.")
+                                     except ValueError:
+                                         print(f"Warning: Could not find original category '{clicked_original_category}' to map to display category.")
+
+                                # --- Update Outputs on Success --- #
+                                positive_reviews_output = positive_reviews
+                                negative_reviews_output = negative_reviews
+                                reviews_content_output = create_review_display(
+                                    filtered_reviews_for_display, language, plot_type='bar_chart',
+                                    x_category=clicked_display_category, selected_words=selected_words
+                                )
+                                # filter_style_output = get_filter_style() # Set later based on success
+                            except (ValueError, IndexError) as e:
+                                print(f"Error finding/processing clicked bar data: {e}")
+                                # Keep outputs as None/default
+                        else:
+                            print(f"Error: Unexpected customdata format in bar chart click: {clicked_custom_data}")
+                            # Keep outputs as None/default
+                    elif process_sentiment_change:
+                        # Handle sentiment change when a bar was previously clicked
+                        # We need the original category from the last click to refilter
+                        # This requires storing the clicked category info somewhere (e.g., in a dcc.Store)
+                        # For now, this path might not work correctly without that stored state.
+                        print("Sentiment filter changed for bar chart, but re-filtering logic needs improvement (requires storing last clicked category).")
+                        # Keep outputs as None/default - Or attempt to use existing selected_words_json source if possible?
+
+                # --- Matrix Logic ---
+                elif plot_type == 'matrix':
+                    if click_data and 'points' in click_data and len(click_data['points']) > 0:
+                        point = click_data['points'][0]
+                        clicked_x = point['x']
+                        clicked_y = point['y']
+                        matrix, _, review_matrix, x_text, _, y_text, _, _ = get_plot_data(
+                            plot_type, x_value, y_value, top_n_x, top_n_y, language, search_query, start_date, end_date
+                        )
+                        formatted_x_display = [format_category_display(label, language) for label in x_text]
+                        formatted_y_display = [format_category_display(label, language) for label in y_text]
+                        x_mapping = {formatted: i for i, formatted in enumerate(formatted_x_display)}
+                        y_mapping = {formatted: i for i, formatted in enumerate(formatted_y_display)}
+                        try:
+                            i = y_mapping.get(clicked_y)
+                            j = x_mapping.get(clicked_x)
+                            # (Lenient matching logic kept) ...
+                            if i is None: # Lenient matching Y
+                                for formatted_y, idx in y_mapping.items():
+                                    if clicked_y in formatted_y or formatted_y in clicked_y: i = idx; break
+                            if j is None: # Lenient matching X
+                                for formatted_x, idx in x_mapping.items():
+                                    if clicked_x in formatted_x or formatted_x in clicked_x: j = idx; break
+
+                            if i is not None and j is not None:
+                                reviews = review_matrix[i][j]
+                                positive_reviews, negative_reviews, _ = categorize_reviews(reviews)
+                                filtered_reviews_for_display = filter_reviews_by_sentiment(reviews, positive_reviews, negative_reviews, sentiment_filter_output)
+                                # --- Update Outputs on Success --- #
+                                positive_reviews_output = positive_reviews
+                                negative_reviews_output = negative_reviews
+                                reviews_content_output = create_review_display(
+                                    filtered_reviews_for_display, language, plot_type='matrix',
+                                    x_category=x_text[j], y_category=y_text[i], selected_words=selected_words
+                                )
+                                # filter_style_output = get_filter_style() # Set later based on success
+                            else:
+                                 print(f"Could not map matrix click: x='{clicked_x}', y='{clicked_y}'")
+                                 # Keep outputs as None/default
+                        except Exception as e:
+                            print(f"Error processing matrix click data: {str(e)}")
+                            # Keep outputs as None/default
+                    elif process_sentiment_change:
+                        print("Sentiment filter changed, but click_data is missing or invalid for matrix.")
+                        # Keep outputs as None/default
+                else:
+                    print(f"Warning: Unexpected plot_type '{plot_type}' in update_reviews_with_sentiment_filter")
+                    # Keep outputs as None/default
+
+                # Log action if one was identified (regardless of plot type processing result)
+                if log_action:
+                    log_user_action(user_real_name, pathname, log_action, log_context)
+
+            except Exception as e:
+                print(f"Error in update_reviews_with_sentiment_filter main logic: {str(e)}")
+                # --- Reset Outputs on Error --- #
+                reviews_content_output = html.Div(f"Error loading reviews: {str(e)}", style={'color': 'red', 'padding': '20px'})
+                positive_reviews_output = None
+                negative_reviews_output = None
+                # count_display_output = '' # Already default
+                # filter_style_output = {'display': 'none'} # Already default
+        # --- End Main Processing Block ---
+
+        # --- Final Output Generation --- #
+        # Calculate count_display and set filter visibility based on whether processing succeeded
+        if positive_reviews_output is not None and negative_reviews_output is not None:
+            count_display_output = create_count_display(positive_reviews_output, negative_reviews_output, sentiment_filter_output, language)
+            filter_style_output = get_filter_style() # Show filter only if successful
+        else:
+            # Ensure count is empty and filter is hidden if reviews are None
+            count_display_output = ''
+            filter_style_output = {'display': 'none'}
+
+        # Return all calculated outputs
+        return reviews_content_output, sentiment_filter_output, filter_style_output, count_display_output, selected_words_output
 
     # Add callback to handle word selection
     @app.callback(
@@ -487,56 +760,99 @@ def register_callbacks(app):
          State('bar-category-checklist', 'value'),
          State('bar-zoom-dropdown', 'value'),
          State('bar-count-slider', 'value'),
-         State('date-filter-storage', 'children')],
+         State('date-filter-storage', 'children'),
+         State('user-real-name-state', 'data'), # Added state
+         State('url', 'pathname')], # Added state
         prevent_initial_call=True
     )
-    def update_reviews_by_word_selection(word_buttons_clicks, clear_clicks, 
-                                        selected_words_json, sentiment_filter, click_data, 
-                                        language, plot_type, x_value, y_value, top_n_x, top_n_y, 
-                                        search_query, bar_categories, bar_zoom, bar_count, date_filter_storage):
+    def update_reviews_by_word_selection(word_buttons_clicks, clear_clicks,
+                                        selected_words_json, sentiment_filter, click_data,
+                                        language, plot_type, x_value, y_value, top_n_x, top_n_y,
+                                        search_query, bar_categories, bar_zoom, bar_count, date_filter_storage,
+                                        user_real_name, pathname): # Added states
         """Update the displayed reviews based on word selection"""
+        # --- Get User Info for Logging ---
+        # Note: Still unable to easily get real_name/pathname here without adding State
+        # --- End User Info ---
+
         # Check which input triggered the callback
         ctx = dash.callback_context
-        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
-        
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None # Define trigger_id here
+
         # Convert selected_words_json to list
         selected_words = json.loads(selected_words_json) if selected_words_json else []
-        
+
         # Get all available words from the word buttons
         all_words = []
-        for item in ctx.inputs_list[0]:
-            if 'id' in item and isinstance(item['id'], dict) and 'index' in item['id']:
-                all_words.append(item['id']['index'])
-        
-        # Handle different triggers
-        if 'clear-word-selection-button' in trigger_id:
+        if ctx.inputs_list and ctx.inputs_list[0]: # Check if inputs_list[0] exists
+            for item in ctx.inputs_list[0]:
+                if 'id' in item and isinstance(item['id'], dict) and 'index' in item['id']:
+                    all_words.append(item['id']['index'])
+
+        # Handle different triggers and prepare logs
+        log_action = None
+        log_context = {}
+        clicked_word = None # Initialize clicked_word
+
+        if trigger_id and 'clear-word-selection-button' in trigger_id:
+            log_action = 'clear_word_selection'
+            log_context = {'previous_selection': selected_words[:]} # Log previous state
             selected_words = []
-        elif 'word-button' in trigger_id and sum(word_buttons_clicks) > 0:
+        elif trigger_id and 'word-button' in trigger_id and word_buttons_clicks and sum(filter(None, word_buttons_clicks)) > 0:
             try:
                 # Try to parse the trigger ID as JSON
-                trigger_dict = json.loads(ctx.triggered[0]['prop_id'].split('.')[0])
-                if trigger_dict.get('type') == 'word-button':
-                    clicked_word = trigger_dict.get('index')
-                    # Toggle the word selection
-                    if clicked_word in selected_words:
-                        selected_words.remove(clicked_word)
-                    else:
-                        selected_words.append(clicked_word)
-            except json.JSONDecodeError:
-                pass
-        
+                # Ensure trigger_id is a string before splitting
+                if isinstance(trigger_id, str):
+                    trigger_dict = json.loads(trigger_id.split('.')[0])
+                    if trigger_dict.get('type') == 'word-button':
+                        clicked_word = trigger_dict.get('index')
+                        # Toggle the word selection
+                        if clicked_word in selected_words:
+                            selected_words.remove(clicked_word)
+                            log_action = 'deselect_review_word'
+                        else:
+                            selected_words.append(clicked_word)
+                            log_action = 'select_review_word'
+
+                        log_context = {
+                            'word': clicked_word,
+                            'current_selection': selected_words[:], # Log current state after change
+                            'click_data_source': str(click_data),
+                            'sentiment_filter': sentiment_filter,
+                            'language': language
+                        }
+                else:
+                     print(f"Unexpected trigger_id type: {type(trigger_id)}, value: {trigger_id}")
+
+            except (json.JSONDecodeError, AttributeError, IndexError, TypeError) as e:
+                 print(f"Error parsing trigger_id for word button: {trigger_id}, Error: {e}")
+                 pass # Ignore if parsing fails
+
+        # If no user trigger identified, do nothing
+        if not log_action:
+            raise dash.exceptions.PreventUpdate
+
         # Parse date range from storage
         date_range = json.loads(date_filter_storage) if date_filter_storage else {"start_date": None, "end_date": None}
         start_date = date_range.get("start_date")
         end_date = date_range.get("end_date")
-        
+
         # Update reviews with the current word selection
-        reviews_content, _, _, _ = update_reviews_with_filters(
-            click_data, sentiment_filter, language, plot_type, x_value, y_value, 
-            top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count, 
-            start_date, end_date, selected_words
-        )
-        
+        try:
+            reviews_content, _, _, _ = update_reviews_with_filters(
+                click_data, sentiment_filter, language, plot_type, x_value, y_value,
+                top_n_x, top_n_y, search_query, bar_categories, bar_zoom, bar_count,
+                start_date, end_date, selected_words
+            )
+        except Exception as e:
+             print(f"Error in update_reviews_with_filters during word selection: {e}")
+             # Fallback or re-raise depending on desired behavior
+             raise dash.exceptions.PreventUpdate # Prevent update if review filtering fails
+
+
+        # Log the action
+        log_user_action(user_real_name, pathname, log_action, log_context)
+
         return reviews_content, json.dumps(selected_words)
 
     # Search-related callbacks
@@ -550,9 +866,15 @@ def register_callbacks(app):
     @app.callback(
         Output('search-help-tooltip', 'style'),
         [Input('search-help-button', 'n_clicks')],
-        [State('search-help-tooltip', 'style')]
+        [State('search-help-tooltip', 'style'),
+         State('user-real-name-state', 'data'), # Added state
+         State('url', 'pathname')], # Added state
+        prevent_initial_call=True
     )
-    def toggle_search_help(n_clicks, current_style):
+    def toggle_search_help(n_clicks, current_style, user_real_name, pathname): # Added states
+        if n_clicks:
+            action = 'show_search_help' if current_style.get('display') == 'none' else 'hide_search_help'
+            log_user_action(user_real_name, pathname, action, {})
         return logic_toggle_search_help(n_clicks, current_style)
     
     # Add a clientside callback to hide tooltip when clicking elsewhere
@@ -641,10 +963,18 @@ def register_callbacks(app):
         [Input('apply-date-btn', 'n_clicks')],
         [State('start-date-input', 'value'),
          State('end-date-input', 'value'),
-         State('date-filter-storage', 'children')],
+         State('date-filter-storage', 'children'),
+         State('user-real-name-state', 'data'), # Added state
+         State('url', 'pathname')], # Added state
         prevent_initial_call=True
     )
-    def update_date_from_input_callback(n_clicks, start_date_input, end_date_input, date_filter_storage):
+    def update_date_from_input_callback(n_clicks, start_date_input, end_date_input, date_filter_storage,
+                                         user_real_name, pathname): # Added states
+        if n_clicks:
+            log_user_action(user_real_name, pathname, 'apply_date_input', {
+                'start_date_input': start_date_input,
+                'end_date_input': end_date_input
+            })
         return update_date_from_input(n_clicks, start_date_input, end_date_input, date_filter_storage)
 
     # Add clientside callback to handle pathname changes
@@ -688,13 +1018,33 @@ def register_callbacks(app):
          Input('date-filter-slider', 'value'),
          Input('time-bucket-dropdown', 'value')],
         [State('search-input', 'value'),
-         State('date-filter-storage', 'children')]
+         State('date-filter-storage', 'children'),
+         State('user-real-name-state', 'data'), # Add user real name state
+         State('url', 'pathname')] # Add pathname state
     )
     def update_trend_chart(plot_type, bar_categories, bar_zoom_value, bar_count, language, n_clicks, 
-                          date_slider_value, time_bucket, search_query, date_filter_storage):
+                          date_slider_value, time_bucket, search_query, date_filter_storage, user_real_name, pathname): # Add states
         """
         Update the trend chart showing category mentions over time.
         """
+        ctx = dash.callback_context
+        trigger_id = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+        triggered_by_user = trigger_id and trigger_id not in ['app-language-state.children'] # Add other non-user triggers if needed
+
+        if triggered_by_user:
+            log_context = {
+                'trigger_id': trigger_id,
+                'plot_type': plot_type, # Should always be 'bar_chart' here based on visibility toggle
+                'bar_categories': bar_categories,
+                'bar_zoom': bar_zoom_value,
+                'bar_count': bar_count,
+                'time_bucket': time_bucket,
+                'search_query': search_query,
+                'date_filter_storage': date_filter_storage, # Log the raw storage value
+                'language': language
+            }
+            log_user_action(user_real_name, pathname, 'update_trend_chart', log_context)
+
         return update_trend_chart_data(plot_type, bar_categories, bar_zoom_value, bar_count, language, 
                                       search_query, date_filter_storage, time_bucket)
 
@@ -728,6 +1078,7 @@ def register_callbacks(app):
     )
     def update_trend_line_selector(plot_type, bar_categories, bar_zoom_value, bar_count, language, 
                                   date_slider_value, search_query, date_filter_storage, time_bucket):
+        # This callback updates options, not a primary user action affecting the view directly. No logging.
         return get_trend_line_options(plot_type, bar_categories, bar_zoom_value, bar_count, language, 
                                      search_query, date_filter_storage, time_bucket)
 
@@ -794,6 +1145,7 @@ def register_callbacks(app):
         
         # If user is not authenticated and tries to access any page other than login, redirect to login
         if pathname != '/login' and not current_user.is_authenticated:
+            # Log attempt to access protected route without auth? Maybe too noisy.
             return '/login', f'?lang={language}&category={category}'
             
         # If user is authenticated and tries to access login page, redirect to main page
@@ -802,6 +1154,8 @@ def register_callbacks(app):
         
         # If user is authenticated but real name is missing, force logout and redirect to login
         if pathname != '/login' and current_user.is_authenticated and not user_real_name:
+            # Log forced logout due to missing name
+            log_user_action(user_real_name, pathname, 'forced_logout_missing_name', {})
             logout_user()
             return '/login', f'?lang={language}&category={category}'
             
