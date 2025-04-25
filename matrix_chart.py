@@ -1,13 +1,8 @@
-import dash
-from dash import html
 import plotly.graph_objects as go
 import plotly.express as px
 import numpy as np
-from typing import List, Dict, Optional, Tuple
-import json
-from datetime import datetime, timedelta
 
-from config import TRANSLATIONS, AXIS_CATEGORY_NAMES, color_mapping
+from config import TRANSLATIONS, AXIS_CATEGORY_NAMES
 from data import get_cached_dict, get_plot_data
 from utils import ratio_to_rgb, get_size_legend_translations, get_hover_translations, get_proportional_size, format_category_display, get_options
 
