@@ -77,7 +77,8 @@ def load_data_files(category='Cables'):
         'attr_perf_sents': json.load(open(os.path.join(result_dir, 'attr_perf_path_to_sents_dict.json'))),
         'perf_sents': json.load(open(os.path.join(result_dir, 'perf_path_to_sents_dict.json'))),
         'attr_ids': json.load(open(os.path.join(result_dir, 'attr_path_to_ids_dict.json'))),
-        'attr_sents': json.load(open(os.path.join(result_dir, 'attr_path_to_sents_dict.json')))
+        'attr_sents': json.load(open(os.path.join(result_dir, 'attr_path_to_sents_dict.json'))),
+        'ngram_idf': json.load(open(os.path.join(result_dir, 'ngram_idf.json')))
     }
 
 def update_raw_dict_map(category='Cables'):

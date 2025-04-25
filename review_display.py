@@ -2,9 +2,10 @@ import dash
 from dash import html
 from collections import Counter
 from typing import List, Dict, Optional, Tuple
+import numpy as np
 
 from config import TRANSLATIONS, color_mapping
-from data import get_bar_chart_data, get_plot_data
+from data import get_bar_chart_data, get_plot_data, raw_dict_map
 from utils import format_category_display
 
 def extract_text_from_review(review_info: Dict) -> str:
@@ -73,6 +74,7 @@ def get_frequent_words(
     """
     all_ngrams = []
     all_words_text = []
+    ngram_doc_freq = Counter()  # Track document frequency (number of reviews containing ngram)
 
     # Remove None entries
     filtered_reviews = [r for r in review_dicts if r]
@@ -84,13 +86,23 @@ def get_frequent_words(
             # Only get ngrams from highlight_detail_ngrams for X-axis
             detail_ngrams = [ngram['text'].lower() for ngram in review_info.get('highlight_detail_ngrams', [])]
             all_ngrams.extend(detail_ngrams)
+            # Update document frequency
+            for ngram in set(detail_ngrams):  # Use set to count each ngram once per review
+                ngram_doc_freq[ngram] += 1
         elif axis == 'y':
             # Only get ngrams from highlight_reason_ngrams for Y-axis
             reason_ngrams = [ngram['text'].lower() for ngram in review_info.get('highlight_reason_ngrams', [])]
             all_ngrams.extend(reason_ngrams)
+            # Update document frequency
+            for ngram in set(reason_ngrams):
+                ngram_doc_freq[ngram] += 1
         else:
             # For no specific axis, get all ngrams
-            all_ngrams.extend(get_all_ngrams_from_review(review_info))
+            review_ngrams = get_all_ngrams_from_review(review_info)
+            all_ngrams.extend(review_ngrams)
+            # Update document frequency
+            for ngram in set(review_ngrams):
+                ngram_doc_freq[ngram] += 1
 
         # Extract relevant text (highlight or full)
         if axis:
@@ -99,13 +111,26 @@ def get_frequent_words(
             text = extract_text_from_review(review_info)
         all_words_text.append(text.lower())
     
-    # Count ngrams
-    ngram_counts = Counter(all_ngrams)
-    # Return the most common words/ngrams with minimum occurrences (e.g., >= 2)
-    min_occurrences = 2
-    most_common = [(word, count) for word, count in ngram_counts.most_common(num_words * 2) if count >= min_occurrences]
-
-    return most_common[:num_words]
+    # Get IDF values from the loaded data
+    ngram_idf = raw_dict_map.get('ngram_idf', {})
+    
+    # Calculate df*idf scores for each ngram
+    ngram_scores = {}
+    total_reviews = len(filtered_reviews)
+    
+    for ngram, df in ngram_doc_freq.items():
+        sublinear_df = 1 + np.log(df + 1)
+        # Get IDF value, default to 1 if not found
+        idf = ngram_idf.get(ngram, 1.0)
+        # Calculate final score
+        ngram_scores[ngram] = sublinear_df * idf
+    
+    # Sort ngrams by score and get top n
+    sorted_ngrams = sorted(ngram_scores.items(), key=lambda x: x[1], reverse=True)
+    top_ngrams = sorted_ngrams[:num_words]
+    
+    # Return list of (ngram, df) tuples, sorted by df*idf score
+    return [(ngram, ngram_doc_freq[ngram]) for ngram, _ in top_ngrams]
 
 def create_word_frequency_display(word_counts, language, word_type='common', on_click_id=None, selected_words=None, title_word=None):
     """
