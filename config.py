@@ -182,6 +182,7 @@ TRANSLATIONS = {
         'no_word_selected': 'No word selected',
         'clear_word_selection': 'Clear selection',
         'all_reviews': 'All Reviews',
+        'other_words': 'Other',
     },
     'zh': {
         'login': '登录',
@@ -270,6 +271,7 @@ TRANSLATIONS = {
         'no_word_selected': '没有选词',
         'clear_word_selection': '清除选择',
         'all_reviews': '所有评论',
+        'other_words': '其余',
     }
 }
 

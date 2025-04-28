@@ -381,12 +381,12 @@ def create_review_display(filtered_review_dicts: List[Dict], language, plot_type
     # Create word frequency analysis if there are enough reviews
     if len(filtered_review_dicts) >= 5: # Lower threshold for showing words
         # Get frequent words from all reviews
-        all_reviews_words = get_frequent_words(filtered_review_dicts, num_words=25)
+        all_reviews_words = get_frequent_words(filtered_review_dicts, num_words=50)
         
         # For matrix view, get X and Y axis highlights
         if plot_type == 'matrix':
-            x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=25)
-            y_highlight_words = get_frequent_words(filtered_review_dicts, axis='y', num_words=25)
+            x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=50)
+            y_highlight_words = get_frequent_words(filtered_review_dicts, axis='y', num_words=50)
             
             # Create word cloud displays for X and Y axis
             if x_highlight_words:
@@ -415,7 +415,7 @@ def create_review_display(filtered_review_dicts: List[Dict], language, plot_type
         else:
             # For bar chart, get only X axis highlights
             # Use the detail highlight (axis='x')
-            x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=25)
+            x_highlight_words = get_frequent_words(filtered_review_dicts, axis='x', num_words=50)
             if x_highlight_words:
                 word_freq_components.append(
                     create_word_frequency_display(
@@ -428,16 +428,23 @@ def create_review_display(filtered_review_dicts: List[Dict], language, plot_type
                     )
                 )
         
-        # Add frequent words from all reviews
-        if all_reviews_words:
+        # Filter all_reviews_words to remove words already in the x or y axis containers
+        x_words = set(word for word, count in (x_highlight_words if 'x_highlight_words' in locals() else []))
+        y_words = set(word for word, count in (y_highlight_words if 'y_highlight_words' in locals() else []))
+        
+        # Filter out words that are already in x or y containers
+        other_words = [(word, count) for word, count in all_reviews_words if word not in x_words and word not in y_words]
+        
+        # Add other frequent words not already shown in x/y containers
+        if other_words:
             word_freq_components.append(
                 create_word_frequency_display(
-                    all_reviews_words, 
+                    other_words, 
                     language, 
                     'common',
-                    on_click_id='all-reviews-words-container',
+                    on_click_id='other-words-container',
                     selected_words=selected_words,
-                    title_word=TRANSLATIONS[language]['all_reviews'] # Title for all reviews
+                    title_word=TRANSLATIONS[language]['other_words'] # Changed title
                 )
             )
             
